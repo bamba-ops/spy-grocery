@@ -1,10 +1,7 @@
 <script setup>
 import { ref, onMounted, reactive } from "vue";
-import LoadingListing from "@/composant/LoadingListing.vue";
-import { MainModel } from "@/models/MainModel";
-import { useRoute } from "vue-router";
-import { useProductStore } from "@/store/productStore";
 import Error from "@/composant/Error.vue";
+import { mainModel } from "@/models/MainModel";
 
 const TARGET_STORE_ID = "8f719263-a1a0-4f39-b398-29c37ef2c266"; // Le store_id à vérifier
 const loading = ref(false);
@@ -13,7 +10,7 @@ const _targetProduct = ref();
 const _bestMatch = ref([]);
 const bestDeal = ref();
 const secondDeal = ref();
-const _useProductStore = useProductStore();
+const _mainModel = mainModel();
 
 function handleIsBestPrice() {
   if (_targetProduct.value.price > _bestMatch.value[0].price) {
@@ -61,8 +58,8 @@ function handleBestPrice() {
   loading.value = true;
   error.value = null;
   try {
-    _targetProduct.value = _useProductStore.targetProduct;
-    _bestMatch.value = _useProductStore.bestMatch;
+    _targetProduct.value = _mainModel.targetProduct;
+    _bestMatch.value = _mainModel.bestMatch;
     if (!_targetProduct.value || !_bestMatch.value) {
       error.value = "Failed to load the best price. Please try again.";
     } else {
@@ -83,7 +80,7 @@ onMounted(async () => {
 
 --- ## ✅ **Template :** ```vue
 <template>
-  <main class="p-6 flex flex-col items-center">
+  <main class="p-6 mt-12 flex flex-col items-center">
     <h1
       v-if="!loading && !error"
       class="text-4xl font-bold text-center mb-10 text-green-700"
@@ -110,6 +107,7 @@ onMounted(async () => {
       <!-- Image Section -->
       <img
         :src="bestDeal.product.image_url"
+        @error="handleImageError"
         alt="Product Image"
         class="w-40 h-40 object-cover rounded-lg mx-auto mb-6"
       />
@@ -126,6 +124,7 @@ onMounted(async () => {
       <div class="flex items-center justify-center gap-4 mt-6">
         <img
           :src="bestDeal.store.image_url"
+          @error="handleImageError"
           alt="Store Logo"
           class="w-12 h-12 object-contain rounded-full border border-gray-300"
         />
@@ -170,6 +169,7 @@ onMounted(async () => {
         <!-- Image -->
         <img
           :src="secondDeal.product.image_url"
+          @error="handleImageError"
           alt="Product Image"
           class="w-32 h-32 object-cover rounded-lg mx-auto mb-4"
         />
@@ -190,6 +190,7 @@ onMounted(async () => {
         <div class="flex items-center justify-center gap-3 mt-4">
           <img
             :src="secondDeal.store.image_url"
+            @error="handleImageError"
             alt="Store Logo"
             class="w-12 h-12 object-contain rounded-full border border-gray-300"
           />

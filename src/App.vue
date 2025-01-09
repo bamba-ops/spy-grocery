@@ -4,7 +4,7 @@
   <div class="min-h-screen bg-gray-100 flex flex-col">
     <!-- Header Section -->
     <header
-      class="bg-white shadow-md p-4 flex items-center justify-between sticky top-0 z-50"
+      class="bg-white shadow-lg p-6 mx-auto mt-4 rounded-full flex items-center justify-between w-3/4 fixed top-0 left-1/2 transform -translate-x-1/2 z-50"
     >
       <div class="flex items-center space-x-2">
         <img
@@ -22,7 +22,7 @@
     </header>
 
     <!-- Dynamic Content -->
-    <main class="flex-1 p-6">
+    <main class="flex-1 p-6 mt-20">
       <router-view />
     </main>
 

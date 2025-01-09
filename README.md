@@ -1,29 +1,65 @@
-# ./
+# Spy Grocery Frontend
 
-This template should help get you started developing with Vue 3 in Vite.
+This project is a frontend application for a grocery comparison service built with Vue 3, Pinia, and Axios. The application provides features for listing product prices from stores and finding the cheapest product based on user queries.
 
-## Recommended IDE Setup
+## Features
+- List product prices by store.
+- Find the cheapest product for a specified query.
+- Vue 3, Pinia, and Axios based structure.
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+## Project Structure
+The project is structured into several key components:
 
-## Customize configuration
+### API Layer
+- `DataAPISource.js`: Handles communication with the backend API using Axios.
 
-See [Vite Configuration Reference](https://vite.dev/config/).
+### Services
+- `CheapestService.js`: Fetches the cheapest product price.
+- `ListingService.js`: Fetches product prices for a specific store.
 
-## Project Setup
+### State Management
+- `MainModel.js`: Manages the application's state using Pinia.
 
-```sh
+### Views
+- `LoadingListing.vue`: Loading component for product listings.
+- `LoadingCheapest.vue`: Loading component for cheapest product results.
+- `Error.vue`: Displays error messages.
+- `CheapestView.vue`: View for displaying the cheapest product result.
+- `ListingView.vue`: View for displaying product listings.
+
+### Configuration
+- `index.js`: Configures Vue Router.
+- `main.js`: Initializes the Vue application and integrates Pinia and the router.
+
+## Installation
+Ensure you have Node.js and npm installed.
+
+```bash
+# Clone the repository
+git clone <repository-url>
+cd spy-grocery-frontend
+
+# Install dependencies
 npm install
-```
 
-### Compile and Hot-Reload for Development
-
-```sh
+# Run the development server
 npm run dev
 ```
 
-### Compile and Minify for Production
+## API Integration
+The application interacts with a backend API located at `http://127.0.0.1:8000/api/v1`.
+- **Best Price:** `POST /product/price`
+- **Prices by Store:** `GET /prices/store/{STORE_ID}`
 
-```sh
-npm run build
-```
+## Usage
+1. Access the homepage to view product listings.
+2. Navigate to `/cheapest` to find the cheapest product based on a query.
+
+## Technologies Used
+- Vue 3
+- Pinia
+- Axios
+
+## License
+This project is licensed under the MIT License.
+
