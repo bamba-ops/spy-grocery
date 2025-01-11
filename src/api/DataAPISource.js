@@ -4,7 +4,7 @@ import { Product } from '@/domain/entity/Product';
 import { Price } from '@/domain/entity/Price';
 
 
-const API_URL = 'http://35.183.48.145:80/api/v1';
+const API_URL = 'https://b339-35-183-48-145.ngrok-free.app/api/v1';
 const STORE_ID = '32d6dd89-4216-4588-a096-631bfaf5df56'
 const GET_ALL_PRICES_BY_STORE_ID = `/prices/store/${STORE_ID}`
 const GET_BEST_PRICE = `/product/price`
