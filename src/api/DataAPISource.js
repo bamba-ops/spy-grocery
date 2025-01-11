@@ -3,7 +3,8 @@ import { Store } from '@/domain/entity/Store';
 import { Product } from '@/domain/entity/Product';
 import { Price } from '@/domain/entity/Price';
 
-const API_URL = 'http://127.0.0.1:8000/api/v1';
+
+const API_URL = 'http://35.183.48.145:80/api/v1';
 const STORE_ID = '32d6dd89-4216-4588-a096-631bfaf5df56'
 const GET_ALL_PRICES_BY_STORE_ID = `/prices/store/${STORE_ID}`
 const GET_BEST_PRICE = `/product/price`
@@ -12,8 +13,6 @@ export class DataAPISource {
 
     async fetchBestPrice(product) {
         try {
-            const products = new Array()
-            const stores = new Array()
 
             const response = await axios.post(API_URL + GET_BEST_PRICE, product, {
                 headers: {
@@ -41,6 +40,7 @@ export class DataAPISource {
                     offset: offset
                 }
             })
+            console.log(response)
             const data = await response.data
 
             //prices = data.map(item => Price.fromJSON(item))

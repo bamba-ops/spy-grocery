@@ -15,6 +15,7 @@ const loadingMore = ref(false);
 const _mainModel = mainModel();
 const totalCount = ref(0);
 const isEndOfResults = ref(false);
+const searchQuery = ref(""); // Par exemple, si vous avez un input de recherche
 
 async function handlePricesListing() {
   loading.value = true;
@@ -28,13 +29,7 @@ async function handlePricesListing() {
       error.value = "Failed to load prices. Please try again.";
     }
 
-    console.log(prices.value.length);
-    console.log(totalCount.value);
-
-    if (
-      prices.value.length == totalCount.value ||
-      prices.value.length > totalCount.value
-    ) {
+    if (prices.value.length >= totalCount.value) {
       isEndOfResults.value = true;
     }
   } catch (err) {
@@ -51,20 +46,17 @@ async function handleLoadMore() {
     const { _prices } = await _mainModel.getPricesByStoreId();
     if (_prices) {
       prices.value.push(..._prices);
-      if (
-        prices.value.length == totalCount.value ||
-        prices.value.length > totalCount.value
-      ) {
+      if (prices.value.length >= totalCount.value) {
         isEndOfResults.value = true;
       }
     } else {
-      error.value = "No prices founded";
+      error.value = "No prices found.";
     }
-
-    loadingMore.value = false;
   } catch (err) {
     console.error("Error loading prices:", err);
     error.value = "Failed to load prices. Please try again.";
+  } finally {
+    loadingMore.value = false;
   }
 }
 
@@ -74,7 +66,6 @@ async function handleProductClick(product) {
     error.value = null;
 
     await _mainModel.getBestPrice(toRaw(product));
-
     router.push("/cheapest");
   } catch (err) {
     error.value = "Failed to fetch the product details.";
@@ -83,7 +74,7 @@ async function handleProductClick(product) {
 
 function handleImageError(event) {
   event.target.src =
-    "https://us.123rf.com/450wm/pgmart/pgmart1604/pgmart160400055/55602454-lettre-de-capital-s-des-bandes-entrelac%C3%A9es-blanches-sur-un-fond-noir-mod%C3%A8le-pour-embl%C3%A8me-logos-et.jpg"; // Remplacement par l'image par défaut
+    "https://us.123rf.com/450wm/pgmart/pgmart1604/pgmart160400055/55602454-lettre-de-capital-s-des-bandes-entrelac%C3%A9es-blanches-sur-un-fond-noir-mod%C3%A8le-pour-embl%C3%A8me-logos-et.jpg";
 }
 
 onMounted(() => {
@@ -92,8 +83,9 @@ onMounted(() => {
 </script>
 
 <template>
-  <main class="p-4 mt-12">
-    <!-- Loading State avec Animation Pulse -->
+  <!-- Conteneur global : fond sombre, texte clair -->
+  <main class="min-h-screen bg-gray-900 text-white p-4 flex flex-col">
+    <!-- 1) ÉTAT DE CHARGEMENT (SKELETONS) -->
     <div
       v-if="loading"
       class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
@@ -101,125 +93,135 @@ onMounted(() => {
       <LoadingListing v-for="n in 30" :key="n" />
     </div>
 
+    <!-- 2) LOADING CHEAPEST (si on charge un produit) -->
     <LoadingCheapest v-if="loadingCheapest && !error && !loading" />
 
+    <!-- 3) ERREUR ÉVENTUELLE -->
     <Error v-if="error" />
 
-    <div
-      v-if="!loading && !loadingCheapest && !error"
-      class="relative mb-8 w-full"
-    >
-      <div class="flex justify-center">
-        <!-- Conteneur flex avec input et svg alignés horizontalement -->
+    <!-- 4) SECTION PRINCIPALE (LISTING) : uniquement si pas de chargement ni d’erreur -->
+    <div v-if="!loading && !loadingCheapest && !error" class="flex-1">
+      <!-- SECTION ICÔNE + TITRE + DESCRIPTION -->
+      <div class="flex flex-col items-center mb-8">
+        <!-- Icône “chance” (trèfle) : 🍀 -->
+        <div class="text-5xl md:text-6xl mb-3">🍀</div>
+
+        <!-- Titre -->
+        <h2 class="text-2xl md:text-3xl font-semibold mb-1">
+          Votre chance du jour
+        </h2>
+
+        <!-- Description -->
+        <p class="text-sm md:text-base text-gray-300 text-center max-w-md">
+          Trouvez des offres imbattables aujourd'hui et profitez pleinement de
+          votre chance !
+        </p>
+      </div>
+
+      <!-- Barre de recherche -->
+      <div class="mb-8 w-full flex justify-center">
         <div
-          class="flex items-center w-3/4 max-w-lg bg-white rounded-full shadow-lg px-4 py-3 space-x-3"
+          class="flex items-center w-full max-w-xl bg-gray-800 rounded-full px-4 py-2 space-x-3"
         >
-          <!-- Icône SVG directement intégré à gauche -->
+          <!-- Icône loupe -->
           <svg
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
-            strokeWidth="1.5"
+            stroke-width="1.5"
             stroke="currentColor"
-            class="w-6 h-6 stroke-2 text-black flex-shrink-0"
+            class="w-5 h-5 text-gray-300 flex-shrink-0"
           >
             <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="m21 21-5.197-5.197m0 0A7.5 7.5 0 
+                 1 0 5.196 5.196a7.5 7.5 0 0 0 
+                 10.607 10.607Z"
             />
           </svg>
-
-          <!-- Barre de recherche sans padding excessif -->
+          <!-- Input -->
           <input
             type="text"
             v-model="searchQuery"
             placeholder="Rechercher un produit..."
-            class="w-full text-lg focus:outline-none border-none"
+            class="w-full bg-transparent text-sm md:text-base text-gray-100 placeholder-gray-500 focus:outline-none"
           />
         </div>
       </div>
-    </div>
 
-    <!-- Total Results -->
-    <div
-      v-if="!loading && !loadingCheapest && !error"
-      class="text-left text-lg font-semibold text-gray-800 mb-4"
-    >
-      {{ totalCount }} Results
-    </div>
+      <!-- Nombre total de résultats -->
+      <div class="mb-4 text-left text-sm md:text-base text-gray-300">
+        {{ totalCount }} résultats
+      </div>
 
-    <div
-      v-if="!loading && !loadingCheapest && !error"
-      class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
-    >
-      <div
-        v-for="price in prices"
-        :key="price.product_id"
-        class="relative group bg-white border border-gray-200 rounded-lg shadow-md overflow-hidden transform transition-all duration-300 hover:scale-105 hover:shadow-xl cursor-pointer"
-        @click="handleProductClick(price.product)"
-      >
-        <!-- Image Section -->
+      <!-- Grid des produits -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         <div
-          class="relative w-full h-40 flex items-center justify-center overflow-hidden"
+          v-for="price in prices"
+          :key="price.product_id"
+          class="relative bg-gray-800 border border-gray-700 rounded-lg shadow-md overflow-hidden transform transition-all duration-300 hover:scale-105 hover:shadow-xl cursor-pointer"
+          @click="handleProductClick(price.product)"
         >
-          <img
-            :src="price.product.image_url"
-            :alt="price.product.name"
-            @error="handleImageError"
-            class="w-full h-full object-contain transition-transform duration-500 group-hover:scale-110"
-          />
-
+          <!-- Image du produit -->
           <div
-            class="absolute inset-0 bg-gradient-to-t from-black to-transparent opacity-0 group-hover:opacity-50 transition-opacity duration-500"
-          ></div>
-        </div>
-        <!-- Content Section -->
-        <div class="p-4">
-          <h2 class="text-lg font-bold text-gray-800 truncate">
-            {{ price.product.name }}
-          </h2>
-          <p class="text-sm text-gray-500 font-medium mt-1">
-            {{ price.product.brand }}
-          </p>
-          <p class="text-sm text-gray-600 mt-1">
-            {{ price.product.unit }}
-          </p>
-          <p class="text-sm text-gray-600 mt-1">
-            <span class="text-gray-800"> ${{ price.price }} </span>
-            / {{ price.unit }}
-          </p>
+            class="relative w-full h-36 sm:h-40 flex items-center justify-center overflow-hidden"
+          >
+            <img
+              :src="price.product.image_url"
+              :alt="price.product.name"
+              @error="handleImageError"
+              class="w-full h-full object-contain transition-transform duration-500 group-hover:scale-110"
+            />
+            <div
+              class="absolute inset-0 bg-gradient-to-t from-black to-transparent opacity-0 group-hover:opacity-50 transition-opacity duration-500"
+            ></div>
+          </div>
+          <!-- Détails du produit -->
+          <div class="p-4">
+            <h2 class="text-base md:text-lg font-semibold truncate">
+              {{ price.product.name }}
+            </h2>
+            <p class="text-xs md:text-sm text-gray-400 mt-1">
+              {{ price.product.brand }}
+            </p>
+            <p class="text-xs md:text-sm text-gray-400">
+              {{ price.product.unit }}
+            </p>
+            <p class="text-sm text-gray-100 mt-1">
+              <span class="font-bold"> ${{ price.price }} </span>
+              <span class="text-gray-300"> / {{ price.unit }} </span>
+            </p>
+          </div>
         </div>
       </div>
-    </div>
 
-    <div
-      class="py-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
-      v-if="loadingMore"
-    >
-      <LoadingListing v-for="n in 3" :key="n" />
-    </div>
-
-    <!-- Bouton Load More -->
-    <div
-      v-if="!error && !loading && !loadingCheapest"
-      class="flex justify-center mt-6"
-    >
-      <button
-        @click="handleLoadMore"
-        :disabled="isEndOfResults"
-        :class="{
-          'bg-gray-400 cursor-not-allowed': isEndOfResults,
-          'bg-black hover:bg-gray-800': !isEndOfResults,
-        }"
-        class="text-white text-lg py-3 px-6 rounded-full transition-all"
+      <!-- Loader "Load more" (skeletons) -->
+      <div
+        v-if="loadingMore"
+        class="py-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
       >
-        Charger plus
-      </button>
+        <LoadingListing v-for="n in 3" :key="n" />
+      </div>
+
+      <!-- Bouton "Charger plus" -->
+      <div class="flex justify-center mt-6">
+        <button
+          @click="handleLoadMore"
+          :disabled="isEndOfResults"
+          :class="{
+            'bg-gray-600 cursor-not-allowed': isEndOfResults,
+            'bg-gray-800 hover:bg-gray-700': !isEndOfResults,
+          }"
+          class="text-sm md:text-base text-white py-2 px-6 rounded-full transition-all font-semibold"
+        >
+          Charger plus
+        </button>
+      </div>
     </div>
   </main>
 </template>
 
 <style scoped>
-/* Custom styles if needed */
+/* Optionnel : animation ou styles supplémentaires */
 </style>

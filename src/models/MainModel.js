@@ -14,8 +14,7 @@ export const mainModel = defineStore('mainModel', () => {
 
     async function getBestPrice(product) {
         [targetProduct.value, bestMatch.value] = await _cheapestService.fetchBestPrice(product)
-        //setTargetProduct(targetProduct)
-        //setBestMacth(bestMatch)
+        console.log(bestMatch.value)
     }
 
     async function getPricesByStoreId() {
