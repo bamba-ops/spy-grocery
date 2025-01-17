@@ -3,7 +3,7 @@
 <template>
   <!-- Error State (Uber-like) -->
   <div
-    class="flex flex-col items-center justify-center space-y-4 min-h-[300px] bg-gray-900 text-white p-6"
+    class="flex flex-col items-center justify-center space-y-4 min-h-[300px] text-white p-6"
   >
     <!-- Icône d'erreur (émoticône) -->
     <div class="text-red-400 text-6xl">😞</div>

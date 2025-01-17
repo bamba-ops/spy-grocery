@@ -148,7 +148,7 @@ function handleImageError(event) {
 </script>
 
 <template>
-  <main class="min-h-screen bg-gray-900 text-white p-4 flex flex-col">
+  <main class="min-h-screen text-white p-4 flex flex-col">
     <LoadingCheapest
       v-if="state.loadingCheapest && !state.error && !state.loading"
     />
@@ -282,7 +282,7 @@ function handleImageError(event) {
             'bg-gray-600 cursor-not-allowed': state.isEndOfResults,
             'bg-gray-800 hover:bg-gray-700': !state.isEndOfResults,
           }"
-          class="text-sm md:text-base text-white py-2 px-6 rounded-full transition-all font-semibold"
+          class="bg-gray-900 text-sm md:text-base text-white py-2 px-6 rounded-full transition-all font-semibold"
         >
           Charger plus
         </button>

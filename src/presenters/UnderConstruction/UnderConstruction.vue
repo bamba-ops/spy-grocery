@@ -1,7 +1,5 @@
 <template>
-  <div
-    class="bg-gray-900 min-h-screen flex flex-col items-center justify-center"
-  >
+  <div class="min-h-screen flex flex-col items-center justify-center">
     <!-- Icône ou émoji -->
     <div class="text-7xl mb-4">🚧</div>
     <!-- Titre principal -->

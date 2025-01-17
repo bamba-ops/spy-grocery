@@ -3,10 +3,12 @@
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-900 flex flex-col">
+  <div
+    class="bg-gradient-to-b from-gray-900 to-gray-800 min-h-screen flex flex-col"
+  >
     <!-- Header Section -->
     <header
-      class="sticky top-0 z-50 bg-gray-800 text-white shadow-sm p-4 flex items-center justify-between"
+      class="sticky top-0 z-50 text-white shadow-sm p-4 flex items-center justify-between"
     >
       <!-- Logo + Nom de la marque -->
       <div class="flex items-center space-x-3">
@@ -19,13 +21,6 @@
           Spy Grocery
         </h1>
       </div>
-
-      <!-- Bouton "Sign in" -->
-      <button
-        class="px-4 py-2 bg-gray-700 text-white rounded-full font-medium hover:bg-gray-600 transition-colors"
-      >
-        Sign in
-      </button>
     </header>
 
     <!-- Dynamic Content -->
