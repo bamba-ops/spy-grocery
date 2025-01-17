@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const URL = 'https://spy-grocery-backend.vercel.app/';
+const URL = 'https://spy-grocery-backend.vercel.app';
 const URL_DEV = 'http://127.0.0.1:8000';
 const API_URL = URL + '/api/v1';
 
