@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import ListingView from '@/presenters/Listing/ListingView.vue'
+import UnderConstruction from '@/presenters/UnderConstruction/UnderConstruction.vue'
 
 
 const router = createRouter({
@@ -8,7 +9,13 @@ const router = createRouter({
     {
       path: '/',
       name: 'ListingView',
+      redirect: '/building',
       component: ListingView,
+    },
+    {
+      path: '/building',
+      name: 'UnderConstruction',
+      component: UnderConstruction
     },
     {
       path: '/cheapest',

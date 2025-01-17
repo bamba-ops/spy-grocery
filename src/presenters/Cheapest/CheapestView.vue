@@ -54,12 +54,18 @@ function removeFirstProduct(id) {
   const targetArray = state.bestMatch.find((subArray) =>
     subArray.some((obj) => obj.id === id)
   );
+
   if (targetArray) {
     targetArray.shift();
     handleIsBestPrice();
-    state.modalProduct = targetArray[0] || null;
-    console.log("Produit suivant dans le modal :", state.modalProduct);
+    if (targetArray.length == 0) {
+      closeModal();
+    } else {
+      state.modalProduct = targetArray[0] || null;
+      console.log("Produit suivant dans le modal :", state.modalProduct);
+    }
   } else {
+    closeModal();
     console.log("Aucun sous-tableau trouvé pour l'ID :", id);
   }
 }
@@ -134,6 +140,12 @@ onMounted(() => {
         {{ state.bestDeal.product.unit }}
       </p>
       <p class="text-lg font-bold mb-3">
+        <span v-if="state.bestDeal.is_promo">
+          {{ state.bestDeal.quantity }} /
+        </span>
+        ${{ state.bestDeal.price_un }}
+      </p>
+      <p class="text-sm text-gray-400 mb-1">
         ${{ state.bestDeal.price }} / {{ state.bestDeal.unit }}
       </p>
       <div class="flex items-center justify-center gap-4 mt-4">
@@ -187,7 +199,12 @@ onMounted(() => {
         <p class="text-xs text-gray-400 mb-1">
           {{ deal.product.brand }} &mdash; {{ deal.product.unit }}
         </p>
-        <p class="text-sm font-bold mb-2">
+        <p class="text-lg font-bold mb-2">
+          <span v-if="deal.is_promo"> {{ deal.quantity }} / </span>${{
+            deal.price_un
+          }}
+        </p>
+        <p class="text-sm text-gray-400 mb-1">
           ${{ deal.price }} / {{ deal.unit }}
         </p>
         <div class="flex items-center justify-center gap-2 mt-2">
@@ -247,9 +264,11 @@ onMounted(() => {
         v-if="state.showModal"
         class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 p-4"
       >
+        <!-- Removed max-h-[90vh] and overflow-auto, reduced p-6 to p-3 -->
         <div
-          class="relative w-full max-w-md md:max-w-3xl bg-gray-900 text-white rounded-xl shadow-2xl p-6 max-h-[90vh] overflow-auto"
+          class="relative w-full max-w-md md:max-w-3xl bg-gray-900 text-white rounded-xl shadow-2xl p-3"
         >
+          <!-- Close button -->
           <button
             @click="closeModal"
             class="absolute top-4 right-4 text-gray-400 hover:text-gray-200 transition-colors"
@@ -269,10 +288,12 @@ onMounted(() => {
               />
             </svg>
           </button>
+
+          <!-- Icon above title, made smaller (h-6 w-6) -->
           <div class="flex justify-center mb-3">
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              class="h-10 w-10 text-white"
+              class="h-6 w-6 text-white"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -285,83 +306,94 @@ onMounted(() => {
               />
             </svg>
           </div>
-          <h2 class="text-xl md:text-2xl font-semibold text-center mb-2">
+
+          <!-- Title and description (smaller font sizes) -->
+          <h2 class="text-md md:text-xl font-semibold text-center mb-2">
             Vérification du produit
           </h2>
           <p
-            class="text-center text-gray-400 text-sm mb-6 px-2 leading-relaxed"
+            class="text-center text-gray-400 text-sm mb-4 px-2 leading-relaxed"
           >
             Comparez le produit en cours avec le produit de référence pour
             déterminer si c’est le bon.
           </p>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+          <!-- Comparison section: smaller gap, smaller images -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Left (Produit à vérifier) -->
             <div
-              class="flex flex-col items-center border-b md:border-b-0 md:border-r border-gray-700 pb-4 md:pb-0 md:pr-4"
+              class="flex flex-col items-center border-b md:border-b-0 md:border-r border-gray-700 pb-3 md:pb-0 md:pr-3"
             >
-              <h3 class="text-md font-medium text-gray-300 mb-2">
+              <h3 class="text-sm font-medium text-gray-300 mb-2">
                 Produit à vérifier
               </h3>
               <div
                 v-if="state.modalProduct"
                 class="flex flex-col items-center space-y-2"
               >
+                <!-- Smaller images: w-16 h-16 -->
                 <img
                   :src="state.modalProduct.product.image_url"
                   @error="handleImageError"
                   alt="Produit en cours"
-                  class="w-24 h-24 object-cover rounded-md"
+                  class="w-16 h-16 object-cover rounded-md"
                 />
                 <p class="font-semibold text-white text-center">
                   {{ state.modalProduct.product.name }}
                 </p>
-                <p class="text-sm text-gray-400">
+                <p class="text-xs text-gray-400">
                   {{ state.modalProduct.product.brand }}
                 </p>
-                <p class="text-sm text-gray-400">
+                <p class="text-xs text-gray-400">
                   {{ state.modalProduct.product.unit }}
                 </p>
-                <p class="text-md font-bold text-white">
+                <p class="text-sm font-bold text-white">
                   ${{ state.modalProduct.price }} /
                   {{ state.modalProduct.unit }}
                 </p>
               </div>
             </div>
-            <div class="flex flex-col items-center md:pl-4">
-              <h3 class="text-md font-medium text-gray-300 mb-2">
+
+            <!-- Right (Produit de référence) -->
+            <div class="flex flex-col items-center md:pl-3">
+              <h3 class="text-sm font-medium text-gray-300 mb-2">
                 Produit de référence
               </h3>
               <div
                 v-if="state.targetProduct"
                 class="flex flex-col items-center space-y-2"
               >
+                <!-- Smaller images: w-16 h-16 -->
                 <img
                   :src="state.targetProduct.product.image_url"
                   @error="handleImageError"
                   alt="Produit de référence"
-                  class="w-24 h-24 object-cover rounded-md"
+                  class="w-16 h-16 object-cover rounded-md"
                 />
                 <p class="font-semibold text-white text-center">
                   {{ state.targetProduct.product.name }}
                 </p>
-                <p class="text-sm text-gray-400">
+                <p class="text-xs text-gray-400">
                   {{ state.targetProduct.product.brand }}
                 </p>
-                <p class="text-sm text-gray-400">
+                <p class="text-xs text-gray-400">
                   {{ state.targetProduct.product.unit }}
                 </p>
-                <p class="text-md font-bold text-white">
+                <p class="text-sm font-bold text-white">
                   ${{ state.targetProduct.price }} /
                   {{ state.targetProduct.unit }}
                 </p>
               </div>
             </div>
           </div>
+
+          <!-- Action buttons: smaller spacing -->
           <div
-            class="mt-8 flex flex-col md:flex-row items-center justify-center gap-4"
+            class="mt-4 flex flex-col md:flex-row items-center justify-center gap-2"
           >
             <button
               @click="closeModal"
-              class="w-full md:w-auto px-6 py-3 bg-gray-100 text-gray-900 font-semibold rounded-md hover:bg-gray-200 transition-colors"
+              class="w-full md:w-auto px-4 py-2 bg-gray-100 text-gray-900 font-semibold rounded-md hover:bg-gray-200 transition-colors"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -378,7 +410,7 @@ onMounted(() => {
             </button>
             <button
               @click="removeFirstProduct(state.modalProduct?.id)"
-              class="w-full md:w-auto px-6 py-3 bg-gray-700 text-white font-semibold rounded-md hover:bg-gray-600 transition-colors"
+              class="w-full md:w-auto px-4 py-2 bg-gray-700 text-white font-semibold rounded-md hover:bg-gray-600 transition-colors"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"

@@ -86,7 +86,7 @@ watch(
     } finally {
       state.loading = false;
     }
-  }, 1000)
+  }, 500)
 );
 
 async function handleLoadMore() {
@@ -253,9 +253,15 @@ function handleImageError(event) {
             <p class="text-xs md:text-sm text-gray-400">
               {{ price.product.unit }}
             </p>
-            <p class="text-sm text-gray-100 mt-1">
-              <span class="font-bold"> ${{ price.price }} </span>
-              <span class="text-gray-300"> / {{ price.unit }} </span>
+            <p class="text-lg text-gray-100 mt-1">
+              <span v-if="price.is_promo">
+                <span class="font-bold"> {{ price.quantity }} / </span>
+                <span class="font-bold"> ${{ price.price_un }} </span>
+              </span>
+              <span v-else class="font-bold"> ${{ price.price_un }} </span>
+            </p>
+            <p class="text-xs md:text-sm text-gray-400">
+              ${{ price.price }} / {{ price.unit }}
             </p>
           </div>
         </div>

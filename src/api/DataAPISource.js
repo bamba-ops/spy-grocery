@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const URL = 'https://spy-grocery-backend-production.up.railway.app';
 const URL_DEV = 'http://127.0.0.1:8000';
-const API_URL = URL + '/api/v1';
+const API_URL = URL_DEV + '/api/v1';
 
 // Ajoutons un nouvel endpoint :
 const SEARCH_PRICES_ENDPOINT = '/prices/search';

@@ -20,6 +20,7 @@ export const mainModel = defineStore('mainModel', () => {
     // 1) GESTION DU "BEST PRICE"
     async function getBestPrice(product) {
         [targetProduct.value, bestMatch.value] = await _cheapestService.fetchBestPrice(product);
+        console.log(bestMatch.value)
     }
 
     // 2) GET PRICES PAR STORE (LISTING PAGINÉ CLASSIQUE)
@@ -74,7 +75,7 @@ export const mainModel = defineStore('mainModel', () => {
         // MÉTHODES
         getBestPrice,
         getPricesByStoreId,
-        searchPricesByStoreAndName,  // <-- Ajoutée ici
+        searchPricesByStoreAndName,
         setTargetProduct,
         setBestMacth
     };
