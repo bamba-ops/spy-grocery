@@ -301,7 +301,7 @@ onMounted(() => {
     <transition name="modal">
       <div
         v-if="state.showModal"
-        class="fixed inset-0 z-50 flex items-center justify-center px-4"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-6"
       >
         <div
           class="absolute inset-0 bg-black/40 backdrop-blur-sm"
@@ -309,16 +309,16 @@ onMounted(() => {
         ></div>
 
         <div
-          class="relative w-full max-w-3xl bg-white rounded-2xl shadow-2xl p-6 md:p-8"
+          class="relative w-full max-w-lg bg-white rounded-xl shadow-2xl p-4 md:p-6 max-h-[90vh] overflow-y-auto"
         >
           <!-- Close Button -->
           <button
             @click="closeModal"
-            class="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+            class="absolute top-2 right-2 text-gray-400 hover:text-gray-600 p-2"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              class="h-6 w-6"
+              class="h-5 w-5"
               viewBox="0 0 24 24"
             >
               <path
@@ -333,11 +333,11 @@ onMounted(() => {
           </button>
 
           <!-- Modal Content -->
-          <div class="text-center mb-8">
-            <div class="inline-block p-3 bg-black/5 rounded-full mb-4">
+          <div class="text-center mb-6">
+            <div class="inline-block p-2 bg-black/5 rounded-full mb-3">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                class="h-6 w-6"
+                class="h-5 w-5"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -350,58 +350,80 @@ onMounted(() => {
                 />
               </svg>
             </div>
-            <h3 class="text-xl font-bold mb-2">Verify Product Match</h3>
-            <p class="text-gray-600">
+            <h3 class="text-lg font-bold mb-1">Verify Product Match</h3>
+            <p class="text-gray-600 text-sm">
               Please compare the products to ensure they match.
             </p>
           </div>
 
           <!-- Product Comparison -->
-          <div class="grid md:grid-cols-2 gap-8">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <!-- Current Product -->
-            <div class="text-center">
-              <h4 class="font-medium text-gray-600 mb-4">Current Product</h4>
-              <div v-if="state.modalProduct" class="space-y-4">
+            <div class="text-center p-3 bg-gray-50 rounded-lg">
+              <h4 class="font-medium text-gray-600 text-sm mb-3">
+                Current Product
+              </h4>
+              <div v-if="state.modalProduct" class="space-y-3">
                 <img
                   :src="state.modalProduct.product.image_url"
                   @error="handleImageError"
                   alt="Current Product"
-                  class="w-24 h-24 mx-auto object-contain"
+                  class="w-20 h-20 mx-auto object-contain"
                 />
-                <h5 class="font-bold">{{ state.modalProduct.product.name }}</h5>
-                <p class="text-sm text-gray-600">
+                <h5 class="font-bold text-sm">
+                  {{ state.modalProduct.product.name }}
+                </h5>
+                <p class="text-xs text-gray-600">
                   {{ state.modalProduct.product.brand }}
                 </p>
-                <p class="text-sm text-gray-600">
+                <p class="text-xs text-gray-600">
                   {{ state.modalProduct.product.unit }}
                 </p>
-                <p class="font-bold">
+                <p class="font-bold text-sm">
                   ${{ state.modalProduct.price }} /
                   {{ state.modalProduct.unit }}
                 </p>
               </div>
             </div>
 
+            <!-- Action Buttons for Mobile -->
+            <div class="flex justify-center gap-3 my-4 md:hidden">
+              <button
+                @click="closeModal"
+                class="px-4 py-2 bg-white border border-black text-black text-sm rounded-full hover:bg-black hover:text-white transition-colors duration-300"
+              >
+                It's Correct
+              </button>
+              <button
+                @click="removeFirstProduct(state.modalProduct?.id)"
+                class="px-4 py-2 bg-black text-white text-sm rounded-full hover:bg-gray-800 transition-colors duration-300"
+              >
+                Wrong Item
+              </button>
+            </div>
+
             <!-- Reference Product -->
-            <div class="text-center">
-              <h4 class="font-medium text-gray-600 mb-4">Reference Product</h4>
-              <div v-if="state.targetProduct" class="space-y-4">
+            <div class="text-center p-3 bg-gray-50 rounded-lg">
+              <h4 class="font-medium text-gray-600 text-sm mb-3">
+                Reference Product
+              </h4>
+              <div v-if="state.targetProduct" class="space-y-3">
                 <img
                   :src="state.targetProduct.product.image_url"
                   @error="handleImageError"
                   alt="Reference Product"
-                  class="w-24 h-24 mx-auto object-contain"
+                  class="w-20 h-20 mx-auto object-contain"
                 />
-                <h5 class="font-bold">
+                <h5 class="font-bold text-sm">
                   {{ state.targetProduct.product.name }}
                 </h5>
-                <p class="text-sm text-gray-600">
+                <p class="text-xs text-gray-600">
                   {{ state.targetProduct.product.brand }}
                 </p>
-                <p class="text-sm text-gray-600">
+                <p class="text-xs text-gray-600">
                   {{ state.targetProduct.product.unit }}
                 </p>
-                <p class="font-bold">
+                <p class="font-bold text-sm">
                   ${{ state.targetProduct.price }} /
                   {{ state.targetProduct.unit }}
                 </p>
@@ -409,17 +431,17 @@ onMounted(() => {
             </div>
           </div>
 
-          <!-- Action Buttons -->
-          <div class="flex justify-center gap-4 mt-8">
+          <!-- Action Buttons for Desktop -->
+          <div class="hidden md:flex justify-center gap-3 mt-6">
             <button
               @click="closeModal"
-              class="px-6 py-2 bg-white border border-black text-black rounded-full hover:bg-black hover:text-white transition-colors duration-300"
+              class="px-4 py-2 bg-white border border-black text-black text-sm rounded-full hover:bg-black hover:text-white transition-colors duration-300"
             >
               It's Correct
             </button>
             <button
               @click="removeFirstProduct(state.modalProduct?.id)"
-              class="px-6 py-2 bg-black text-white rounded-full hover:bg-gray-800 transition-colors duration-300"
+              class="px-4 py-2 bg-black text-white text-sm rounded-full hover:bg-gray-800 transition-colors duration-300"
             >
               Wrong Item
             </button>
