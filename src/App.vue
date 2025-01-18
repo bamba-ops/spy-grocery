@@ -1,46 +1,37 @@
 <script setup>
-// (Aucun script particulier ici pour l’instant)
+import Header from "@/components/layout/Header.vue";
+import Footer from "@/components/layout/Footer.vue";
 </script>
 
 <template>
-  <div
-    class="bg-gradient-to-b from-gray-900 to-gray-800 min-h-screen flex flex-col"
-  >
-    <!-- Header Section -->
-    <header
-      class="sticky top-0 z-50 text-white shadow-sm p-4 flex items-center justify-between"
-    >
-      <!-- Logo + Nom de la marque -->
-      <div class="flex items-center space-x-3">
-        <img
-          src="https://us.123rf.com/450wm/pgmart/pgmart1604/pgmart160400055/55602454-lettre-de-capital-s-des-bandes-entrelac%C3%A9es-blanches-sur-un-fond-noir-mod%C3%A8le-pour-embl%C3%A8me-logos-et.jpg"
-          alt="Spy Grocery Logo"
-          class="w-10 h-10 object-cover rounded-full border border-gray-700"
-        />
-        <h1 class="text-xl md:text-2xl font-semibold tracking-tight">
-          Spy Grocery
-        </h1>
-      </div>
-    </header>
+  <div class="bg-white min-h-screen flex flex-col">
+    <Header />
 
     <!-- Dynamic Content -->
-    <main class="flex-1 p-6">
-      <!-- Vue Router Outlet -->
+    <main class="flex-1">
       <router-view />
     </main>
 
-    <!-- Footer Section -->
-    <footer
-      class="bg-gray-800 text-white py-4 text-center text-xs md:text-sm font-light"
-    >
-      &copy; 2025 Spy Grocery. All rights reserved.
-    </footer>
+    <Footer />
   </div>
 </template>
 
-<style scoped>
-/* Typo minimaliste */
+<style>
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+
 body {
   font-family: "Inter", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+.transition-all {
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 300ms;
 }
 </style>

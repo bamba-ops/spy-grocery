@@ -2,15 +2,21 @@ import { createRouter, createWebHistory } from 'vue-router'
 import ListingView from '@/presenters/Listing/ListingView.vue'
 import UnderConstruction from '@/presenters/UnderConstruction/UnderConstruction.vue'
 
-
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: '/',
       name: 'ListingView',
-      //redirect: '/building',
       component: ListingView,
+      beforeEnter: (to, from, next) => {
+        const hasAccess = localStorage.getItem('site-access') === 'granted'
+        if (!hasAccess) {
+          next('/building')
+        } else {
+          next()
+        }
+      }
     },
     {
       path: '/building',
@@ -18,12 +24,30 @@ const router = createRouter({
       component: UnderConstruction
     },
     {
+      path: '/listing',
+      name: 'Listing',
+      component: ListingView,
+      beforeEnter: (to, from, next) => {
+        const hasAccess = localStorage.getItem('site-access') === 'granted'
+        if (!hasAccess) {
+          next('/building')
+        } else {
+          next()
+        }
+      }
+    },
+    {
       path: '/cheapest',
       name: 'Cheapest',
-      // route level code-splitting
-      // this generates a separate chunk (About.[hash].js) for this route
-      // which is lazy-loaded when the route is visited.
       component: () => import('../presenters/Cheapest/CheapestView.vue'),
+      beforeEnter: (to, from, next) => {
+        const hasAccess = localStorage.getItem('site-access') === 'granted'
+        if (!hasAccess) {
+          next('/building')
+        } else {
+          next()
+        }
+      }
     },
   ],
 })

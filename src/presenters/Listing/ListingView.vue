@@ -4,9 +4,9 @@ import { useRouter } from "vue-router";
 import { mainModel } from "@/models/MainModel";
 import debounce from "lodash.debounce";
 
-import LoadingListing from "@/composant/LoadingListing.vue";
-import Error from "@/composant/Error.vue";
-import LoadingCheapest from "@/composant/LoadingCheapest.vue";
+import LoadingListing from "@/components/LoadingListing.vue";
+import Error from "@/components/Error.vue";
+import LoadingCheapest from "@/components/LoadingCheapest.vue";
 
 const TARGET_STORE_ID = "32d6dd89-4216-4588-a096-631bfaf5df56";
 const router = useRouter();
@@ -148,51 +148,49 @@ function handleImageError(event) {
 </script>
 
 <template>
-  <main class="min-h-screen text-white p-4 flex flex-col">
+  <main class="min-h-screen text-black bg-white p-4 flex flex-col">
     <LoadingCheapest
       v-if="state.loadingCheapest && !state.error && !state.loading"
     />
     <Error v-if="state.error" />
 
     <div v-if="!state.loadingCheapest && !state.error" class="flex-1">
-      <!-- Titre et description -->
-      <div class="flex flex-col items-center mb-8">
-        <div class="text-5xl md:text-6xl mb-3">🍀</div>
-        <h2 class="text-2xl md:text-3xl font-semibold mb-1">
+      <!-- Header section -->
+      <div class="flex flex-col items-center mb-12">
+        <div class="text-6xl md:text-7xl mb-4">🍀</div>
+        <h2 class="text-3xl md:text-4xl font-bold mb-2 text-gray-900">
           Votre chance du jour
         </h2>
-        <p class="text-sm md:text-base text-gray-300 text-center max-w-md">
+        <p class="text-base md:text-lg text-gray-600 text-center max-w-lg">
           Trouvez des offres imbattables aujourd'hui et profitez pleinement de
           votre chance !
         </p>
       </div>
 
-      <!-- Barre de recherche -->
-      <div class="mb-8 w-full flex justify-center">
+      <!-- Search bar -->
+      <div class="mb-10 w-full flex justify-center">
         <div
-          class="flex items-center w-full max-w-xl bg-gray-800 rounded-full px-4 py-2 space-x-3"
+          class="flex items-center w-full max-w-2xl bg-white border border-gray-200 rounded-full px-6 py-3 space-x-4 shadow-lg hover:shadow-xl transition-shadow duration-300"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
-            stroke-width="1.5"
+            stroke-width="2"
             stroke="currentColor"
-            class="w-5 h-5 text-gray-300 flex-shrink-0"
+            class="w-6 h-6 text-gray-400 flex-shrink-0"
           >
             <path
               stroke-linecap="round"
               stroke-linejoin="round"
-              d="m21 21-5.197-5.197m0 0A7.5 7.5 0 
-                     1 0 5.196 5.196a7.5 7.5 0 0 0 
-                     10.607 10.607Z"
+              d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
             />
           </svg>
           <input
             type="text"
             v-model="state.searchQuery"
             placeholder="Rechercher un produit..."
-            class="w-full bg-transparent text-sm md:text-base text-gray-100 placeholder-gray-500 focus:outline-none"
+            class="w-full bg-transparent text-base md:text-lg text-gray-800 placeholder-gray-400 focus:outline-none"
           />
         </div>
       </div>
@@ -210,7 +208,7 @@ function handleImageError(event) {
 
       <div
         v-if="!state.noResult"
-        class="mb-4 text-left text-sm md:text-base text-gray-300"
+        class="mb-6 text-left text-base md:text-lg text-gray-600 font-medium"
       >
         {{ state.prices.length }} / {{ state.totalCount }} résultats
       </div>
@@ -222,47 +220,48 @@ function handleImageError(event) {
           !state.loadingCheapest &&
           !state.noResult
         "
-        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"
       >
         <div
           v-for="price in state.prices"
           :key="price.product_id"
-          class="relative bg-gray-800 border border-gray-700 rounded-lg shadow-md overflow-hidden transform transition-all duration-300 hover:scale-105 hover:shadow-xl cursor-pointer"
+          class="group relative bg-white rounded-xl shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100"
           @click="handleProductClick(price.product)"
         >
           <div
-            class="relative w-full h-36 sm:h-40 flex items-center justify-center overflow-hidden group"
+            class="relative w-full h-48 sm:h-52 flex items-center justify-center overflow-hidden"
           >
             <img
               :src="price.product.image_url"
               :alt="price.product.name"
               @error="handleImageError"
-              class="w-full h-full object-contain transition-transform duration-500 group-hover:scale-110"
+              class="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
             />
             <div
-              class="absolute inset-0 bg-gradient-to-t from-black to-transparent opacity-0 group-hover:opacity-50 transition-opacity duration-500"
+              class="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity duration-300"
             ></div>
           </div>
-          <div class="p-4">
-            <h2 class="text-base md:text-lg font-semibold truncate">
+          <div class="p-6">
+            <h2 class="text-lg md:text-xl font-bold text-gray-900 truncate">
               {{ price.product.name }}
             </h2>
-            <p class="text-xs md:text-sm text-gray-400 mt-1">
+            <p class="text-sm md:text-base text-gray-600 mt-2">
               {{ price.product.brand }}
             </p>
-            <p class="text-xs md:text-sm text-gray-400">
+            <p class="text-sm md:text-base text-gray-600">
               {{ price.product.unit }}
             </p>
-            <p class="text-lg text-gray-100 mt-1">
-              <span v-if="price.is_promo">
-                <span class="font-bold"> {{ price.quantity }} / </span>
-                <span class="font-bold"> ${{ price.price_un }} </span>
-              </span>
-              <span v-else class="font-bold"> ${{ price.price_un }} </span>
-            </p>
-            <p class="text-xs md:text-sm text-gray-400">
-              ${{ price.price }} / {{ price.unit }}
-            </p>
+            <div class="mt-4 flex items-baseline space-x-2">
+              <p class="text-2xl font-bold text-gray-900">
+                <span v-if="price.is_promo">
+                  {{ price.quantity }} / ${{ price.price_un }}
+                </span>
+                <span v-else>${{ price.price_un }}</span>
+              </p>
+              <p class="text-sm text-gray-500">
+                ${{ price.price }} / {{ price.unit }}
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -274,15 +273,15 @@ function handleImageError(event) {
         <LoadingListing v-for="n in 3" :key="n" />
       </div>
 
-      <div v-if="!state.noResult" class="flex justify-center mt-6">
+      <div v-if="!state.noResult" class="flex justify-center mt-10">
         <button
           @click="handleLoadMore"
           :disabled="state.isEndOfResults"
           :class="{
-            'bg-gray-600 cursor-not-allowed': state.isEndOfResults,
-            'bg-gray-800 hover:bg-gray-700': !state.isEndOfResults,
+            'bg-gray-200 text-gray-400': state.isEndOfResults,
+            'bg-black text-white hover:bg-gray-800': !state.isEndOfResults,
           }"
-          class="bg-gray-900 text-sm md:text-base text-white py-2 px-6 rounded-full transition-all font-semibold"
+          class="py-3 px-8 rounded-full transition-all duration-300 text-base md:text-lg font-medium shadow-md hover:shadow-lg"
         >
           Charger plus
         </button>

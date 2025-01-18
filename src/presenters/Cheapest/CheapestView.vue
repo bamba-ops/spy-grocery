@@ -1,6 +1,6 @@
 <script setup>
 import { reactive, onMounted } from "vue";
-import Error from "@/composant/Error.vue";
+import Error from "@/components/Error.vue";
 import { mainModel } from "@/models/MainModel";
 
 const TARGET_STORE_ID = "32d6dd89-4216-4588-a096-631bfaf5df56";
@@ -100,294 +100,308 @@ onMounted(() => {
 </script>
 
 <template>
-  <!-- Conteneur principal (remplace le <main>) -->
-  <div class="min-h-screen text-white px-6 py-8 flex flex-col items-center">
-    <!-- État de chargement -->
+  <div class="min-h-screen bg-white text-gray-900 px-4 py-8 md:px-6 md:py-12">
+    <!-- Loading and Error States -->
     <LoadingResultComposant v-if="state.loading" />
-    <!-- État d'erreur -->
     <Error v-if="state.error" />
 
-    <!-- Titre / Section d'intro -->
-    <div v-if="!state.loading && !state.error" class="mb-10 text-center">
-      <div class="text-6xl mb-4">🌟</div>
-      <h2 class="text-3xl font-bold">Nos meilleures offres</h2>
-      <p class="text-gray-300 text-sm md:text-base mt-2">
-        Découvrez nos articles phares sélectionnés rien que pour vous.
-      </p>
-    </div>
-
-    <!-- Section BEST DEAL -->
     <div
-      v-if="state.bestDeal && !state.loading && !state.error"
-      class="relative w-full max-w-3xl bg-gray-800 rounded-lg shadow-lg mb-10 p-6 grid grid-cols-1 md:grid-cols-2 gap-6 items-center"
+      v-if="!state.loading && !state.error"
+      class="max-w-7xl mx-auto animate-fade-in"
     >
-      <!-- Label BEST DEAL -->
+      <!-- Header Section -->
+      <div class="text-center mb-16">
+        <div
+          class="inline-block p-4 bg-black/5 rounded-full mb-6 animate-bounce-slow"
+        >
+          <span class="text-4xl">💰</span>
+        </div>
+        <h1 class="text-4xl md:text-5xl font-bold mb-4">Best Price Found</h1>
+        <p class="text-gray-600 text-lg max-w-2xl mx-auto">
+          We've compared prices across multiple stores to find you the best
+          deal.
+        </p>
+      </div>
+
+      <!-- Best Deal Section -->
       <div
-        class="absolute top-0 left-0 px-4 py-1 bg-gray-700 text-white text-xs font-semibold rounded-br-md"
+        v-if="state.bestDeal"
+        class="mb-16 transform transition-all duration-500 hover:scale-[1.02]"
       >
-        BEST DEAL
-      </div>
-      <!-- Image produit -->
-      <div class="flex justify-center">
-        <img
-          :src="state.bestDeal.product.image_url"
-          @error="handleImageError"
-          alt="Product Image"
-          class="w-44 h-44 object-cover rounded-md border border-gray-700"
-        />
-      </div>
-      <!-- Infos produit -->
-      <div class="flex flex-col justify-center text-center md:text-left">
-        <h2 class="text-xl font-bold mb-1">
-          {{ state.bestDeal.product.name }}
-        </h2>
-        <p class="text-gray-400 text-sm mb-2">
-          {{ state.bestDeal.product.brand }} &mdash;
-          {{ state.bestDeal.product.unit }}
-        </p>
-        <p class="text-lg font-bold">
-          <span v-if="state.bestDeal.is_promo">
-            {{ state.bestDeal.quantity }} /
-          </span>
-          ${{ state.bestDeal.price_un }}
-        </p>
-        <p class="text-sm text-gray-400 mb-3">
-          ${{ state.bestDeal.price }} / {{ state.bestDeal.unit }}
-        </p>
-        <div
-          class="flex items-center gap-3 mt-3 justify-center md:justify-start"
-        >
-          <img
-            :src="state.bestDeal.store.image_url"
-            @error="handleImageError"
-            alt="Store Logo"
-            class="w-10 h-10 object-contain rounded-full border border-gray-700"
-          />
-          <p class="text-sm text-gray-300">
-            Available at
-            <span class="text-white font-semibold">{{
-              state.bestDeal.store.name
-            }}</span>
-          </p>
-        </div>
-        <div v-if="state.bestDeal.store.id !== TARGET_STORE_ID" class="mt-4">
-          <p class="text-xs text-gray-400 mb-1 italic">
-            Mauvais article ? Cliquez ci-dessous
-          </p>
-          <button
-            @click="openModal(state.bestDeal)"
-            class="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm font-semibold rounded-md transition"
+        <div class="relative bg-white rounded-2xl shadow-xl overflow-hidden">
+          <!-- Best Deal Label -->
+          <div
+            class="absolute top-6 left-6 bg-black text-white px-4 py-2 rounded-full text-sm font-medium z-10"
           >
-            Mauvais article
-          </button>
+            BEST DEAL
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-8 p-8">
+            <!-- Product Image -->
+            <div class="relative group">
+              <div
+                class="aspect-square w-3/4 mx-auto rounded-xl overflow-hidden bg-gray-50"
+              >
+                <img
+                  :src="state.bestDeal.product.image_url"
+                  @error="handleImageError"
+                  alt="Product Image"
+                  class="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500"
+                />
+              </div>
+            </div>
+
+            <!-- Product Info -->
+            <div class="flex flex-col justify-center">
+              <h2 class="text-2xl font-bold mb-2">
+                {{ state.bestDeal.product.name }}
+              </h2>
+              <p class="text-gray-600 mb-4">
+                {{ state.bestDeal.product.brand }} •
+                {{ state.bestDeal.product.unit }}
+              </p>
+
+              <!-- Price Section -->
+              <div class="bg-black/5 rounded-xl p-6 mb-6">
+                <div class="flex items-baseline gap-2">
+                  <span class="text-3xl font-bold">
+                    ${{ state.bestDeal.price_un }}
+                  </span>
+                  <span
+                    v-if="state.bestDeal.is_promo"
+                    class="text-green-600 font-medium"
+                  >
+                    {{ state.bestDeal.quantity }} units
+                  </span>
+                </div>
+                <p class="text-gray-600 mt-2">
+                  ${{ state.bestDeal.price }} / {{ state.bestDeal.unit }}
+                </p>
+              </div>
+
+              <!-- Store Info -->
+              <div class="flex items-center gap-4">
+                <img
+                  :src="state.bestDeal.store.image_url"
+                  @error="handleImageError"
+                  alt="Store Logo"
+                  class="w-12 h-12 rounded-full border border-gray-200"
+                />
+                <div>
+                  <p class="font-medium">Available at</p>
+                  <p class="text-gray-600">{{ state.bestDeal.store.name }}</p>
+                </div>
+              </div>
+
+              <!-- Wrong Item Button -->
+              <div
+                v-if="state.bestDeal.store.id !== TARGET_STORE_ID"
+                class="mt-6"
+              >
+                <button
+                  @click="openModal(state.bestDeal)"
+                  class="w-full bg-black text-white py-3 px-6 rounded-full font-medium hover:bg-gray-800 transition-colors duration-300"
+                >
+                  Wrong Item?
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- Section autres offres -->
-    <div
-      v-if="state.otherDeals && state.otherDeals.length"
-      class="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-5xl"
-    >
-      <div
-        v-for="(deal, index) in state.otherDeals"
-        :key="deal.id"
-        class="relative bg-gray-800 rounded-lg shadow-md p-4 flex flex-col items-center text-center border border-gray-700 hover:scale-105 transition-transform duration-300"
-      >
-        <div
-          class="absolute top-3 left-3 bg-gray-700 text-white text-xs px-2 py-1 rounded-full"
-        >
-          #{{ index + 1 }}
-        </div>
-        <img
-          :src="deal.product.image_url"
-          @error="handleImageError"
-          alt="Product Image"
-          class="w-20 h-20 object-cover rounded-md mb-2 border border-gray-700"
-        />
-        <h3 class="text-base font-semibold mb-1">{{ deal.product.name }}</h3>
-        <p class="text-xs text-gray-400 mb-1">
-          {{ deal.product.brand }} &mdash; {{ deal.product.unit }}
-        </p>
-        <p class="text-lg font-bold mb-2">
-          <span v-if="deal.is_promo"> {{ deal.quantity }} / </span>
-          ${{ deal.price_un }}
-        </p>
-        <p class="text-sm text-gray-400 mb-1">
-          ${{ deal.price }} / {{ deal.unit }}
-        </p>
-        <div class="flex items-center justify-center gap-2 mt-2">
-          <img
-            :src="deal.store.image_url"
-            @error="handleImageError"
-            alt="Store Logo"
-            class="w-10 h-10 object-contain rounded-full border border-gray-700"
-          />
-          <p class="text-sm text-gray-300">
-            Available at
-            <span class="text-white font-semibold">{{ deal.store.name }}</span>
-          </p>
-        </div>
-        <div
-          v-if="deal.store.id !== TARGET_STORE_ID"
-          class="mt-4 flex flex-col items-center"
-        >
-          <p class="text-xs text-gray-400 mb-2 italic">Mauvais article ?</p>
-          <button
-            @click="openModal(deal)"
-            class="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-white text-sm font-semibold rounded-md transition"
+      <!-- Other Deals Section -->
+      <div v-if="state.otherDeals && state.otherDeals.length">
+        <h3 class="text-2xl font-bold mb-8">Other Options</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div
+            v-for="deal in state.otherDeals"
+            :key="deal.id"
+            class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300"
           >
-            Mauvais article
-          </button>
+            <div
+              class="aspect-[4/3] relative overflow-hidden w-2/3 mx-auto pt-4"
+            >
+              <img
+                :src="deal.product.image_url"
+                @error="handleImageError"
+                alt="Product Image"
+                class="w-full h-full object-contain hover:scale-105 transition-transform duration-500"
+              />
+            </div>
+
+            <div class="p-6">
+              <h4 class="font-bold text-lg mb-2">{{ deal.product.name }}</h4>
+              <p class="text-gray-600 text-sm mb-4">
+                {{ deal.product.brand }} • {{ deal.product.unit }}
+              </p>
+
+              <div class="flex justify-between items-end mb-4">
+                <div>
+                  <p class="text-2xl font-bold">${{ deal.price_un }}</p>
+                  <p class="text-gray-600 text-sm">
+                    ${{ deal.price }} / {{ deal.unit }}
+                  </p>
+                </div>
+                <div
+                  v-if="deal.is_promo"
+                  class="text-green-600 text-sm font-medium"
+                >
+                  {{ deal.quantity }} units
+                </div>
+              </div>
+
+              <div class="flex items-center gap-3">
+                <img
+                  :src="deal.store.image_url"
+                  @error="handleImageError"
+                  alt="Store Logo"
+                  class="w-8 h-8 rounded-full border border-gray-200"
+                />
+                <p class="text-sm text-gray-600">{{ deal.store.name }}</p>
+              </div>
+
+              <button
+                v-if="deal.store.id !== TARGET_STORE_ID"
+                @click="openModal(deal)"
+                class="w-full mt-4 border border-black text-black py-2 rounded-full hover:bg-black hover:text-white transition-colors duration-300"
+              >
+                Wrong Item?
+              </button>
+            </div>
+          </div>
         </div>
+      </div>
+
+      <!-- Home Button -->
+      <div class="flex justify-center mt-16">
+        <a
+          href="/"
+          class="inline-flex items-center justify-center w-14 h-14 bg-black text-white rounded-full hover:bg-gray-800 transition-colors duration-300"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="1.5"
+            stroke="currentColor"
+            class="w-6 h-6"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"
+            />
+          </svg>
+        </a>
       </div>
     </div>
 
-    <!-- Bouton pour revenir à l'accueil -->
-    <div v-if="!state.loading && !state.error" class="mt-10">
-      <a
-        href="/"
-        class="inline-flex items-center justify-center w-12 h-12 bg-gray-800 text-white rounded-full hover:bg-gray-700 transition"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke-width="1.5"
-          stroke="currentColor"
-          class="w-6 h-6"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5
-                   9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125
-                   1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0
-                   1.125-.504 1.125-1.125V9.75M8.25 21h8.25"
-          />
-        </svg>
-      </a>
-    </div>
-
-    <!-- Modale de vérification de produit -->
-    <transition name="fade">
+    <!-- Verification Modal -->
+    <transition name="modal">
       <div
         v-if="state.showModal"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 p-4"
+        class="fixed inset-0 z-50 flex items-center justify-center px-4"
       >
         <div
-          class="relative w-full max-w-md md:max-w-3xl bg-gray-900 text-white rounded-xl shadow-2xl p-3"
+          class="absolute inset-0 bg-black/40 backdrop-blur-sm"
+          @click="closeModal"
+        ></div>
+
+        <div
+          class="relative w-full max-w-3xl bg-white rounded-2xl shadow-2xl p-6 md:p-8"
         >
-          <!-- Bouton de fermeture -->
+          <!-- Close Button -->
           <button
             @click="closeModal"
-            class="absolute top-4 right-4 text-gray-400 hover:text-gray-200 transition-colors"
+            class="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              class="h-5 w-5"
-              fill="none"
+              class="h-6 w-6"
               viewBox="0 0 24 24"
-              stroke="currentColor"
-              stroke-width="2"
             >
               <path
+                fill="none"
+                stroke="currentColor"
                 stroke-linecap="round"
                 stroke-linejoin="round"
+                stroke-width="2"
                 d="M6 18L18 6M6 6l12 12"
               />
             </svg>
           </button>
 
-          <!-- Icône au-dessus du titre -->
-          <div class="flex justify-center mb-3">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-6 w-6 text-white"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 11-9.995 9.9A10 10 0 0112 2z"
-              />
-            </svg>
+          <!-- Modal Content -->
+          <div class="text-center mb-8">
+            <div class="inline-block p-3 bg-black/5 rounded-full mb-4">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 11-9.995 9.9A10 10 0 0112 2z"
+                />
+              </svg>
+            </div>
+            <h3 class="text-xl font-bold mb-2">Verify Product Match</h3>
+            <p class="text-gray-600">
+              Please compare the products to ensure they match.
+            </p>
           </div>
 
-          <!-- Titre et description de la modale -->
-          <h2 class="text-md md:text-xl font-semibold text-center mb-2">
-            Vérification du produit
-          </h2>
-          <p
-            class="text-center text-gray-400 text-sm mb-4 px-2 leading-relaxed"
-          >
-            Comparez le produit en cours avec le produit de référence pour
-            déterminer si c’est le bon.
-          </p>
-
-          <!-- Section de comparaison: produit à vérifier & produit de référence -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <!-- Produit à vérifier -->
-            <div
-              class="flex flex-col items-center border-b md:border-b-0 md:border-r border-gray-700 pb-3 md:pb-0 md:pr-3"
-            >
-              <h3 class="text-sm font-medium text-gray-300 mb-2">
-                Produit à vérifier
-              </h3>
-              <div
-                v-if="state.modalProduct"
-                class="flex flex-col items-center space-y-2"
-              >
+          <!-- Product Comparison -->
+          <div class="grid md:grid-cols-2 gap-8">
+            <!-- Current Product -->
+            <div class="text-center">
+              <h4 class="font-medium text-gray-600 mb-4">Current Product</h4>
+              <div v-if="state.modalProduct" class="space-y-4">
                 <img
                   :src="state.modalProduct.product.image_url"
                   @error="handleImageError"
-                  alt="Produit en cours"
-                  class="w-16 h-16 object-cover rounded-md"
+                  alt="Current Product"
+                  class="w-24 h-24 mx-auto object-contain"
                 />
-                <p class="font-semibold text-white text-center">
-                  {{ state.modalProduct.product.name }}
-                </p>
-                <p class="text-xs text-gray-400">
+                <h5 class="font-bold">{{ state.modalProduct.product.name }}</h5>
+                <p class="text-sm text-gray-600">
                   {{ state.modalProduct.product.brand }}
                 </p>
-                <p class="text-xs text-gray-400">
+                <p class="text-sm text-gray-600">
                   {{ state.modalProduct.product.unit }}
                 </p>
-                <p class="text-sm font-bold text-white">
+                <p class="font-bold">
                   ${{ state.modalProduct.price }} /
                   {{ state.modalProduct.unit }}
                 </p>
               </div>
             </div>
 
-            <!-- Produit de référence -->
-            <div class="flex flex-col items-center md:pl-3">
-              <h3 class="text-sm font-medium text-gray-300 mb-2">
-                Produit de référence
-              </h3>
-              <div
-                v-if="state.targetProduct"
-                class="flex flex-col items-center space-y-2"
-              >
+            <!-- Reference Product -->
+            <div class="text-center">
+              <h4 class="font-medium text-gray-600 mb-4">Reference Product</h4>
+              <div v-if="state.targetProduct" class="space-y-4">
                 <img
                   :src="state.targetProduct.product.image_url"
                   @error="handleImageError"
-                  alt="Produit de référence"
-                  class="w-16 h-16 object-cover rounded-md"
+                  alt="Reference Product"
+                  class="w-24 h-24 mx-auto object-contain"
                 />
-                <p class="font-semibold text-white text-center">
+                <h5 class="font-bold">
                   {{ state.targetProduct.product.name }}
-                </p>
-                <p class="text-xs text-gray-400">
+                </h5>
+                <p class="text-sm text-gray-600">
                   {{ state.targetProduct.product.brand }}
                 </p>
-                <p class="text-xs text-gray-400">
+                <p class="text-sm text-gray-600">
                   {{ state.targetProduct.product.unit }}
                 </p>
-                <p class="text-sm font-bold text-white">
+                <p class="font-bold">
                   ${{ state.targetProduct.price }} /
                   {{ state.targetProduct.unit }}
                 </p>
@@ -395,43 +409,19 @@ onMounted(() => {
             </div>
           </div>
 
-          <!-- Boutons d'action -->
-          <div
-            class="mt-4 flex flex-col md:flex-row items-center justify-center gap-2"
-          >
+          <!-- Action Buttons -->
+          <div class="flex justify-center gap-4 mt-8">
             <button
               @click="closeModal"
-              class="w-full md:w-auto px-4 py-2 bg-gray-100 text-gray-900 font-semibold rounded-md hover:bg-gray-200 transition-colors"
+              class="px-6 py-2 bg-white border border-black text-black rounded-full hover:bg-black hover:text-white transition-colors duration-300"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                class="size-6"
-              >
-                <path
-                  fill-rule="evenodd"
-                  d="M19.916 4.626a.75.75 0 0 1 .208 1.04l-9 13.5a.75.75 0 0 1-1.154.114l-6-6a.75.75 0 0 1 1.06-1.06l5.353 5.353 8.493-12.74a.75.75 0 0 1 1.04-.207Z"
-                  clip-rule="evenodd"
-                />
-              </svg>
+              It's Correct
             </button>
             <button
               @click="removeFirstProduct(state.modalProduct?.id)"
-              class="w-full md:w-auto px-4 py-2 bg-gray-700 text-white font-semibold rounded-md hover:bg-gray-600 transition-colors"
+              class="px-6 py-2 bg-black text-white rounded-full hover:bg-gray-800 transition-colors duration-300"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                class="size-6"
-              >
-                <path
-                  fill-rule="evenodd"
-                  d="M5.47 5.47a.75.75 0 0 1 1.06 0L12 10.94l5.47-5.47a.75.75 0 1 1 1.06 1.06L13.06 12l5.47 5.47a.75.75 0 1 1-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 0 1-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 0 1 0-1.06Z"
-                  clip-rule="evenodd"
-                />
-              </svg>
+              Wrong Item
             </button>
           </div>
         </div>
@@ -441,12 +431,45 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s;
+.animate-bounce-slow {
+  animation: bounce 2s infinite;
 }
-.fade-enter-from,
-.fade-leave-to {
+
+@keyframes bounce {
+  0%,
+  100% {
+    transform: translateY(-5%);
+    animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+  }
+  50% {
+    transform: translateY(0);
+    animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal-enter-active,
+.modal-leave-active {
+  transition: all 0.3s ease;
+}
+
+.modal-enter-from,
+.modal-leave-to {
   opacity: 0;
+  transform: scale(0.95);
 }
 </style>
