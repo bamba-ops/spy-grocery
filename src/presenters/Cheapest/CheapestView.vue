@@ -165,6 +165,9 @@ onMounted(() => {
               <div class="bg-black/5 rounded-xl p-6 mb-6">
                 <div class="flex items-baseline gap-2">
                   <span class="text-3xl font-bold">
+                    <span v-if="state.bestDeal.is_promo" class="">
+                      {{ state.bestDeal.quantity }} /
+                    </span>
                     ${{ state.bestDeal.price_un }}
                   </span>
                   <span
@@ -238,16 +241,14 @@ onMounted(() => {
 
               <div class="flex justify-between items-end mb-4">
                 <div>
-                  <p class="text-2xl font-bold">${{ deal.price_un }}</p>
+                  <p class="text-2xl font-bold">
+                    <span v-if="deal.is_promo"> {{ deal.quantity }} / </span>${{
+                      deal.price_un
+                    }}
+                  </p>
                   <p class="text-gray-600 text-sm">
                     ${{ deal.price }} / {{ deal.unit }}
                   </p>
-                </div>
-                <div
-                  v-if="deal.is_promo"
-                  class="text-green-600 text-sm font-medium"
-                >
-                  {{ deal.quantity }} units
                 </div>
               </div>
 

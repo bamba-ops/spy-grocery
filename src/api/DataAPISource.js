@@ -1,8 +1,7 @@
 import axios from 'axios';
+import { getApiUrl } from '../config/api.config';
 
-const URL = 'https://spy-grocery-backend-production.up.railway.app';
-const URL_DEV = 'http://127.0.0.1:8000';
-const API_URL = URL + '/api/v1';
+const API_URL = getApiUrl();
 
 // Ajoutons un nouvel endpoint :
 const SEARCH_PRICES_ENDPOINT = '/prices/search';
@@ -51,7 +50,7 @@ export class DataAPISource {
     // -----------------------------------------------------------------
     async searchPricesByStoreAndName(storeId, productName, limit = 30, offset = 0) {
         try {
-            // On utilise l’endpoint GET /prices/search, 
+            // On utilise l'endpoint GET /prices/search, 
             // en passant store_id et product_name en query params
             const response = await axios.get(API_URL + SEARCH_PRICES_ENDPOINT, {
                 params: {
