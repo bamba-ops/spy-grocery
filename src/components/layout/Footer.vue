@@ -7,26 +7,25 @@
     <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
       <div>
         <h3 class="text-lg font-bold mb-4">Spy Grocery</h3>
-        <p class="text-gray-400 text-sm">
-          Trouvez les meilleures offres près de chez vous
-        </p>
+        <p class="text-gray-400 text-sm">Find the best deals near you</p>
       </div>
+      <!--
       <div>
-        <h4 class="text-sm font-bold mb-4">À propos</h4>
+        <h4 class="text-sm font-bold mb-4">About</h4>
         <ul class="space-y-2">
           <li>
             <a href="#" class="text-gray-400 hover:text-white text-sm"
-              >Notre histoire</a
+              >Our Story</a
             >
           </li>
           <li>
             <a href="#" class="text-gray-400 hover:text-white text-sm"
-              >Comment ça marche</a
+              >How it Works</a
             >
           </li>
           <li>
             <a href="#" class="text-gray-400 hover:text-white text-sm"
-              >Carrières</a
+              >Careers</a
             >
           </li>
         </ul>
@@ -36,7 +35,7 @@
         <ul class="space-y-2">
           <li>
             <a href="#" class="text-gray-400 hover:text-white text-sm"
-              >Centre d'aide</a
+              >Help Center</a
             >
           </li>
           <li>
@@ -50,29 +49,31 @@
         </ul>
       </div>
       <div>
-        <h4 class="text-sm font-bold mb-4">Légal</h4>
+        <h4 class="text-sm font-bold mb-4">Legal</h4>
         <ul class="space-y-2">
           <li>
             <a href="#" class="text-gray-400 hover:text-white text-sm"
-              >Conditions d'utilisation</a
+              >Terms of Use</a
             >
           </li>
           <li>
             <a href="#" class="text-gray-400 hover:text-white text-sm"
-              >Politique de confidentialité</a
+              >Privacy Policy</a
             >
           </li>
           <li>
             <a href="#" class="text-gray-400 hover:text-white text-sm"
-              >Mentions légales</a
+              >Legal Notice</a
             >
           </li>
         </ul>
       </div>
+      -->
     </div>
+
     <div class="max-w-7xl mx-auto mt-12 pt-8 border-t border-gray-800">
       <p class="text-center text-gray-400 text-sm">
-        &copy; 2025 Spy Grocery. Tous droits réservés.
+        &copy; 2025 Spy Grocery. All rights reserved.
       </p>
     </div>
   </footer>
