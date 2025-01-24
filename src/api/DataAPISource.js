@@ -5,7 +5,7 @@ const API_URL = getApiUrl();
 
 // Ajoutons un nouvel endpoint :
 const SEARCH_PRICES_ENDPOINT = '/prices/search';
-const NEWSLETTER_ENDPOINT = '/newsletter/subscribe';
+const NEWSLETTER_ENDPOINT = '/subscribe';
 
 // Store par défaut, si nécessaire
 const STORE_ID = '32d6dd89-4216-4588-a096-631bfaf5df56';
