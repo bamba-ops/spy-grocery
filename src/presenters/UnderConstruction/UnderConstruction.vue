@@ -43,6 +43,14 @@
             Want to know when we launch?
           </h3>
           <div class="space-y-3">
+            <!-- Community -->
+            <div class="text-sm text-gray-600 mb-4">
+              <p class="font-medium">
+                🎉 23 future savings experts have already joined us!
+              </p>
+              <p>Join the smart shoppers community.</p>
+            </div>
+
             <div class="relative">
               <input
                 v-model="email"
