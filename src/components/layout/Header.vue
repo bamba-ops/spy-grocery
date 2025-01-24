@@ -16,7 +16,7 @@
       <h1 class="text-xl font-bold tracking-tight text-black">Spy Grocery</h1>
     </div>
 
-    <!-- Navigation Menu -->
+    <!-- Navigation Menu 
     <nav class="hidden md:flex items-center space-x-8">
       <a
         href="#"
@@ -39,8 +39,9 @@
         Se connecter
       </button>
     </nav>
+    -->
 
-    <!-- Mobile Menu Button -->
+    <!-- Mobile Menu Button
     <button class="md:hidden text-gray-600 hover:text-black">
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -57,5 +58,5 @@
         />
       </svg>
     </button>
-  </header>
+  --></header>
 </template>

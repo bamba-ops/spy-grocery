@@ -157,8 +157,8 @@ onMounted(() => {
                 {{ state.bestDeal.product.name }}
               </h2>
               <p class="text-gray-600 mb-4">
-                {{ state.bestDeal.product.brand }} •
-                {{ state.bestDeal.product.unit }}
+                {{ state.bestDeal.product.brand }}
+                <span hidden> • {{ state.bestDeal.product.unit }} </span>
               </p>
 
               <!-- Price Section -->
@@ -236,7 +236,8 @@ onMounted(() => {
             <div class="p-6">
               <h4 class="font-bold text-lg mb-2">{{ deal.product.name }}</h4>
               <p class="text-gray-600 text-sm mb-4">
-                {{ deal.product.brand }} • {{ deal.product.unit }}
+                {{ deal.product.brand }}
+                <span hidden> • {{ deal.product.unit }}</span>
               </p>
 
               <div class="flex justify-between items-end mb-4">

@@ -5,6 +5,7 @@ const API_URL = getApiUrl();
 
 // Ajoutons un nouvel endpoint :
 const SEARCH_PRICES_ENDPOINT = '/prices/search';
+const NEWSLETTER_ENDPOINT = '/newsletter/subscribe';
 
 // Store par défaut, si nécessaire
 const STORE_ID = '32d6dd89-4216-4588-a096-631bfaf5df56';
@@ -66,6 +67,25 @@ export class DataAPISource {
         } catch (error) {
             console.error('Error searching prices:', error);
             throw new Error('Failed to search prices');
+        }
+    }
+
+    // Nouvelle méthode pour la newsletter
+    async subscribeToNewsletter(email) {
+        try {
+            const response = await axios.post(
+                API_URL + NEWSLETTER_ENDPOINT,
+                { email: email.trim().toLowerCase() },
+                {
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+            return response.data;
+        } catch (error) {
+            console.error('Newsletter subscription error:', error);
+            throw error;
         }
     }
 }
