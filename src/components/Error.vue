@@ -1,28 +1,63 @@
-<script setup></script>
+<script setup>
+const handleRetry = () => {
+  window.location.href = "/";
+};
+</script>
 
 <template>
-  <!-- Error State (Uber-like) -->
   <div
-    class="flex flex-col items-center justify-center space-y-4 min-h-[300px] text-white p-6"
+    class="min-h-[80vh] flex flex-col items-center justify-center px-4 py-12 bg-white text-black"
   >
-    <!-- Icône d'erreur (émoticône) -->
-    <div class="text-red-400 text-6xl">😞</div>
+    <!-- Animation container -->
+    <div class="relative mb-8">
+      <!-- Pulsing circles animation -->
+      <div class="absolute inset-0 animate-ping-slow">
+        <div class="w-24 h-24 bg-red-50 rounded-full"></div>
+      </div>
+      <div class="absolute inset-0 animate-ping-slower">
+        <div class="w-24 h-24 bg-red-100 rounded-full"></div>
+      </div>
 
-    <!-- Titre d’erreur -->
-    <h2 class="text-2xl md:text-3xl font-semibold">
-      Oops! Something went wrong.
-    </h2>
+      <!-- Center icon -->
+      <div
+        class="relative w-24 h-24 bg-red-500 rounded-full flex items-center justify-center"
+      >
+        <span class="text-white text-4xl">⚠️</span>
+      </div>
+    </div>
 
-    <!-- Message d’explication -->
-    <p class="text-sm md:text-base text-gray-300 text-center">
-      We couldn't fetch the products. Please try again.
-    </p>
-
-    <!-- Bouton de réessai -->
-    <button
-      class="px-6 py-2 bg-gray-800 text-white font-semibold rounded-full hover:bg-gray-700 transition-all duration-300"
-    >
-      <a href="/">Retry</a>
-    </button>
+    <!-- Error content -->
+    <div class="text-center space-y-4 max-w-md">
+      <h2 class="text-2xl md:text-3xl font-bold text-gray-900">
+        Oops! Something went wrong
+      </h2>
+      <p class="text-base md:text-lg text-gray-600">
+        We couldn't fetch the products. Please try again or check back later.
+      </p>
+      <button
+        @click="handleRetry"
+        class="mt-6 px-8 py-3 bg-black text-white font-medium rounded-full hover:bg-gray-800 transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
+      >
+        Try Again
+      </button>
+    </div>
   </div>
 </template>
+
+<style scoped>
+.animate-ping-slow {
+  animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+.animate-ping-slower {
+  animation: ping 2.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@keyframes ping {
+  75%,
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+</style>

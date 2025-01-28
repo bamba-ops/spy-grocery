@@ -45,6 +45,12 @@
       While we search, did you know? We compare prices across multiple stores to
       save you up to 30% on your groceries.
     </p>
+
+    <!-- Warning message -->
+    <p class="mt-4 text-sm font-bold text-black text-center max-w-md">
+      Please do not leave this page. The search process may take a few moments
+      to ensure we find the best deals for you.
+    </p>
   </div>
 </template>
 
