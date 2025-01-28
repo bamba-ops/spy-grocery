@@ -243,14 +243,17 @@ function handleImageError(event) {
           </div>
           <div class="p-6">
             <h2 class="text-lg md:text-xl font-bold text-gray-900 truncate">
-              {{ price.product.name }}
+              {{ price.product.name_raw }}
             </h2>
+
             <p class="text-sm md:text-base text-gray-600 mt-2">
               {{ price.product.brand }}
             </p>
+            <!--
             <p class="text-sm md:text-base text-gray-600">
               {{ price.product.unit }}
             </p>
+          -->
             <div class="mt-4 flex items-baseline space-x-2">
               <p class="text-2xl font-bold text-gray-900">
                 <span v-if="price.is_promo">

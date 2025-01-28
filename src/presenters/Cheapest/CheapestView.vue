@@ -110,14 +110,16 @@ onMounted(() => {
       class="max-w-7xl mx-auto animate-fade-in"
     >
       <!-- Header Section -->
-      <div class="text-center mb-16">
+      <div class="text-center mb-8 md:mb-16">
         <div
-          class="inline-block p-4 bg-black/5 rounded-full mb-6 animate-bounce-slow"
+          class="inline-block p-2 md:p-4 bg-black/5 rounded-full mb-4 md:mb-6 animate-bounce-slow"
         >
-          <span class="text-4xl">💰</span>
+          <span class="text-2xl md:text-4xl">💰</span>
         </div>
-        <h1 class="text-4xl md:text-5xl font-bold mb-4">Best Price Found</h1>
-        <p class="text-gray-600 text-lg max-w-2xl mx-auto">
+        <h1 class="text-2xl md:text-5xl font-bold mb-2 md:mb-4">
+          Best Price Found
+        </h1>
+        <p class="text-gray-600 text-base md:text-lg max-w-2xl mx-auto">
           We've compared prices across multiple stores to find you the best
           deal.
         </p>
@@ -126,21 +128,23 @@ onMounted(() => {
       <!-- Best Deal Section -->
       <div
         v-if="state.bestDeal"
-        class="mb-16 transform transition-all duration-500 hover:scale-[1.02]"
+        class="mb-8 md:mb-16 transform transition-all duration-500 hover:scale-[1.02]"
       >
         <div class="relative bg-white rounded-2xl shadow-xl overflow-hidden">
           <!-- Best Deal Label -->
           <div
-            class="absolute top-6 left-6 bg-black text-white px-4 py-2 rounded-full text-sm font-medium z-10"
+            class="absolute top-3 left-3 md:top-6 md:left-6 bg-black text-white px-3 py-1 md:px-4 md:py-2 rounded-full text-xs md:text-sm font-medium z-10"
           >
             BEST DEAL
           </div>
 
-          <div class="grid md:grid-cols-2 gap-8 p-8">
+          <div
+            class="grid grid-cols-2 md:grid-cols-2 gap-4 md:gap-8 p-4 md:p-8"
+          >
             <!-- Product Image -->
             <div class="relative group">
               <div
-                class="aspect-square w-3/4 mx-auto rounded-xl overflow-hidden bg-gray-50"
+                class="aspect-square w-full md:w-3/4 mx-auto rounded-xl overflow-hidden bg-gray-50"
               >
                 <img
                   :src="state.bestDeal.product.image_url"
@@ -153,57 +157,59 @@ onMounted(() => {
 
             <!-- Product Info -->
             <div class="flex flex-col justify-center">
-              <h2 class="text-2xl font-bold mb-2">
+              <h2 class="text-lg md:text-2xl font-bold mb-1 md:mb-2">
                 {{ state.bestDeal.product.name }}
               </h2>
-              <p class="text-gray-600 mb-4">
+              <p class="text-gray-600 text-sm md:text-base mb-2 md:mb-4">
                 {{ state.bestDeal.product.brand }}
                 <span hidden> • {{ state.bestDeal.product.unit }} </span>
               </p>
 
               <!-- Price Section -->
-              <div class="bg-black/5 rounded-xl p-6 mb-6">
-                <div class="flex items-baseline gap-2">
-                  <span class="text-3xl font-bold">
-                    <span v-if="state.bestDeal.is_promo" class="">
+              <div class="bg-black/5 rounded-xl p-3 md:p-6 mb-3 md:mb-6">
+                <div class="flex items-baseline gap-1 md:gap-2">
+                  <span class="text-xl md:text-3xl font-bold">
+                    <span v-if="state.bestDeal.is_promo">
                       {{ state.bestDeal.quantity }} /
                     </span>
                     ${{ state.bestDeal.price_un }}
                   </span>
                   <span
                     v-if="state.bestDeal.is_promo"
-                    class="text-green-600 font-medium"
+                    class="text-green-600 font-medium text-sm md:text-base"
                   >
                     {{ state.bestDeal.quantity }} units
                   </span>
                 </div>
-                <p class="text-gray-600 mt-2">
+                <p class="text-gray-600 text-sm mt-1 md:mt-2">
                   ${{ state.bestDeal.price }} / {{ state.bestDeal.unit }}
                 </p>
               </div>
 
               <!-- Store Info -->
-              <div class="flex items-center gap-4">
+              <div class="flex items-center gap-2 md:gap-4">
                 <img
                   :src="state.bestDeal.store.image_url"
                   @error="handleImageError"
                   alt="Store Logo"
-                  class="w-12 h-12 rounded-full border border-gray-200"
+                  class="w-8 h-8 md:w-12 md:h-12 rounded-full border border-gray-200"
                 />
                 <div>
-                  <p class="font-medium">Available at</p>
-                  <p class="text-gray-600">{{ state.bestDeal.store.name }}</p>
+                  <p class="font-medium text-sm md:text-base">Available at</p>
+                  <p class="text-gray-600 text-sm">
+                    {{ state.bestDeal.store.name }}
+                  </p>
                 </div>
               </div>
 
               <!-- Wrong Item Button -->
               <div
                 v-if="state.bestDeal.store.id !== TARGET_STORE_ID"
-                class="mt-6"
+                class="mt-3 md:mt-6"
               >
                 <button
                   @click="openModal(state.bestDeal)"
-                  class="w-full bg-black text-white py-3 px-6 rounded-full font-medium hover:bg-gray-800 transition-colors duration-300"
+                  class="w-full bg-black text-white py-2 md:py-3 px-4 md:px-6 rounded-full text-sm md:text-base font-medium hover:bg-gray-800 transition-colors duration-300"
                 >
                   Wrong Item?
                 </button>
@@ -215,61 +221,70 @@ onMounted(() => {
 
       <!-- Other Deals Section -->
       <div v-if="state.otherDeals && state.otherDeals.length">
-        <h3 class="text-2xl font-bold mb-8">Other Options</h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <h3 class="text-xl md:text-2xl font-bold mb-4 md:mb-8">
+          Other Options
+        </h3>
+        <div
+          class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6"
+        >
           <div
             v-for="deal in state.otherDeals"
             :key="deal.id"
             class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300"
           >
-            <div
-              class="aspect-[4/3] relative overflow-hidden w-2/3 mx-auto pt-4"
-            >
-              <img
-                :src="deal.product.image_url"
-                @error="handleImageError"
-                alt="Product Image"
-                class="w-full h-full object-contain hover:scale-105 transition-transform duration-500"
-              />
-            </div>
-
-            <div class="p-6">
-              <h4 class="font-bold text-lg mb-2">{{ deal.product.name }}</h4>
-              <p class="text-gray-600 text-sm mb-4">
-                {{ deal.product.brand }}
-                <span hidden> • {{ deal.product.unit }}</span>
-              </p>
-
-              <div class="flex justify-between items-end mb-4">
-                <div>
-                  <p class="text-2xl font-bold">
-                    <span v-if="deal.is_promo"> {{ deal.quantity }} / </span>${{
-                      deal.price_un
-                    }}
-                  </p>
-                  <p class="text-gray-600 text-sm">
-                    ${{ deal.price }} / {{ deal.unit }}
-                  </p>
+            <div class="flex items-center p-3 md:block md:p-6">
+              <div class="w-1/3 md:w-2/3 mx-auto">
+                <div class="aspect-square relative overflow-hidden">
+                  <img
+                    :src="deal.product.image_url"
+                    @error="handleImageError"
+                    alt="Product Image"
+                    class="w-full h-full object-contain hover:scale-105 transition-transform duration-500"
+                  />
                 </div>
               </div>
 
-              <div class="flex items-center gap-3">
-                <img
-                  :src="deal.store.image_url"
-                  @error="handleImageError"
-                  alt="Store Logo"
-                  class="w-8 h-8 rounded-full border border-gray-200"
-                />
-                <p class="text-sm text-gray-600">{{ deal.store.name }}</p>
-              </div>
+              <div class="flex-1 pl-3 md:pl-0">
+                <h4 class="font-bold text-sm md:text-lg mb-1 md:mb-2">
+                  {{ deal.product.name }}
+                </h4>
+                <p class="text-gray-600 text-xs md:text-sm mb-2 md:mb-4">
+                  {{ deal.product.brand }}
+                  <span hidden> • {{ deal.product.unit }}</span>
+                </p>
 
-              <button
-                v-if="deal.store.id !== TARGET_STORE_ID"
-                @click="openModal(deal)"
-                class="w-full mt-4 border border-black text-black py-2 rounded-full hover:bg-black hover:text-white transition-colors duration-300"
-              >
-                Wrong Item?
-              </button>
+                <div class="flex justify-between items-end mb-2 md:mb-4">
+                  <div>
+                    <p class="text-lg md:text-2xl font-bold">
+                      <span v-if="deal.is_promo"> {{ deal.quantity }} / </span
+                      >${{ deal.price_un }}
+                    </p>
+                    <p class="text-gray-600 text-xs md:text-sm">
+                      ${{ deal.price }} / {{ deal.unit }}
+                    </p>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-2 md:gap-3">
+                  <img
+                    :src="deal.store.image_url"
+                    @error="handleImageError"
+                    alt="Store Logo"
+                    class="w-6 h-6 md:w-8 md:h-8 rounded-full border border-gray-200"
+                  />
+                  <p class="text-xs md:text-sm text-gray-600">
+                    {{ deal.store.name }}
+                  </p>
+                </div>
+
+                <button
+                  v-if="deal.store.id !== TARGET_STORE_ID"
+                  @click="openModal(deal)"
+                  class="w-full mt-2 md:mt-4 border border-black text-black py-1.5 md:py-2 rounded-full text-sm hover:bg-black hover:text-white transition-colors duration-300"
+                >
+                  Wrong Item?
+                </button>
+              </div>
             </div>
           </div>
         </div>
