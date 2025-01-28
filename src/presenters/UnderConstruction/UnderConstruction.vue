@@ -46,7 +46,7 @@
             <!-- Community -->
             <div class="text-sm text-gray-600 mb-4">
               <p class="font-medium">
-                🎉 23 future savings experts have already joined us!
+                🎉 36 future savings experts have already joined us!
               </p>
               <p>Join the smart shoppers community.</p>
             </div>
