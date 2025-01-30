@@ -1,10 +1,13 @@
 <script setup>
 import { reactive, onMounted } from "vue";
 import Error from "@/components/Error.vue";
-import { mainModel } from "@/models/MainModel";
+import { useGlobalStore } from "@/stores/globalStore";
+import { useI18n } from "vue-i18n";
+import { VAR_CONFIG } from "@/config/var.config";
 
-const TARGET_STORE_ID = "32d6dd89-4216-4588-a096-631bfaf5df56";
-const _mainModel = mainModel();
+const { t } = useI18n();
+
+const store = useGlobalStore();
 
 const state = reactive({
   loading: false,
@@ -18,25 +21,20 @@ const state = reactive({
 });
 
 function openModal(product) {
-  console.log("Ouverture du modal pour le produit :", product);
   state.modalProduct = product;
   state.showModal = true;
 }
 
 function closeModal() {
-  console.log("Fermeture du modal");
   state.showModal = false;
   state.modalProduct = null;
 }
 
 function handleImageError(event) {
-  console.log("Erreur de chargement de l'image, remplacement par défaut.");
-  event.target.src =
-    "https://us.123rf.com/450wm/pgmart/pgmart1604/pgmart160400055/55602454-lettre-de-capital-s-des-bandes-entrelac%C3%A9es-blanches-sur-un-fond-noir-mod%C3%A8le-pour-embl%C3%A8me-logos-et.jpg";
+  event.target.src = VAR_CONFIG.TARGET_IMAGE_URL_ERROR;
 }
 
 function handleIsBestPrice() {
-  console.log("Calcul du meilleur prix...");
   const allDeals = [state.targetProduct];
   state.bestMatch.forEach((subArray) => {
     if (subArray[0] !== undefined) allDeals.push(subArray[0]);
@@ -45,12 +43,9 @@ function handleIsBestPrice() {
   allDeals.sort((a, b) => a.price - b.price);
   state.bestDeal = allDeals[0];
   state.otherDeals = allDeals.slice(1);
-  console.log("Meilleur deal sélectionné :", state.bestDeal);
-  console.log("Autres deals :", state.otherDeals);
 }
 
 function removeFirstProduct(id) {
-  console.log("Suppression du premier produit pour l'ID :", id);
   const targetArray = state.bestMatch.find((subArray) =>
     subArray.some((obj) => obj.id === id)
   );
@@ -62,39 +57,32 @@ function removeFirstProduct(id) {
       closeModal();
     } else {
       state.modalProduct = targetArray[0] || null;
-      console.log("Produit suivant dans le modal :", state.modalProduct);
     }
   } else {
     closeModal();
-    console.log("Aucun sous-tableau trouvé pour l'ID :", id);
   }
 }
 
 function handleBestPrice() {
-  console.log("Chargement des prix...");
   state.loading = true;
   state.error = null;
   try {
-    state.targetProduct = _mainModel.targetProduct;
-    state.bestMatch = _mainModel.bestMatch;
+    state.targetProduct = store.targetProduct;
+    state.bestMatch = store.bestMatch;
 
     if (!state.targetProduct || !state.bestMatch) {
-      state.error = "Failed to load the best price. Please try again.";
-      console.error(state.error);
+      state.error = t("Cheapest.state.error");
     } else {
       handleIsBestPrice();
-      console.log("Données de prix chargées avec succès.");
     }
   } catch (e) {
-    console.error("Erreur lors du chargement du meilleur prix :", e);
-    state.error = "Failed to load the best price. Please try again.";
+    state.error = t("Cheapest.state.error");
   } finally {
     state.loading = false;
   }
 }
 
 onMounted(() => {
-  console.log("Composant monté, initialisation...");
   handleBestPrice();
 });
 </script>
@@ -117,11 +105,10 @@ onMounted(() => {
           <span class="text-2xl md:text-4xl">💰</span>
         </div>
         <h1 class="text-2xl md:text-5xl font-bold mb-2 md:mb-4">
-          Best Price Found
+          {{ t("Cheapest.title") }}
         </h1>
         <p class="text-gray-600 text-base md:text-lg max-w-2xl mx-auto">
-          We've compared prices across multiple stores to find you the best
-          deal.
+          {{ t("Cheapest.description") }}
         </p>
       </div>
 
@@ -135,7 +122,7 @@ onMounted(() => {
           <div
             class="absolute top-3 left-3 md:top-6 md:left-6 bg-black text-white px-3 py-1 md:px-4 md:py-2 rounded-full text-xs md:text-sm font-medium z-10"
           >
-            BEST DEAL
+            {{ t("Cheapest.best_deal") }}
           </div>
 
           <div
@@ -178,7 +165,7 @@ onMounted(() => {
                     v-if="state.bestDeal.is_promo"
                     class="text-green-600 font-medium text-sm md:text-base"
                   >
-                    {{ state.bestDeal.quantity }} units
+                    {{ state.bestDeal.quantity }} {{ t("Cheapest.unit") }}
                   </span>
                 </div>
                 <p class="text-gray-600 text-sm mt-1 md:mt-2">
@@ -195,7 +182,9 @@ onMounted(() => {
                   class="w-8 h-8 md:w-12 md:h-12 rounded-full border border-gray-200"
                 />
                 <div>
-                  <p class="font-medium text-sm md:text-base">Available at</p>
+                  <p class="font-medium text-sm md:text-base">
+                    {{ t("Cheapest.available_at") }}
+                  </p>
                   <p class="text-gray-600 text-sm">
                     {{ state.bestDeal.store.name }}
                   </p>
@@ -211,7 +200,7 @@ onMounted(() => {
                   @click="openModal(state.bestDeal)"
                   class="w-full bg-black text-white py-2 md:py-3 px-4 md:px-6 rounded-full text-sm md:text-base font-medium hover:bg-gray-800 transition-colors duration-300"
                 >
-                  Wrong Item?
+                  {{ t("Cheapest.wrong_item") }}
                 </button>
               </div>
             </div>
@@ -222,7 +211,7 @@ onMounted(() => {
       <!-- Other Deals Section -->
       <div v-if="state.otherDeals && state.otherDeals.length">
         <h3 class="text-xl md:text-2xl font-bold mb-4 md:mb-8">
-          Other Options
+          {{ t("Cheapest.other_options") }}
         </h3>
         <div
           class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6"
@@ -278,11 +267,11 @@ onMounted(() => {
                 </div>
 
                 <button
-                  v-if="deal.store.id !== TARGET_STORE_ID"
+                  v-if="deal.store.id !== VAR_CONFIG.TARGET_STORE_ID"
                   @click="openModal(deal)"
                   class="w-full mt-2 md:mt-4 border border-black text-black py-1.5 md:py-2 rounded-full text-sm hover:bg-black hover:text-white transition-colors duration-300"
                 >
-                  Wrong Item?
+                  {{ t("Cheapest.wrong_item") }}
                 </button>
               </div>
             </div>
@@ -367,9 +356,11 @@ onMounted(() => {
                 />
               </svg>
             </div>
-            <h3 class="text-lg font-bold mb-1">Verify Product Match</h3>
+            <h3 class="text-lg font-bold mb-1">
+              {{ t("Cheapest.modal.title") }}
+            </h3>
             <p class="text-gray-600 text-sm">
-              Please compare the products to ensure they match.
+              {{ t("Cheapest.modal.description") }}
             </p>
           </div>
 
@@ -378,7 +369,7 @@ onMounted(() => {
             <!-- Current Product -->
             <div class="text-center p-3 bg-gray-50 rounded-lg">
               <h4 class="font-medium text-gray-600 text-sm mb-3">
-                Current Product
+                {{ t("Cheapest.modal.current_product") }}
               </h4>
               <div v-if="state.modalProduct" class="space-y-3">
                 <img
@@ -409,20 +400,20 @@ onMounted(() => {
                 @click="closeModal"
                 class="px-4 py-2 bg-white border border-black text-black text-sm rounded-full hover:bg-black hover:text-white transition-colors duration-300"
               >
-                It's Correct
+                {{ t("Cheapest.modal.correct") }}
               </button>
               <button
                 @click="removeFirstProduct(state.modalProduct?.id)"
                 class="px-4 py-2 bg-black text-white text-sm rounded-full hover:bg-gray-800 transition-colors duration-300"
               >
-                Wrong Item
+                {{ t("Cheapest.modal.wrong") }}
               </button>
             </div>
 
             <!-- Reference Product -->
             <div class="text-center p-3 bg-gray-50 rounded-lg">
               <h4 class="font-medium text-gray-600 text-sm mb-3">
-                Reference Product
+                {{ t("Cheapest.modal.reference_product") }}
               </h4>
               <div v-if="state.targetProduct" class="space-y-3">
                 <img
@@ -454,13 +445,13 @@ onMounted(() => {
               @click="closeModal"
               class="px-4 py-2 bg-white border border-black text-black text-sm rounded-full hover:bg-black hover:text-white transition-colors duration-300"
             >
-              It's Correct
+              {{ t("Cheapest.modal.correct") }}
             </button>
             <button
               @click="removeFirstProduct(state.modalProduct?.id)"
               class="px-4 py-2 bg-black text-white text-sm rounded-full hover:bg-gray-800 transition-colors duration-300"
             >
-              Wrong Item
+              {{ t("Cheapest.modal.wrong") }}
             </button>
           </div>
         </div>

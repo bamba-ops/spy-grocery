@@ -1,17 +1,5 @@
 <template>
   <div class="min-h-screen bg-white">
-    <!-- Header -->
-    <header class="fixed top-0 left-0 right-0 bg-white z-10 border-b">
-      <div class="px-4 py-3 flex items-center justify-between">
-        <div class="flex items-center">
-          <span class="text-black font-medium">Spy Grocery</span>
-        </div>
-        <button class="p-2">
-          <span class="text-xl">≡</span>
-        </button>
-      </div>
-    </header>
-
     <!-- Main Content -->
     <div class="px-4 pt-16 pb-8">
       <div class="max-w-md mx-auto">
@@ -26,13 +14,12 @@
 
         <!-- Title -->
         <h1 class="text-xl font-bold text-center mb-3">
-          We're Building Something Great
+          {{ t("UnderConstruction.main.title") }}
         </h1>
 
         <!-- Description -->
         <p class="text-sm text-gray-600 text-center mb-6">
-          Our team is working hard to bring you the best grocery price
-          comparison experience. Stay tuned!
+          {{ t("UnderConstruction.main.description") }}
         </p>
 
         <!-- Newsletter -->
@@ -40,22 +27,28 @@
           class="bg-black/5 rounded-xl p-6 text-center mb-8 transition-all duration-300"
         >
           <h3 class="text-base font-semibold mb-4">
-            Want to know when we launch?
+            {{ t("UnderConstruction.main.newsletter.title") }}
           </h3>
           <div class="space-y-3">
             <!-- Community -->
             <div class="text-sm text-gray-600 mb-4">
               <p class="font-medium">
-                🎉 36 future savings experts have already joined us!
+                {{
+                  t("UnderConstruction.main.newsletter.community", {
+                    count: 36,
+                  })
+                }}
               </p>
-              <p>Join the smart shoppers community.</p>
+              <p>{{ t("UnderConstruction.main.newsletter.join") }}</p>
             </div>
 
             <div class="relative">
               <input
                 v-model="email"
                 type="email"
-                placeholder="Enter your email"
+                :placeholder="
+                  t('UnderConstruction.main.newsletter.placeholder')
+                "
                 :disabled="loading || subscribed"
                 :class="{
                   'opacity-50 cursor-not-allowed': loading || subscribed,
@@ -84,7 +77,11 @@
                 }"
                 class="w-full px-6 py-3 text-sm bg-black text-white rounded-lg font-medium transition-all duration-300 transform"
               >
-                {{ loading ? "Subscribing..." : "Notify Me" }}
+                {{
+                  loading
+                    ? t("UnderConstruction.main.newsletter.loading")
+                    : t("UnderConstruction.main.newsletter.button")
+                }}
               </button>
             </transition>
 
@@ -113,7 +110,9 @@
                 class="bg-green-50 rounded-lg p-4 text-sm text-green-700 flex items-center justify-center space-x-2"
               >
                 <span class="text-lg">✓</span>
-                <span>You're all set! We'll notify you when we launch.</span>
+                <span>{{
+                  t("UnderConstruction.main.newsletter.success")
+                }}</span>
               </div>
             </transition>
           </div>
@@ -123,25 +122,33 @@
         <div class="space-y-6 mb-8">
           <div class="bg-black/5 rounded-xl p-4 text-center">
             <div class="text-xl mb-2">💰</div>
-            <h3 class="text-sm font-medium mb-1">Save Money</h3>
+            <h3 class="text-sm font-medium mb-1">
+              {{ t("UnderConstruction.main.features.save_money.title") }}
+            </h3>
             <p class="text-xs text-gray-600">
-              Compare prices across stores to find the best deals
+              {{ t("UnderConstruction.main.features.save_money.description") }}
             </p>
           </div>
 
           <div class="bg-black/5 rounded-xl p-4 text-center">
             <div class="text-xl mb-2">⚡</div>
-            <h3 class="text-sm font-medium mb-1">Save Time</h3>
+            <h3 class="text-sm font-medium mb-1">
+              {{ t("UnderConstruction.main.features.save_time.title") }}
+            </h3>
             <p class="text-xs text-gray-600">
-              Quick and easy price comparison at your fingertips
+              {{ t("UnderConstruction.main.features.save_time.description") }}
             </p>
           </div>
 
           <div class="bg-black/5 rounded-xl p-4 text-center">
             <div class="text-xl mb-2">🎯</div>
-            <h3 class="text-sm font-medium mb-1">Smart Shopping</h3>
+            <h3 class="text-sm font-medium mb-1">
+              {{ t("UnderConstruction.main.features.smart_shopping.title") }}
+            </h3>
             <p class="text-xs text-gray-600">
-              Make informed decisions with real-time price updates
+              {{
+                t("UnderConstruction.main.features.smart_shopping.description")
+              }}
             </p>
           </div>
         </div>
@@ -151,7 +158,9 @@
           <div class="h-1 bg-gray-100 rounded-full overflow-hidden">
             <div class="h-full bg-black rounded-full w-3/4"></div>
           </div>
-          <p class="text-xs text-gray-500 text-center mt-2">75% Complete</p>
+          <p class="text-xs text-gray-500 text-center mt-2">
+            {{ t("UnderConstruction.main.progress.label", { percent: 75 }) }}
+          </p>
         </div>
 
         <!-- Access Button -->
@@ -160,7 +169,7 @@
             @click="showPasswordModal = true"
             class="px-6 py-2.5 bg-black text-white text-sm rounded-full"
           >
-            Access Beta Version
+            {{ t("UnderConstruction.main.beta.button") }}
           </button>
         </div>
       </div>
@@ -177,8 +186,11 @@
 
 <script setup>
 import { ref } from "vue";
+import { useI18n } from "vue-i18n";
 import PasswordModal from "@/components/common/PasswordModal.vue";
-import { mainModel } from "@/models/MainModel";
+import { useGlobalStore } from "@/stores/globalStore";
+
+const { t } = useI18n();
 
 const showPasswordModal = ref(false);
 const email = ref("");
@@ -186,7 +198,7 @@ const loading = ref(false);
 const message = ref("");
 const messageType = ref("");
 const subscribed = ref(false);
-const _mainModel = mainModel();
+const store = useGlobalStore();
 
 const validateEmail = (email) => {
   const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -200,23 +212,9 @@ const handleAccessGranted = () => {
 const subscribeToNewsletter = async () => {
   // Reset previous messages
   message.value = "";
-  messageType.value = "";
-
-  // Validate email
-  if (!email.value) {
-    message.value = "Please enter your email address";
-    messageType.value = "error";
-    return;
-  }
-
-  if (!validateEmail(email.value)) {
-    message.value = "Please enter a valid email address";
-    messageType.value = "error";
-    return;
-  }
 
   try {
-    const response = await _mainModel.subscribeToNewsletter(email.value);
+    const response = await store.subscribeToNewsletter(email.value);
 
     if (response?.status === "success") {
       messageType.value = "success";
@@ -231,27 +229,24 @@ const subscribeToNewsletter = async () => {
       throw new Error("Unexpected response format");
     }
   } catch (error) {
-    console.error("Newsletter subscription error:", error);
-
     // Handle different types of errors
     if (error.response) {
       // Server responded with an error
       if (error.response.status === 400) {
-        message.value = "This email address is invalid or already subscribed.";
+        message.value = t("UnderConstruction.errors.already_subscribed");
       } else if (error.response.status === 500) {
-        message.value =
-          "We're experiencing technical difficulties. Please try again later.";
+        message.value = t("UnderConstruction.errors.server_error");
       } else {
         message.value =
-          error.response.data?.detail || "An error occurred. Please try again.";
+          error.response.data?.detail ||
+          t("UnderConstruction.errors.generic_error");
       }
     } else if (error.request) {
       // Request was made but no response
-      message.value =
-        "Unable to reach the server. Please check your connection.";
+      message.value = t("UnderConstruction.errors.connection_error");
     } else {
       // Something else went wrong
-      message.value = "An unexpected error occurred. Please try again.";
+      message.value = t("UnderConstruction.errors.generic_error");
     }
     messageType.value = "error";
   }

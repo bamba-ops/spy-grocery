@@ -1,0 +1,106 @@
+{
+  "Error": {
+    "title": "Oops! Quelque chose s'est mal passé",
+    "description": "Nous sommes désolés, mais une erreur est survenue lors du traitement de votre requête. Veuillez réessayer plus tard.",
+    "button": "Réessayer"
+  },
+  "Listing": {
+    "title": "Votre chance du jour",
+    "description": "Trouvez des offres imbattables aujourd'hui et profitez pleinement de votre chance !",
+    "search_placeholder": "Rechercher un produit...",
+    "no_result": "Aucun résultat",
+    "results": "résultats",
+    "load_more": "Charger plus",
+    "state": {
+      "error": "Erreur lors du chargement des prix. Veuillez réessayer."
+    }
+  },
+  "Cheapest": {
+    "title": "Meilleure offre trouvée",
+    "description": "Nous avons comparé les prix entre les magasins pour trouver la meilleure offre pour vous.",
+    "best_deal": "Meilleure offre",
+    "unit": "unité",
+    "available_at": "Disponible à",
+    "wrong_item": "Produit incorrect ?",
+    "other_options": "Autres options",
+    "modal": {
+      "title": "Vérification du produit",
+      "description": "Veuillez comparer les produits pour vous assurer qu'ils correspondent.",
+      "current_product": "Produit actuel",
+      "correct": "C'est correct",
+      "wrong": "Produit incorrect",
+      "reference_product": "Produit de référence"
+    },
+    "state": {
+      "error": "Erreur lors du chargement des données. Veuillez réessayer."
+    }
+  },
+  "LoadingCheapest": {
+    "title": "Recherche des meilleures offres",
+    "description": "Nous recherchons les meilleures offres pour vous. Veuillez patienter...",
+    "tips": "En attendant, vous savez que nous comparerons les prix entre les magasins pour vous faire gagner jusqu'à 30% sur vos courses ?",
+    "warning": "Veuillez ne pas quitter cette page. La recherche peut prendre quelques minutes pour trouver les meilleures offres pour vous.",
+    "progress": {
+      "scanning": "Recherche dans les magasins locaux...",
+      "comparing": "Comparaison des prix...",
+      "finding": "Recherche des meilleures offres...",
+      "analyzing": "Analyse des offres...",
+      "almost": "Presque là..."
+    }
+  },
+  "PasswordModal": {
+    "title": "Bienvenue de retour",
+    "description": "Entrez votre code d'accès pour continuer",
+    "placeholder": "Entrez votre code d'accès",
+    "button": "Continuer",
+    "cancel": "Annuler",
+    "error": "Code d'accès invalide"
+  },
+  "Footer": {
+    "title": "Spy Grocery",
+    "description": "Trouvez les meilleures offres près de chez vous",
+    "copyright": "© 2025 Spy Grocery. Tous droits réservés."
+  },
+    "UnderConstruction": {"main": {
+      "title": "Nous construisons quelque chose de grand",
+      "description": "Notre équipe travaille dur pour vous offrir la meilleure expérience de comparaison de prix alimentaires. Restez à l'écoute !",
+    "newsletter": {
+      "title": "Voulez-vous savoir quand nous lançons ?",
+      "community": "🎉 {count} futurs experts en économies nous ont déjà rejoints !",
+        "join": "Rejoignez la communauté des acheteurs intelligents",
+        "placeholder": "Entrez votre email",
+        "button": "Me notifier",
+        "loading": "Inscription en cours...",
+        "success": "C'est tout bon ! Nous vous préviendrons lors du lancement."
+    },
+    "features": {
+        "save_money": {
+        "title": "Économisez",
+        "description": "Comparez les prix entre les magasins pour trouver les meilleures offres"
+      },
+        "save_time": {
+        "title": "Gagnez du temps",
+        "description": "Comparaison de prix rapide et facile à portée de main"
+      },
+        "smart_shopping": {
+        "title": "Shopping intelligent",
+        "description": "Prenez des décisions éclairées avec des mises à jour de prix en temps réel"
+      }
+    },
+    "progress": {
+      "label": "Terminé à {percent}%"
+    },
+    "beta": {
+      "button": "Accéder à la version bêta"
+      }
+    },
+    "errors": {
+      "email_required": "Veuillez entrer votre adresse email",
+      "invalid_email": "Veuillez entrer une adresse email valide",
+      "already_subscribed": "Cette adresse email est invalide ou déjà inscrite.",
+      "server_error": "Nous rencontrons des difficultés techniques. Veuillez réessayer plus tard.",
+      "connection_error": "Connexion au serveur impossible. Vérifiez votre connexion.",
+      "generic_error": "Une erreur inattendue s'est produite. Veuillez réessayer."
+    }
+  }
+}

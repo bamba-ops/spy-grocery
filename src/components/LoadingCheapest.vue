@@ -20,7 +20,7 @@
 
     <!-- Loading text -->
     <h2 class="text-2xl md:text-3xl font-bold text-gray-900 text-center mb-4">
-      Finding the best deals
+      {{ t("LoadingCheapest.title") }}
     </h2>
 
     <!-- Animated messages -->
@@ -42,27 +42,28 @@
 
     <!-- Tips -->
     <p class="text-sm text-gray-500 text-center max-w-md">
-      While we search, did you know? We compare prices across multiple stores to
-      save you up to 30% on your groceries.
+      {{ t("LoadingCheapest.tips") }}
     </p>
 
     <!-- Warning message -->
     <p class="mt-4 text-sm font-bold text-black text-center max-w-md">
-      Please do not leave this page. The search process may take a few moments
-      to ensure we find the best deals for you.
+      {{ t("LoadingCheapest.warning") }}
     </p>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from "vue";
+import { useI18n } from "vue-i18n";
+
+const { t } = useI18n();
 
 const messages = [
-  "Scanning local stores...",
-  "Comparing prices...",
-  "Finding the best deals...",
-  "Analyzing discounts...",
-  "Almost there...",
+  t("LoadingCheapest.progress.scanning"),
+  t("LoadingCheapest.progress.comparing"),
+  t("LoadingCheapest.progress.finding"),
+  t("LoadingCheapest.progress.analyzing"),
+  t("LoadingCheapest.progress.almost"),
 ];
 
 const currentMessageIndex = ref(0);

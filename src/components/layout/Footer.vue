@@ -1,13 +1,15 @@
 <script setup>
-// Add any footer-specific logic here
+import { useI18n } from "vue-i18n";
+
+const { t } = useI18n();
 </script>
 
 <template>
   <footer class="bg-black text-white py-12 px-6">
     <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
       <div>
-        <h3 class="text-lg font-bold mb-4">Spy Grocery</h3>
-        <p class="text-gray-400 text-sm">Find the best deals near you</p>
+        <h3 class="text-lg font-bold mb-4">{{ t("Footer.title") }}</h3>
+        <p class="text-gray-400 text-sm">{{ t("Footer.description") }}</p>
       </div>
       <!--
       <div>
@@ -73,7 +75,7 @@
 
     <div class="max-w-7xl mx-auto mt-12 pt-8 border-t border-gray-800">
       <p class="text-center text-gray-400 text-sm">
-        &copy; 2025 Spy Grocery. All rights reserved.
+        {{ t("Footer.copyright") }}
       </p>
     </div>
   </footer>

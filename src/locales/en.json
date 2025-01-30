@@ -1,0 +1,107 @@
+{
+    "Error": {
+        "title": "Oops! Something went wrong",
+        "description": "We're sorry, but an error occurred while processing your request. Please try again later.",
+        "button": "Try Again"
+    },
+    "Listing": {
+        "title": "Your chance of the day",
+        "description": "Find unbeatable deals today and fully enjoy your chance!",
+        "search_placeholder": "Search for a product...",
+        "no_result": "No results",
+        "results": "results",
+        "load_more": "Load more",
+        "state": {
+            "error": "Error loading the prices. Please try again."
+        }
+    },
+    "Cheapest": {
+        "title": "Your best deal",
+        "description": "We've compared prices across stores to find the best deal for you.",
+        "best_deal": "Best deal",
+        "unit": "unit",
+        "available_at": "Available at",
+        "wrong_item": "Wrong item?",
+        "other_options": "Other options",
+        "modal": {
+            "title": "Verify product match",
+            "description": "Please compare the products to ensure they match.",
+            "current_product": "Current product",
+            "correct": "It's correct",
+            "wrong": "Wrong item",
+            "reference_product": "Reference product"
+        },
+        "state": {
+            "error": "Error loading the best price. Please try again."
+        }
+    },
+    "LoadingCheapest": {
+        "title": "Finding the best deals",
+        "description": "We're fetching the best deals for you. Please wait...",
+        "tips": "While we search, did you know? We compare prices across multiple stores to save you up to 30% on your groceries.",
+        "warning": "Please do not leave this page. The search process may take a few moments to ensure we find the best deals for you.",
+        "progress": {
+            "scanning": "Scanning local stores...",
+            "comparing": "Comparing prices...",
+            "finding": "Finding the best deals...",
+            "analyzing": "Analyzing discounts...",
+            "almost": "Almost there..."
+        }
+
+    },
+    "PasswordModal": {
+        "title": "Welcome Back",
+        "description": "Enter your access code to continue",
+        "placeholder": "Enter access code",
+        "button": "Continue",
+        "cancel": "Cancel",
+        "error": "Invalid access code"
+    },
+    "Footer": {
+        "title": "Spy Grocery",
+        "description": "Find the best deals near you",
+        "copyright": "Spy Grocery. All rights reserved."
+    },
+    "UnderConstruction": { "main": {
+        "title": "We're Building Something Great",
+        "description": "We're working hard to bring you the best grocery deals. Please check back soon!",
+    "newsletter": {
+        "title": "Want to know when we launch?",
+            "community": "🎉 {count} future savings experts have already joined us!",
+            "join": "Join the smart shoppers community",
+            "placeholder": "Enter your email",
+            "button": "Notify Me",
+            "loading": "Subscribing...",
+            "success": "You're all set! We'll notify you when we launch."
+    },
+    "features": {
+            "save_money": {
+            "title": "Save Money",
+            "description": "Compare prices across stores to find the best deals"
+        },
+            "save_time": {
+            "title": "Save Time",
+            "description": "Quick and easy price comparison at your fingertips"
+        },
+            "smart_shopping": {
+            "title": "Smart Shopping",
+            "description": "Make informed decisions with real-time price updates"
+        }
+    },
+    "progress": {
+        "label": "{percent}% Complete"
+    },
+    "beta": {
+        "button": "Access Beta Version"
+          }
+    },
+    "errors": {
+    "email_required": "Please enter your email address",
+    "invalid_email": "Please enter a valid email address",
+    "already_subscribed": "This email address is invalid or already subscribed.",
+        "server_error": "We're experiencing technical difficulties. Please try again later.",
+        "connection_error": "Unable to reach the server. Please check your connection.",
+        "generic_error": "An unexpected error occurred. Please try again."
+        }
+    }
+}

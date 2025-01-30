@@ -1,56 +1,50 @@
 <script setup>
-import { reactive, watch, onMounted, toRaw } from "vue";
+import { reactive, watch, onMounted, toRaw, computed } from "vue";
 import { useRouter } from "vue-router";
-import { mainModel } from "@/models/MainModel";
+import { useGlobalStore } from "@/stores/globalStore";
 import debounce from "lodash.debounce";
+import { useI18n } from "vue-i18n";
 
 import LoadingListing from "@/components/LoadingListing.vue";
 import Error from "@/components/Error.vue";
 import LoadingCheapest from "@/components/LoadingCheapest.vue";
+import { VAR_CONFIG } from "@/config/var.config";
 
-const TARGET_STORE_ID = "32d6dd89-4216-4588-a096-631bfaf5df56";
+const TARGET_STORE_ID = VAR_CONFIG.TARGET_STORE_ID;
 const router = useRouter();
-const _mainModel = mainModel();
+const store = useGlobalStore();
+const { t } = useI18n();
 
+// État UI local
 const state = reactive({
-  prices: [],
   loading: false,
   error: null,
   loadingCheapest: false,
   loadingMore: false,
-  isEndOfResults: false,
-  totalCount: 0,
   noResult: false,
   searchQuery: "",
 });
 
+// Computed properties from store
+const prices = computed(() => store.prices);
+const totalCount = computed(() => store.totalCount);
+const isEndOfResults = computed(() => store.isEndOfResults);
+
 onMounted(async () => {
-  console.log("Montage du composant : chargement initial...");
-  _mainModel.currentOffset = 0;
-  state.isEndOfResults = false;
+  store.resetPagination();
   await loadInitialListing();
 });
 
 async function loadInitialListing() {
-  console.log("Chargement de la liste initiale...");
   state.loading = true;
   state.error = null;
   try {
-    const { total_count, _prices } = await _mainModel.getPricesByStoreId();
-    if (_prices) {
-      state.prices = _prices;
-      state.totalCount = total_count;
-      state.isEndOfResults = state.prices.length >= total_count;
-      console.log("Liste initiale chargée avec succès.", {
-        prices: state.prices,
-      });
-    } else {
-      state.error = "Failed to load prices. Please try again.";
-      console.error(state.error);
+    const { _prices } = await store.getPricesByStoreId();
+    if (!_prices) {
+      state.error = t("Listing.state.error");
     }
   } catch (err) {
-    console.error("Erreur lors du chargement initial :", err);
-    state.error = "Failed to load prices. Please try again.";
+    state.error = t("Listing.state.error");
   } finally {
     state.loading = false;
   }
@@ -59,29 +53,21 @@ async function loadInitialListing() {
 watch(
   () => state.searchQuery,
   debounce(async (newVal) => {
-    console.log("Recherche modifiée :", newVal);
     state.noResult = false;
-    _mainModel.currentOffset = 0;
-    state.isEndOfResults = false;
+    store.resetPagination();
     if (!newVal) {
-      console.log("Recherche vide, rechargement de la liste initiale...");
       return await loadInitialListing();
     }
     state.loading = true;
     try {
-      const { total_count, _prices } =
-        await _mainModel.searchPricesByStoreAndName(TARGET_STORE_ID, newVal);
-      if (_prices) {
-        state.prices = _prices;
-        state.totalCount = total_count;
-        state.isEndOfResults = state.prices.length >= total_count;
-        console.log("Résultats de recherche :", { prices: state.prices });
-      } else {
+      const { _prices } = await store.searchPricesByStoreAndName(
+        TARGET_STORE_ID,
+        newVal
+      );
+      if (!_prices || _prices.length === 0) {
         state.noResult = true;
-        console.log("Aucun résultat trouvé pour la recherche.");
       }
     } catch (err) {
-      console.error("Erreur lors de la recherche :", err);
       state.noResult = true;
     } finally {
       state.loading = false;
@@ -90,60 +76,36 @@ watch(
 );
 
 async function handleLoadMore() {
-  console.log("Chargement de plus de résultats...");
-  if (state.isEndOfResults) {
-    console.log("Fin des résultats atteinte.");
+  if (isEndOfResults.value) {
     return;
   }
   state.loadingMore = true;
   try {
     const fetcher = state.searchQuery
-      ? _mainModel.searchPricesByStoreAndName.bind(
-          null,
-          TARGET_STORE_ID,
-          state.searchQuery
-        )
-      : _mainModel.getPricesByStoreId;
-    const { total_count, _prices } = await fetcher();
-    state.totalCount = total_count;
-    if (_prices?.length) {
-      state.prices.push(..._prices);
-      state.isEndOfResults = state.prices.length >= state.totalCount;
-      console.log("Nouveaux éléments ajoutés :", _prices);
-    } else {
-      console.log("Aucun nouvel élément trouvé.");
-    }
+      ? () =>
+          store.searchPricesByStoreAndName(TARGET_STORE_ID, state.searchQuery)
+      : () => store.getPricesByStoreId();
+    await fetcher();
   } catch (err) {
-    console.error("Erreur lors du chargement de plus de résultats :", err);
-    state.error = "Failed to load more products.";
+    state.error = t("Listing.state.error");
   } finally {
     state.loadingMore = false;
   }
 }
 
 async function handleProductClick(product) {
-  console.log("Produit sélectionné :", product);
   try {
     state.loadingCheapest = true;
     state.error = null;
-    await _mainModel.getBestPrice(toRaw(product));
-    console.log("Navigation vers '/cheapest' après sélection du produit.");
+    await store.getBestPrice(toRaw(product));
     router.push("/cheapest");
   } catch (err) {
-    console.error(
-      "Erreur lors de la récupération des détails du produit :",
-      err
-    );
-    state.error = "Failed to fetch product details.";
+    state.error = t("Listing.state.error");
   }
 }
 
 function handleImageError(event) {
-  console.log(
-    "Erreur de chargement de l'image, remplacement par une image par défaut."
-  );
-  event.target.src =
-    "https://us.123rf.com/450wm/pgmart/pgmart1604/pgmart160400055/55602454-lettre-de-capital-s-des-bandes-entrelac%C3%A9es-blanches-sur-un-fond-noir-mod%C3%A8le-pour-embl%C3%A8me-logos-et.jpg";
+  event.target.src = VAR_CONFIG.TARGET_IMAGE_URL_ERROR;
 }
 </script>
 
@@ -159,11 +121,10 @@ function handleImageError(event) {
       <div class="flex flex-col items-center mb-12">
         <div class="text-6xl md:text-7xl mb-4">🍀</div>
         <h2 class="text-3xl md:text-4xl font-bold mb-2 text-gray-900">
-          Votre chance du jour
+          {{ t("Listing.title") }}
         </h2>
         <p class="text-base md:text-lg text-gray-600 text-center max-w-lg">
-          Trouvez des offres imbattables aujourd'hui et profitez pleinement de
-          votre chance !
+          {{ t("Listing.description") }}
         </p>
       </div>
 
@@ -189,14 +150,14 @@ function handleImageError(event) {
           <input
             type="text"
             v-model="state.searchQuery"
-            placeholder="Rechercher un produit..."
+            :placeholder="t('Listing.search_placeholder')"
             class="w-full bg-transparent text-base md:text-lg text-gray-800 placeholder-gray-400 focus:outline-none"
           />
         </div>
       </div>
 
       <div v-if="state.noResult" class="text-gray-400 text-center mb-4">
-        Aucun résultat
+        {{ t("Listing.no_result") }}
       </div>
 
       <div
@@ -210,7 +171,8 @@ function handleImageError(event) {
         v-if="!state.noResult"
         class="mb-6 text-left text-base md:text-lg text-gray-600 font-medium"
       >
-        {{ state.prices.length }} / {{ state.totalCount }} résultats
+        {{ prices.length }} / {{ totalCount }}
+        {{ t("Listing.results") }}
       </div>
 
       <div
@@ -223,7 +185,7 @@ function handleImageError(event) {
         class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"
       >
         <div
-          v-for="price in state.prices"
+          v-for="price in prices"
           :key="price.product_id"
           class="group relative bg-white rounded-xl shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100"
           @click="handleProductClick(price.product)"
@@ -279,14 +241,14 @@ function handleImageError(event) {
       <div v-if="!state.noResult" class="flex justify-center mt-10">
         <button
           @click="handleLoadMore"
-          :disabled="state.isEndOfResults"
+          :disabled="isEndOfResults"
           :class="{
-            'bg-gray-200 text-gray-400': state.isEndOfResults,
-            'bg-black text-white hover:bg-gray-800': !state.isEndOfResults,
+            'bg-gray-200 text-gray-400': isEndOfResults,
+            'bg-black text-white hover:bg-gray-800': !isEndOfResults,
           }"
           class="py-3 px-8 rounded-full transition-all duration-300 text-base md:text-lg font-medium shadow-md hover:shadow-lg"
         >
-          Charger plus
+          {{ t("Listing.load_more") }}
         </button>
       </div>
     </div>

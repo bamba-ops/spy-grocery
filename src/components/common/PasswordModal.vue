@@ -13,15 +13,17 @@
 
         <!-- Content -->
         <div class="max-w-sm mx-auto">
-          <h3 class="text-xl font-semibold mb-2 text-center">Welcome Back</h3>
+          <h3 class="text-xl font-semibold mb-2 text-center">
+            {{ t("PasswordModal.title") }}
+          </h3>
           <p class="text-gray-500 text-sm text-center mb-6">
-            Enter your access code to continue
+            {{ t("PasswordModal.description") }}
           </p>
 
           <input
             v-model="password"
             type="password"
-            placeholder="Enter access code"
+            :placeholder="t('PasswordModal.placeholder')"
             class="w-full bg-gray-50 px-4 py-3.5 rounded-2xl mb-4 focus:outline-none focus:ring-2 focus:ring-black/10"
             @keyup.enter="checkPassword"
           />
@@ -30,14 +32,14 @@
             @click="checkPassword"
             class="w-full bg-black text-white py-3.5 rounded-2xl font-medium mb-4"
           >
-            Continue
+            {{ t("PasswordModal.button") }}
           </button>
 
           <button
             @click="$emit('close')"
             class="w-full text-gray-500 py-2 font-medium"
           >
-            Cancel
+            {{ t("PasswordModal.cancel") }}
           </button>
 
           <p v-if="error" class="text-red-500 text-sm text-center mt-4">
@@ -52,6 +54,10 @@
 <script setup>
 import { ref } from "vue";
 import { useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
+import { VAR_CONFIG } from "@/config/var.config";
+
+const { t } = useI18n();
 
 const props = defineProps({
   show: Boolean,
@@ -64,12 +70,24 @@ const password = ref("");
 const error = ref("");
 
 const checkPassword = () => {
-  if (password.value === "spy2024") {
-    localStorage.setItem("site-access", "granted");
+  if (password.value === VAR_CONFIG.TARGET_PASSWORD) {
+    // Durée de validité (1 heure)
+    const expirationTime =
+      Date.now() + VAR_CONFIG.TARGET_PASSWORD_EXPIRATION_TIME;
+
+    // Stocker les données avec expiration
+    localStorage.setItem(
+      VAR_CONFIG.TARGET_PASSWORD_KEY,
+      JSON.stringify({
+        status: VAR_CONFIG.TARGET_PASSWORD_STATUS,
+        expires: expirationTime,
+      })
+    );
+
     emit("access-granted");
-    router.push("/listing");
+    router.push(VAR_CONFIG.TARGET_LISTING_URL);
   } else {
-    error.value = "Invalid access code";
+    error.value = t("PasswordModal.error");
     password.value = "";
   }
 };

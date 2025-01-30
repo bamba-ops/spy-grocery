@@ -1,6 +1,13 @@
 <script setup>
+import { useI18n } from "vue-i18n";
+import { VAR_CONFIG } from "@/config/var.config";
+
+const TARGET_HOME_URL = VAR_CONFIG.TARGET_HOME_URL;
+
+const { t } = useI18n();
+
 const handleRetry = () => {
-  window.location.href = "/";
+  window.location.href = TARGET_HOME_URL;
 };
 </script>
 
@@ -29,16 +36,16 @@ const handleRetry = () => {
     <!-- Error content -->
     <div class="text-center space-y-4 max-w-md">
       <h2 class="text-2xl md:text-3xl font-bold text-gray-900">
-        Oops! Something went wrong
+        {{ t("Error.title") }}
       </h2>
       <p class="text-base md:text-lg text-gray-600">
-        We couldn't fetch the products. Please try again or check back later.
+        {{ t("Error.description") }}
       </p>
       <button
         @click="handleRetry"
         class="mt-6 px-8 py-3 bg-black text-white font-medium rounded-full hover:bg-gray-800 transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
       >
-        Try Again
+        {{ t("Error.button") }}
       </button>
     </div>
   </div>
