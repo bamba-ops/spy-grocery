@@ -114,12 +114,12 @@ async function handleProductClick(product) {
     // Afficher le modal ou gérer le cas où une task existe déjà
     showTaskModal.value = true;
   } else {
-    if (store.user_limit.is_prenium) {
+    if (store.user_limit.is_prenium && store.session) {
       store.setTaskByProductId(product.id);
       return;
     }
     if (store.user_limit.is_limit_over) {
-      if (store.user_limit.is_registered) {
+      if (store.user_limit.is_registered && !store.user_limit.is_prenium) {
         router.push("/price");
         return;
       }
