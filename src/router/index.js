@@ -25,11 +25,6 @@ const router = createRouter({
       component: Profile,
     },
     {
-      path: '/building',
-      name: 'UnderConstruction',
-      component: UnderConstruction
-    },
-    {
       path: '/listing',
       name: 'Listing',
       component: Listing,
