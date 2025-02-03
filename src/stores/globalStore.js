@@ -81,6 +81,7 @@ export const useGlobalStore = defineStore('globalStore', {
                         is_prenium: false,
                         user_id: null
                     };
+                    await appApi.initUserLimit(this.user_limit)
                 }
             } catch (error) {
                 // 5. Fallback local en cas d'erreur serveur
