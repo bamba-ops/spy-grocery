@@ -80,12 +80,37 @@ onUnmounted(() => {
           <path
             stroke-linecap="round"
             stroke-linejoin="round"
-            d="M12 3v17.25m0 0c-1.472 0-2.882.265-4.185.75M12 20.25c1.472 0 2.882.265 4.185.75M18.75 4.97A48.416 48.416 0 0012 4.5c-2.291 0-4.545.16-6.75.47m7.5 0v1.375c0 .621.503 1.125 1.125 1.125h2.25c.621 0 1.125-.504 1.125-1.125V5.47m0 0c.256-.027.51-.05.766-.07M18.75 4.97c0 2.29.16 4.545.47 6.75m-5.22 0c.256.02.51.043.766.07 1.29.15 2.5.38 3.63.68m-4.39-7.45c-.256-.027-.51-.05-.766-.07-1.29-.15-2.5-.38-3.63-.68"
+            d="M15.042 21.672 13.684 16.6m0 0-2.51 2.225.569-9.47 5.227 7.917-3.286-.672ZM12 2.25V4.5m5.834.166-1.591 1.591M20.25 10.5H18M7.757 14.743l-1.59 1.59M6 10.5H3.75m4.007-4.243-1.59-1.59"
           />
         </svg>
-        <span class="text-sm font-medium text-gray-700">{{
-          user_limit.is_prenium ? "" : user_limit.limit
-        }}</span>
+
+        <span class="text-sm font-medium text-gray-700">
+          <template v-if="user_limit.limit === undefined">
+            <svg
+              class="animate-spin h-5 w-5 text-gray-600"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                class="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="4"
+              ></circle>
+              <path
+                class="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
+            </svg>
+          </template>
+          <template v-else>
+            {{ user_limit.is_prenium ? "" : user_limit.limit }}
+          </template>
+        </span>
       </div>
 
       <!-- Language Dropdown -->

@@ -52,7 +52,11 @@ const router = createRouter({
       component: () => import('@/views/PaymentStatus.vue')
     }
   ],
-})
+  scrollBehavior(to, from, savedPosition) {
+    return { top: 0 }
+
+  }
+},)
 
 router.beforeEach((to, from, next) => {
   const accessData = JSON.parse(localStorage.getItem("site-access"));
