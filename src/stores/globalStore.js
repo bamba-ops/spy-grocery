@@ -54,36 +54,43 @@ export const useGlobalStore = defineStore('globalStore', {
     actions: {
         // Initialise la limite en priorisant le serveur
         async initUserLimit() {
-            // 1. Charger le localStorage (pour conserver les infos d'IP déjà récupérées par exemple)
+            // 1. Charger le localStorage
             const localLimit = localStorage.getItem('user-limit');
             if (localLimit) {
                 this.user_limit = JSON.parse(localLimit);
             }
 
-            // 2. Si aucune info IP n'est présente, la récupérer
+            // 2. Si aucune info IP, la récupérer
             if (!this.user_limit.ip_info) {
                 await this.getIpInfo();
             }
 
-            // 3. Récupérer la version serveur avec l'IP donnée
-            const serverLimit = await appApi.getByIpInfo(this.user_limit);
-            if (serverLimit) {
-                // On utilise toujours la version du serveur (source de vérité)
-                this.user_limit = serverLimit;
-            } else {
-                // 4. Si aucune donnée n'existe sur le serveur, on en crée une nouvelle
-                this.user_limit.limit = 10;
-                this.user_limit.is_limit_over = false;
-                await appApi.initUserLimit(this.user_limit);
-                // On met à jour par la suite la version locale à partir du serveur
-                const newServerLimit = await appApi.getByIpInfo(this.user_limit);
-                if (newServerLimit) {
-                    this.user_limit = newServerLimit;
+            try {
+                // 3. Tentative de récupération depuis le serveur
+                const serverLimit = await appApi.getByIpInfo(this.user_limit);
+
+                if (serverLimit) {
+                    this.user_limit = serverLimit;
+                } else {
+                    // 4. Création d'un nouveau user_limit local si absent du serveur
+                    this.user_limit = {
+                        ip_info: this.user_limit.ip_info,
+                        limit: 10,
+                        is_limit_over: false,
+                        is_registered: false,
+                        is_prenium: false,
+                        user_id: null
+                    };
+                }
+            } catch (error) {
+                // 5. Fallback local en cas d'erreur serveur
+                console.error('Erreur serveur, utilisation du local:', error);
+                if (!this.user_limit.limit) {
+                    this.user_limit.limit = 10;
                 }
             }
 
             this.saveLocalLimit();
-            // On peut vérifier l'état de la limite si nécessaire
             this.checkLimitStatus();
         },
 
