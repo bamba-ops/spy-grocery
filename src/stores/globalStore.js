@@ -330,7 +330,7 @@ export const useGlobalStore = defineStore('globalStore', {
 
         async assignRegistrationBonus() {
             // On vérifie que l'utilisateur est connecté et que le bonus n'a pas déjà été accordé
-            if (this.session && !this.user_limit.is_registered) {
+            if (this.session && !this.user_limit.is_registered && !this.user_limit.user_id) {
                 this.user_limit.limit = this.user_limit.limit + 10
                 this.user_limit.is_registered = true
                 this.user_limit.is_limit_over = false
