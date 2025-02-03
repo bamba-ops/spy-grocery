@@ -8,6 +8,24 @@ const apiUrl = getApiUrl();
 // Listing Api
 export const listingApi = {
 
+    async setTaskByProductId(product_id) {
+        try {
+            const response = await axios.post(`${apiUrl}${VAR_CONFIG.TARGET_TASK_ENDPOINT}`, { product_id: product_id });
+            return response.data;
+        } catch (error) {
+            throw new Error('Failed to set task');
+        }
+
+    },
+
+    async setTaskProcess(task) {
+        try {
+            await axios.post(`${apiUrl}/task/process`, { task: task })
+        } catch (error) {
+            throw new Error('Failed to process task')
+        }
+    },
+
     // Get the prices by store id
     async getPricesByStoreId(limit = 30, offset = 0) {
         try {
@@ -33,7 +51,6 @@ export const listingApi = {
             });
             return response.data;
         } catch (error) {
-            console.error('Search error:', error.response?.data || error.message);
             throw new Error('Failed to fetch listing by store and name');
         }
     },

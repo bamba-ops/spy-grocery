@@ -2,12 +2,27 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Listing from '@/views/Listing.vue'
 import UnderConstruction from '@/views/UnderConstruction.vue'
 import Cheapest from '@/views/Cheapest.vue'
+import Landing from '@/views/Landing.vue'
+import Profile from '@/views/Profile.vue'
+import Price from '@/views/Price.vue'
+import SignInMagic from '@/views/SignInMagic.vue'
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: '/',
-      redirect: '/listing'
+      name: 'Landing',
+      component: Landing,
+    },
+    {
+      path: '/price',
+      name: 'Price',
+      component: Price,
+    },
+    {
+      path: '/profile',
+      name: 'Profile',
+      component: Profile,
     },
     {
       path: '/building',
@@ -18,14 +33,24 @@ const router = createRouter({
       path: '/listing',
       name: 'Listing',
       component: Listing,
-      meta: { requiresAuth: true }
+      //meta: { requiresAuth: true }
     },
     {
       path: '/cheapest',
       name: 'Cheapest',
       component: Cheapest,
-      meta: { requiresAuth: true }
+      //meta: { requiresAuth: true }
     },
+    {
+      path: '/auth',
+      name: 'SignInMagic',
+      component: SignInMagic,
+    },
+    {
+      path: '/payment',
+      name: 'payment-status',
+      component: () => import('@/views/PaymentStatus.vue')
+    }
   ],
 })
 

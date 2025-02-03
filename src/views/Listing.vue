@@ -1,13 +1,23 @@
 <script setup>
-import { reactive, watch, onMounted, toRaw, computed } from "vue";
+import {
+  reactive,
+  ref,
+  watch,
+  onMounted,
+  toRaw,
+  computed,
+  onBeforeUnmount,
+} from "vue";
 import { useRouter } from "vue-router";
 import { useGlobalStore } from "@/stores/globalStore";
 import debounce from "lodash.debounce";
 import { useI18n } from "vue-i18n";
-
+import TaskStatusIndicator from "@/components/TaskStatusIndicator.vue";
 import LoadingListing from "@/components/LoadingListing.vue";
 import Error from "@/components/Error.vue";
 import LoadingCheapest from "@/components/LoadingCheapest.vue";
+import TaskWarningModal from "@/components/TaskWarningModal.vue";
+import UserLimitModal from "@/components/UserLimitModal.vue";
 import { VAR_CONFIG } from "@/config/var.config";
 
 const TARGET_STORE_ID = VAR_CONFIG.TARGET_STORE_ID;
@@ -25,12 +35,20 @@ const state = reactive({
   searchQuery: "",
 });
 
+// Variable pour le modal de comparaison déjà active
+const showTaskModal = ref(store.task !== null);
+const showUserLimitModal = ref(false);
+
 // Computed properties from store
 const prices = computed(() => store.prices);
 const totalCount = computed(() => store.totalCount);
 const isEndOfResults = computed(() => store.isEndOfResults);
 
+// Pour gérer la suppression automatique en cas de failed
+const removeTaskTimeout = ref(null);
+
 onMounted(async () => {
+  store.loadTask();
   store.resetPagination();
   await loadInitialListing();
 });
@@ -76,9 +94,7 @@ watch(
 );
 
 async function handleLoadMore() {
-  if (isEndOfResults.value) {
-    return;
-  }
+  if (isEndOfResults.value) return;
   state.loadingMore = true;
   try {
     const fetcher = state.searchQuery
@@ -94,23 +110,48 @@ async function handleLoadMore() {
 }
 
 async function handleProductClick(product) {
-  try {
-    state.loadingCheapest = true;
-    state.error = null;
-    await store.getBestPrice(toRaw(product));
-    router.push("/cheapest");
-  } catch (err) {
-    state.error = t("Listing.state.error");
+  if (store.task) {
+    // Afficher le modal ou gérer le cas où une task existe déjà
+    showTaskModal.value = true;
+  } else {
+    if (store.user_limit.is_prenium) {
+      store.setTaskByProductId(product.id);
+      return;
+    }
+    if (store.user_limit.is_limit_over) {
+      if (store.user_limit.is_registered) {
+        router.push("/price");
+        return;
+      }
+      showUserLimitModal.value = true;
+      return;
+    }
+    await store.consumeLimit();
+    store.setTaskByProductId(product.id);
   }
 }
 
 function handleImageError(event) {
   event.target.src = VAR_CONFIG.TARGET_IMAGE_URL_ERROR;
 }
+
+// Gestion de la fermeture du modal
+function handleModalClose(id) {
+  if (id == 1) {
+    showUserLimitModal.value = false;
+  } else if (id == 2) {
+    showTaskModal.value = false;
+  }
+}
 </script>
 
 <template>
   <main class="min-h-screen text-black bg-white p-4 flex flex-col">
+    <!-- Modal d'avertissement s'il y a déjà un comparatif actif -->
+    <TaskWarningModal v-if="showTaskModal" @close="handleModalClose(2)" />
+    <UserLimitModal v-if="showUserLimitModal" @close="handleModalClose(1)" />
+    <TaskStatusIndicator :task="store.task" />
+
     <LoadingCheapest
       v-if="state.loadingCheapest && !state.error && !state.loading"
     />
@@ -254,3 +295,82 @@ function handleImageError(event) {
     </div>
   </main>
 </template>
+
+<style scoped>
+@keyframes pulse-dot {
+  0%,
+  100% {
+    transform: scale(0.75);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.25);
+    opacity: 1;
+  }
+}
+
+.animate-pulse-dot {
+  animation: pulse-dot 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.delay-100 {
+  animation-delay: 0.1s;
+}
+
+.delay-200 {
+  animation-delay: 0.2s;
+}
+
+.delay-300 {
+  animation-delay: 0.3s;
+}
+
+/* Animation checkmark */
+@keyframes checkmark {
+  from {
+    stroke-dashoffset: 20;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.animate-checkmark {
+  animation: checkmark 0.5s ease-out forwards;
+  stroke-dasharray: 20;
+  stroke-dashoffset: 20;
+}
+
+/* Animation shake */
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-3px);
+  }
+  75% {
+    transform: translateX(3px);
+  }
+}
+
+.animate-shake {
+  animation: shake 0.4s ease-in-out 2;
+}
+
+/* Animation bounce */
+@keyframes bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+.animate-bounce {
+  animation: bounce 1s infinite;
+}
+</style>

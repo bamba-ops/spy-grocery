@@ -1,17 +1,27 @@
 <script setup>
 import Header from "@/components/layout/Header.vue";
 import Footer from "@/components/layout/Footer.vue";
+import UserIconFloating from "./components/UserIconFloating.vue";
+import { useGlobalStore } from "@/stores/globalStore";
+import { onMounted } from "vue";
+
+const store = useGlobalStore();
+
+onMounted(async () => {
+  store.initAuthListener();
+  await store.initUserLimit();
+});
 </script>
 
 <template>
   <div class="bg-white min-h-screen flex flex-col">
-    <Header />
+    <Header :user_limit="store.user_limit" />
 
     <!-- Dynamic Content -->
     <main class="flex-1">
       <router-view />
     </main>
-
+    <UserIconFloating />
     <Footer />
   </div>
 </template>

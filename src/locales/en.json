@@ -13,7 +13,18 @@
         "load_more": "Load more",
         "state": {
             "error": "Error loading the prices. Please try again."
-        }
+        },
+        "task_status":{
+      "pending": "Pending",
+      "processing": "Processing",
+      "completed": "Completed",
+      "failed": "Failed"
+    }
+    },
+    "TaskWarningModal": {
+        "title": "Comparison in progress",
+        "description": "You are allowed only one product comparison at a time. Please finish or cancel your current comparison before starting a new one.",
+        "button": "OK"
     },
     "Cheapest": {
         "title": "Your best deal",
@@ -103,5 +114,76 @@
         "connection_error": "Unable to reach the server. Please check your connection.",
         "generic_error": "An unexpected error occurred. Please try again."
         }
+    },
+    "HeroSection": {
+        "title": "Compare grocery prices across Quebec in real-time",
+        "subtitle": "Save with the best prices at your favorite stores in seconds",
+        "demo_section": {
+            "title": "Try our comparator",
+            "info_message": "Select a product to start instant comparison"
+        },
+        "custom_search": {
+            "prompt": "Can't find your product?",
+            "button": "Try with your own products"
+        }
+    },
+    "ProblemAgitation": {
+        "title": "The Daily Struggle of Savings",
+        "subtitle": "Why continue to waste time and money on groceries?",
+        "problem1": {
+            "title": "Race Against Time",
+            "icon": "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z",
+            "description": "Quebecers spend an average of <span class='text-red-600 font-medium'>{time}/week</span> comparing prices between stores",
+            "solution": "Instant comparison in <span class='font-bold'>{delay}/seconds</span>"
+        },
+        "problem2": {
+            "title": "Complex Price Hunting",
+            "icon": "M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z",
+            "description": "Up to <span class='text-blue-600 font-medium'>{gap}</span> price difference for the same product across stores",
+            "solution": "Real-time analysis on <span class='font-bold'>{stores}+ grocery stores</span>"
+        },
+        "problem3": {
+            "title": "Missed Savings",
+            "icon": "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
+            "description": "An average family loses <span class='text-green-600 font-medium'>{loss}/year</span> by not taking advantage of best prices",
+            "solution": "Up to <span class='font-bold'>{saving}</span> savings on your grocery bill"
+        },
+        "cta": {
+            "text": "Start Saving Now"
+        }
+    },
+    "DemoVideoSection": {
+        "videoTitle": "Discover the power of our comparator",
+        "videoSubtitle": "Watch in 1 minute how to optimize your daily grocery shopping",
+        "features": {
+            "feature1": {
+                "title": "Exhaustive Database",
+                "description": "Access to over 20,000 listed products"
+            },
+            "feature2": {
+                "title": "Real-Time Updates",
+                "description": "Prices updated every minute"
+            },
+            "feature3": {
+                "title": "Smart Search",
+                "description": "Find any product with one click"
+            }
+        }
+    },
+    "SocialProofSection": {
+        "title": "They Trust Us",
+        "subtitle": "Join thousands of Quebecers saving time and money"
+    },
+    "UserLimitModal": {
+        "title": "Search Limit Reached",
+        "description": "You've reached your search limit. Sign up now to unlock <strong>{search_number}  additional searches</strong>.",
+        "button": "Sign Up"
+    },
+    "UserIconFloating": {
+        "button" : "Sign out"
+    },
+    "Profile":{
+        "name": "Profile",
+        "button": "Sign out"
     }
 }

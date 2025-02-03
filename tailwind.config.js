@@ -4,7 +4,11 @@ export default {
   darkMode: 'class',
   purge: ['./index.html', './src/**/*.{vue,js,ts,jsx,tsx}'],
   theme: {
-    extend: {},
+    extend: {
+      screens: {
+        'hover-hover': { 'raw': '(hover: hover)' },
+      }
+    },
   },
   plugins: [],
 }

@@ -14,4 +14,5 @@ export const VAR_CONFIG = {
     TARGET_PRICES_STORE_ENDPOINT: '/prices/store',
     TARGET_PRICES_SEARCH_ENDPOINT: '/prices/search',
     TARGET_PRODUCT_PRICE_ENDPOINT: '/product/price',
+    TARGET_TASK_ENDPOINT: '/task',
 };
