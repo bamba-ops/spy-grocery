@@ -12,7 +12,6 @@
             <span class="text-white text-xl font-bold">S</span>
           </div>
         </div>
-        <h2 class="text-3xl font-bold text-gray-900">Connexion</h2>
       </div>
 
       <!-- Formulaire -->

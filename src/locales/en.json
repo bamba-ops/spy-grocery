@@ -23,7 +23,7 @@
     },
     "TaskWarningModal": {
         "title": "Comparison in progress",
-        "description": "You are allowed only one product comparison at a time. Please finish or cancel your current comparison before starting a new one.",
+        "description": "You are allowed only one product comparison at a time. Please finish your current comparison before starting a new one.",
         "button": "OK"
     },
     "Cheapest": {

@@ -23,7 +23,7 @@
   },
   "TaskWarningModal": {
     "title": "Comparaison déjà en cours",
-    "description": "Vous n'êtes autorisé(e) qu'à une comparaison de produit à la fois. Veuillez terminer ou annuler la comparaison en cours avant d'en lancer une nouvelle.",
+    "description": "Vous n'êtes autorisé(e) qu'à une comparaison de produit à la fois. Veuillez terminer la comparaison en cours avant d'en lancer une nouvelle.",
     "button": "D'accord"
   },
   "Cheapest": {
