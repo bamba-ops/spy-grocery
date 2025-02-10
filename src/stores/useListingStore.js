@@ -6,6 +6,7 @@ import { supabase } from '@/api/supabase';
 
 export const useListingStore = defineStore('listing', {
     state: () => ({
+        session: null,
         task: null,
         realtimeSubscription: null,
         searchTerm: '',
@@ -50,7 +51,7 @@ export const useListingStore = defineStore('listing', {
 
             // Exécuter processTask UNE SEULE FOIS après la création de la souscription
             if (this.realtimeSubscription && this.task && !this.task.process_init) {
-                await TasksService.processTask(this.task, this.product);
+                await TasksService.processTask(this.task, this.product, this.session);
             }
 
             if (this.task.status === 'completed') {
@@ -112,11 +113,12 @@ export const useListingStore = defineStore('listing', {
             await this.subscribeToTaskUpdates(task.id);
         },
 
-        async setTaskByProductId(product_id, product) {
+        async setTaskByProductId(product_id, product, session) {
             try {
                 if (this.task) return;
                 this.product = product
-                const data = await TasksService.setTaskByProductId({ product_id })
+                this.session = session
+                const data = await TasksService.setTaskByProductId({ product_id, session })
                 this.task = data
                 this.setLocalStorageTask(data)
             } catch (error) {
@@ -124,7 +126,6 @@ export const useListingStore = defineStore('listing', {
                 this.isError = true;
                 this.prices = []
             }
-
         },
 
         async getAllPrices() {

@@ -22,6 +22,7 @@ export const useAuthStore = defineStore('auth', {
             const { data: { session } } = await supabase.auth.getSession();
             this.session = session
             supabase.auth.onAuthStateChange((event, session) => {
+                console.log(session)
                 this.session = session
             })
         },

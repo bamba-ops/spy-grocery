@@ -1,32 +1,29 @@
-/**
- * Service pour la gestion des requêtes liées aux prix
- */
-import { useAuthStore } from "@/stores/useAuthStore";
-
-const authStore = useAuthStore()
 const API_BASE_URL = 'http://localhost:8000/api/v2';
 
 export const TasksService = {
-    setHeaders() {
-        if (authStore.session) {
-            console.log({ Authorization: `Bearer ${authStore.session.access_token}` })
-            return authStore.session ? { Authorization: `Bearer ${authStore.session.access_token}` } : {};
-        } else {
-            return {
-                'Content-Type': 'application/json',
-            }
+    setHeaders(session) {
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+        if (session?.access_token && session?.refresh_token) {
+            headers['Authorization'] = `Bearer ${session.access_token}`;
+            headers['x-refresh-token'] = session.refresh_token;
         }
+        return headers;
     },
 
-    async setTaskByProductId({ product_id }) {
+    async setTaskByProductId({ product_id, session }) {
         try {
+            // Construction dynamique du payload
+            const payload = { product_id };
+            if (session?.user?.id) {
+                payload.user_id = session.user.id;
+            }
 
             const response = await fetch(`${API_BASE_URL}/task/product/id`, {
                 method: 'POST',
-                headers: this.setHeaders(),
-                body: JSON.stringify({
-                    product_id
-                })
+                headers: this.setHeaders(session),
+                body: JSON.stringify(payload)
             });
 
             if (!response.ok) {
@@ -35,19 +32,18 @@ export const TasksService = {
 
             return await response.json();
         } catch (error) {
-            console.error('Erreur dans PricesService.getPrices:', error);
-            throw error; // On remonte l'erreur pour la gérer dans le store
+            console.error('Erreur dans TasksService.setTaskByProductId:', error);
+            throw error; // Remonte l'erreur pour la gérer dans le store ou ailleurs
         }
     },
-    /*
-    async processTask(task, product) {
+
+
+    async processTask(task, product, session) {
         try {
 
             const response = await fetch(`${API_BASE_URL}/task/process`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: this.setHeaders(session),
                 body: JSON.stringify({
                     task,
                     product
@@ -63,5 +59,5 @@ export const TasksService = {
             throw error; // On remonte l'erreur pour la gérer dans le store
         }
     }
-        */
+
 };

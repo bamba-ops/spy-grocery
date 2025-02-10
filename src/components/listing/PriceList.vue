@@ -3,6 +3,12 @@ import { useListingStore } from "@/stores/useListingStore";
 
 const listingStore = useListingStore();
 
+defineProps({
+  session: {
+    required: true,
+  },
+});
+
 function handleImageError(event) {
   event.target.src = listingStore.IMAGE_URL_ERROR;
 }
@@ -13,7 +19,13 @@ function handleImageError(event) {
       v-for="price in listingStore.prices"
       :key="price.product_id"
       class="group relative bg-white rounded-xl shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100"
-      @click="listingStore.setTaskByProductId(price.product.id, price.product)"
+      @click="
+        listingStore.setTaskByProductId(
+          price.product.id,
+          price.product,
+          session
+        )
+      "
     >
       <div
         class="relative w-full h-48 sm:h-52 flex items-center justify-center overflow-hidden"

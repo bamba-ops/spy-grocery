@@ -26,6 +26,9 @@ defineProps({
     type: Function,
     required: true,
   },
+  session: {
+    required: true,
+  },
 });
 
 onMounted(async () => {
@@ -103,7 +106,7 @@ watch(
         </p>
       </div>
       <!-- PriceList -->
-      <PriceList v-if="listingStore.prices" />
+      <PriceList v-if="listingStore.prices" :session="session" />
       <!-- LaodingPriceList -->
       <LoadingPriceList v-if="listingStore.isLoading" />
       <!-- ButtonLoadingMore -->
