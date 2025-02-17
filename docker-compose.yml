@@ -1,10 +1,10 @@
 
 services:
   backend:
-    build: ./spy-grocery-backend-v2
-    container_name: spy-grocery-backend-v2
+    build: ./spy-grocery-backend
+    container_name: spy-grocery-backend
     volumes:
-      - ./spy-grocery-backend-v2:/app
+      - ./spy-grocery-backend:/app
     ports:
       - "8000:8000"  # Expose le port pour le frontend local
     env_file:
