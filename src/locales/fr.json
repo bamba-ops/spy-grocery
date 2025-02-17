@@ -1,0 +1,265 @@
+{
+  "Error": {
+    "title": "Oops! Quelque chose s'est mal passé",
+    "description": "Nous sommes désolés, mais une erreur est survenue lors du traitement de votre requête. Veuillez réessayer plus tard.",
+    "button": "Réessayer"
+  },
+  "Listing": {
+    "title": "Votre chance du jour",
+    "description": "Trouvez des offres imbattables aujourd'hui et profitez pleinement de votre chance !",
+    "search_placeholder": "Rechercher un produit...",
+    "no_result": "Aucun résultat",
+    "results": "résultats",
+    "load_more": "Charger plus",
+    "confirm_delete_title": "Confirmer la suppression",
+    "confirm_delete_message": "Êtes-vous sûr de vouloir annuler cette tâche ?",
+    "state": {
+      "error": "Erreur lors du chargement des prix. Veuillez réessayer."
+    },
+    "General": {
+      "cancel": "Annuler",
+      "confirm": "Confirmer"
+    },
+    "task_status": {
+      "pending": "En attente",
+      "processing": "En cours",
+      "completed": "Terminé",
+      "failed": "Échec"
+    }
+  },
+  "TaskWarningModal": {
+    "title": "Comparaison déjà en cours",
+    "description": "Vous n'êtes autorisé(e) qu'à une comparaison de produit à la fois. Veuillez terminer la comparaison en cours avant d'en lancer une nouvelle.",
+    "button": "D'accord"
+  },
+  "Cheapest": {
+    "title": "Meilleure offre trouvée",
+    "description": "Nous avons comparé les prix entre les magasins pour trouver la meilleure offre pour vous.",
+    "best_deal": "Meilleure offre",
+    "unit": "unité",
+    "available_at": "Disponible à",
+    "wrong_item": "Produit incorrect ?",
+    "other_options": "Autres options",
+    "promo": {
+      "unlock": "Débloquez plus d'offres",
+      "more_stores": "Comparez avec 2+ magasins supplémentaires",
+      "sign_up": "S'inscrire pour déverrouiller"
+    },
+    "modal": {
+      "back": "Précédent",
+      "next": "Suivant",
+      "confirm": "Confirmer",
+      "title": "Vérification du produit",
+      "description": "Veuillez comparer les produits pour vous assurer qu'ils correspondent.",
+      "current_product": "Produit actuel",
+      "correct": "C'est correct",
+      "wrong": "Produit incorrect",
+      "reference_product": "Produit de référence"
+    },
+    "state": {
+      "error": "Erreur lors du chargement des données. Veuillez réessayer."
+    }
+  },
+  "LoadingCheapest": {
+    "title": "Recherche des meilleures offres",
+    "description": "Nous recherchons les meilleures offres pour vous. Veuillez patienter...",
+    "tips": "En attendant, saviez-vous que nous comparons les prix entre plusieurs magasins pour vous faire gagner jusqu'à 30% sur vos courses ?",
+    "warning": "Veuillez ne pas quitter cette page. La recherche peut prendre quelques minutes pour trouver les meilleures offres pour vous.",
+    "progress": {
+      "scanning": "Recherche dans les magasins locaux...",
+      "comparing": "Comparaison des prix...",
+      "finding": "Recherche des meilleures offres...",
+      "analyzing": "Analyse des offres...",
+      "almost": "Presque là..."
+    }
+  },
+  "PasswordModal": {
+    "title": "Bienvenue de retour",
+    "description": "Entrez votre code d'accès pour continuer",
+    "placeholder": "Entrez votre code d'accès",
+    "button": "Continuer",
+    "cancel": "Annuler",
+    "error": "Code d'accès invalide"
+  },
+  "Footer": {
+    "title": "Spy Grocery",
+    "description": "Trouvez les meilleures offres près de chez vous",
+    "copyright": "© 2025 Spy Grocery. Tous droits réservés."
+  },
+  "UnderConstruction": {
+    "main": {
+      "title": "Nous construisons quelque chose de grand",
+      "description": "Notre équipe travaille dur pour vous offrir la meilleure expérience de comparaison de prix alimentaires. Restez à l'écoute !",
+      "newsletter": {
+        "title": "Voulez-vous savoir quand nous lançons ?",
+        "community": "🎉 {count} futurs experts en économies nous ont déjà rejoints !",
+        "join": "Rejoignez la communauté des acheteurs intelligents",
+        "placeholder": "Entrez votre email",
+        "button": "Me notifier",
+        "loading": "Inscription en cours...",
+        "success": "C'est tout bon ! Nous vous préviendrons lors du lancement."
+      },
+      "features": {
+        "save_money": {
+          "title": "Économisez",
+          "description": "Comparez les prix entre les magasins pour trouver les meilleures offres"
+        },
+        "save_time": {
+          "title": "Gagnez du temps",
+          "description": "Comparaison de prix rapide et facile à portée de main"
+        },
+        "smart_shopping": {
+          "title": "Shopping intelligent",
+          "description": "Prenez des décisions éclairées avec des mises à jour de prix en temps réel"
+        }
+      },
+      "progress": {
+        "label": "Terminé à {percent}%"
+      },
+      "beta": {
+        "button": "Accéder à la version bêta"
+      }
+    },
+    "errors": {
+      "email_required": "Veuillez entrer votre adresse email",
+      "invalid_email": "Veuillez entrer une adresse email valide",
+      "already_subscribed": "Cette adresse email est invalide ou déjà inscrite.",
+      "server_error": "Nous rencontrons des difficultés techniques. Veuillez réessayer plus tard.",
+      "connection_error": "Connexion au serveur impossible. Vérifiez votre connexion.",
+      "generic_error": "Une erreur inattendue s'est produite. Veuillez réessayer."
+    }
+  },
+  "HeroSection": {
+    "title": "Comparez les prix alimentaires du Québec en temps réel",
+    "subtitle": "Économisez au meilleur prix dans vos magasins préférés en quelques secondes",
+    "demo_section": {
+      "title": "Testez notre comparateur",
+      "info_message": "Sélectionnez un produit pour lancer la comparaison instantanée"
+    },
+    "custom_search": {
+      "prompt": "Vous ne trouvez pas votre produit ?",
+      "button": "Essayez avec vos propres produits"
+    }
+  },
+  "ProblemAgitation": {
+    "title": "L'Enjeu Croissant des Dépenses Alimentaires",
+    "subtitle": "Pourquoi surpayer alors que des solutions existent ?",
+    "problem1": {
+      "title": "Budget Alimentaire Croissant",
+      "icon": "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z",
+      "description": "Les Québécois consacrent <span class='text-red-600 font-medium'>{percent} de leur budget annuel</span> à l'alimentation - le taux le plus élevé au Canada",
+      "solution": "Économies potentielles de <span class='font-bold'>{saving}</span> grâce à une comparaison intelligente"
+    },
+    "problem2": {
+      "title": "Écart de Prix Important",
+      "icon": "M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z",
+      "description": "Étude de <span class='text-blue-600 font-medium'>{products} produits courants</span> révélant des écarts entre <span class='text-blue-600 font-medium'>{stores}+ enseignes</span>",
+      "solution": "Suivi en temps réel de <span class='font-bold'>{economy} G$</span> de dépenses alimentaires au Québec"
+    },
+    "problem3": {
+      "title": "Impact de l'Inflation",
+      "icon": "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
+      "description": "<span class='text-green-600 font-medium'>{insecurity} des Québécois</span> en insécurité alimentaire (+{people} depuis 2019)",
+      "solution": "Prix actualisés toutes les <span class='font-bold'>{update}</span> pour contrer l'inflation"
+    },
+    "cta": {
+      "text": "Optimiser Mon Budget"
+    }
+  },
+  "DemoVideoSection": {
+    "videoTitle": "Découvrez la puissance de notre comparateur",
+    "videoSubtitle": "Visualisez en 1 minute comment optimiser vos courses quotidiennes",
+    "features": {
+      "feature1": {
+        "title": "Base de données exhaustive",
+        "description": "Accès à plus de 20 000 produits référencés"
+      },
+      "feature2": {
+        "title": "Mises à jour en temps réel",
+        "description": "Prix actualisés toutes les minutes"
+      },
+      "feature3": {
+        "title": "Recherche intelligente",
+        "description": "Trouvez n'importe quel produit en 1 clic"
+      }
+    }
+  },
+  "SocialProofSection": {
+    "title": "Ils nous font confiance",
+    "subtitle": "Rejoignez des milliers de Québécois qui économisent temps et argent"
+  },
+  "UserLimitModal": {
+    "title": "Limite atteinte",
+    "main_message": "Vous avez atteint la limite mensuelle du comparateur.",
+    "upgrade_part1": "Pour accéder à l'option",
+    "upgrade_part2": "illimitée",
+    "upgrade_part3": ", poursuivez la mise à niveau.",
+    "reset_message": "Votre quota actuel sera réinitialisé le 1er du mois prochain.",
+    "button": "Débloquer l'offre illimitée",
+    "reminder": "Me rappeler le 1er du mois"
+  },
+  "UserIconFloating": {
+    "button": "Déconnexion"
+  },
+  "Profile": {
+    "email_section": "Email",
+    "current_email": "Email actuel",
+    "edit_button": "Modifier",
+    "save_button": "Enregistrer",
+    "cancel_button": "Annuler",
+    "email_placeholder": "Nouvel email",
+    "magic_link_message": "Nous utilisons des liens magiques envoyés à cet email pour la connexion",
+    "validation": {
+      "empty_email": "L'email ne peut pas être vide",
+      "invalid_email": "Veuillez entrer un email valide"
+    }
+  },
+  "Auth": {
+    "email_placeholder": "Address email",
+    "sending_progress": "Envoi en cours...",
+    "send": "Envoyer le Magic Link",
+    "message": "Lien magique envoyé ! Vérifiez vos emails.",
+    "err_message": "Erreur lors de l'envoi du lien"
+  },
+  "currentPlan": {
+    "title": "Plan actuel",
+    "change": "Changer"
+  },
+
+  "monthlyUsageLimit": {
+    "title": "Limite d'utilisation mensuelle",
+    "resetDateLabel": "Date de réinitialisation : ",
+    "description": "Votre limite sera réinitialisée automatiquement à cette date chaque mois"
+  },
+
+  "Pricing": {
+    "title": "Des prix transparents pour des économies réelles",
+    "subtitle": "Choisissez votre formule d'abonnement",
+    "free": {
+      "title": "Essentiel",
+      "price": "0",
+      "month": "mois",
+      "badge": "Découverte du service",
+      "features": {
+        "searches": "recherches/mois",
+        "stores": "épiceries comparables",
+        "support": "support email 24/7"
+      },
+      "cta": "Commencer gratuitement"
+    },
+    "premium": {
+      "title": "Premium",
+      "price": "5.75",
+      "badge": "Choix optimal",
+      "features": {
+        "comparator": "Comparateur illimité",
+        "all_stores": "Toutes les épiceries",
+        "priority_support": "Support prioritaire",
+        "early_access": "Nouveautés en avant-première"
+      },
+      "billing": "Facturation annuelle (69$)",
+      "cta": "Choisir Premium"
+    },
+    "guarantee": "Garantie satisfait ou remboursé sous 30 jours"
+  }
+}
