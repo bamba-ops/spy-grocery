@@ -1,65 +1,93 @@
-# Spy Grocery Frontend
+# SpyGrocery Frontend
 
-This project is a frontend application for a grocery comparison service built with Vue 3, Pinia, and Axios. The application provides features for listing product prices from stores and finding the cheapest product based on user queries.
+Comparateur intelligent de prix alimentaires - Frontend Vue.js
 
-## Features
-- List product prices by store.
-- Find the cheapest product for a specified query.
-- Vue 3, Pinia, and Axios based structure.
+## 🚀 Technologies utilisées
 
-## Project Structure
-The project is structured into several key components:
+- Vue 3 + Vite
+- Tailwind CSS
+- Pinia (State Management)
+- Vue Router
+- Supabase (Authentification)
+- Axios (HTTP Client)
+- Vue i18n (Internationalisation)
 
-### API Layer
-- `DataAPISource.js`: Handles communication with the backend API using Axios.
+## 📦 Installation
 
-### Services
-- `CheapestService.js`: Fetches the cheapest product price.
-- `ListingService.js`: Fetches product prices for a specific store.
-
-### State Management
-- `MainModel.js`: Manages the application's state using Pinia.
-
-### Views
-- `LoadingListing.vue`: Loading component for product listings.
-- `LoadingCheapest.vue`: Loading component for cheapest product results.
-- `Error.vue`: Displays error messages.
-- `CheapestView.vue`: View for displaying the cheapest product result.
-- `ListingView.vue`: View for displaying product listings.
-
-### Configuration
-- `index.js`: Configures Vue Router.
-- `main.js`: Initializes the Vue application and integrates Pinia and the router.
-
-## Installation
-Ensure you have Node.js and npm installed.
-
-```bash
-# Clone the repository
-git clone <repository-url>
-cd spy-grocery-frontend
-
-# Install dependencies
+``bash
 npm install
+``
 
-# Run the development server
+## ⚙️ Configuration
+
+1. Copier le fichier d'environnement :
+
+``bash
+cp .env.example .env
+``
+
+2. Remplir les variables d'environnement :
+
+``env
+VITE_API_URL=[URL de l'API backend]
+
+VITE_SUPABASE_URL=[URL Supabase]
+
+VITE_SUPABASE_KEY=[Clé Supabase]
+
+VITE_STRIPE_LINK=[URL Stripe]
+``
+
+
+## 🛠 Scripts disponibles
+
+``bash
 npm run dev
-```
+``
 
-## API Integration
-The application interacts with a backend API located at `http://127.0.0.1:8000/api/v1`.
-- **Best Price:** `POST /product/price`
-- **Prices by Store:** `GET /prices/store/{STORE_ID}`
+## 📁 Structure du projet
 
-## Usage
-1. Access the homepage to view product listings.
-2. Navigate to `/cheapest` to find the cheapest product based on a query.
+src/
+├── api/ # Services API
+├── assets/ # Ressources statiques
+├── components/ # Composants Vue
+│ ├── auth/ # Authentification
+│ ├── compare/ # Comparaison de prix
+│ └── landing/ # Page d'accueil
+├── stores/ # Stores Pinia
+└── views/ # Pages Router
 
-## Technologies Used
-- Vue 3
-- Pinia
-- Axios
 
-## License
-This project is licensed under the MIT License.
+## 🔒 Variables d'environnement
 
+| Variable            | Description                          |
+|---------------------|--------------------------------------|
+| VITE_API_URL        | URL de l'API backend                 |
+| VITE_SUPABASE_URL   | URL de configuration Supabase       |
+| VITE_SUPABASE_KEY   | Clé d'API Supabase                   |
+| VITE_STRIPE_LINK    | URL de paiement Stripe               |
+
+## 🌍 Internationalisation
+
+Les traductions sont gérées avec vue-i18n dans :
+
+public/locales/
+├── en.json
+└── fr.json
+
+
+## 🎨 Style
+
+- Tailwind CSS pour le styling
+- Design responsive mobile-first
+- Animations CSS personnalisées
+
+## 🔑 Authentification
+
+Gérée via Supabase avec :
+- Connexion/déconnexion
+- Gestion de session
+- Protection de routes
+
+## 📄 License
+MIT © Walid Gharbi
