@@ -1,6 +1,6 @@
 <script setup>
+import { debounce } from "lodash";
 import { useListingStore } from "@/stores/useListingStore";
-import { ref } from "vue";
 
 const listingStore = useListingStore();
 defineProps({
@@ -10,8 +10,13 @@ defineProps({
   },
 });
 
+// Créez une fonction debounced
+const handleSearchTermDebounced = debounce((value) => {
+  listingStore.searchTerm = value;
+}, 800);
+
 const handleSearchTerm = (event) => {
-  listingStore.searchTerm = event.target.value;
+  handleSearchTermDebounced(event.target.value);
 };
 </script>
 

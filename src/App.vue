@@ -13,12 +13,13 @@ const route = useRoute();
 
 onMounted(async () => {
   await authStore.initUserSession();
+  await authStore.initClientAfterSignUp();
 });
 </script>
 
 <template>
   <div class="bg-white min-h-screen flex flex-col">
-    <Header :session="authStore.session" />
+    <Header :session="authStore.session" :client="authStore.client" />
 
     <main class="flex-1">
       <router-view :t="t" :session="authStore.session" />

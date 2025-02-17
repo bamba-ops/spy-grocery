@@ -3,7 +3,7 @@ import { useRouter } from "vue-router";
 
 const router = useRouter();
 const handleRetry = () => {
-  window.location.href = "/";
+  window.location.href = "/listing";
 };
 
 defineProps({

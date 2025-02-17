@@ -5,6 +5,7 @@ import LoadingPriceList from "@/components/listing/LoadingPriceList.vue";
 import Error from "@/components/Error.vue";
 import ButtonLoadMore from "@/components/listing/ButtonLoadMore.vue";
 import TaskStatus from "@/components/listing/TaskStatus.vue";
+import LimitReachedModal from "@/components/listing/LimitReachedModal.vue";
 import { useListingStore } from "@/stores/useListingStore";
 import { onMounted, watch, ref, onUnmounted } from "vue";
 import PriceList from "@/components/listing/PriceList.vue";
@@ -68,7 +69,7 @@ watch(
       } finally {
         listingStore.isLoading = false;
       }
-    }, 300); // Réduit le debounce à 300ms pour une meilleure réactivité
+    }, 800); // Réduit le debounce à 300ms pour une meilleure réactivité
   }
 );
 </script>
@@ -116,6 +117,7 @@ watch(
       :t="t"
     />
     <TaskStatus :t="t" />
+    <LimitReachedModal :t="t" v-if="listingStore.isLimitReached" />
   </main>
   <!-- Error -->
   <Error v-else :t="t" />

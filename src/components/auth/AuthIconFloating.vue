@@ -19,7 +19,7 @@ function handleNavToAuth() {
     <div
       @click="handleNavToAuth()"
       :class="
-        session
+        authStore.session
           ? 'bg-black rounded-md text-center shadow cursor-pointer px-3 py-2 min-w-[6rem] max-w-[90vw]'
           : 'flex items-center justify-center w-16 h-16 bg-black rounded-md shadow cursor-pointer'
       "

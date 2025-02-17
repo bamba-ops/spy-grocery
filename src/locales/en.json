@@ -1,210 +1,265 @@
 {
-    "Error": {
-        "title": "Oops! Something went wrong",
-        "description": "We're sorry, but an error occurred while processing your request. Please try again later.",
-        "button": "Try Again"
+  "Error": {
+    "title": "Oops! Something went wrong",
+    "description": "We're sorry, but an error occurred while processing your request. Please try again later.",
+    "button": "Try Again"
+  },
+
+  "Listing": {
+    "title": "Your chance of the day",
+    "description": "Find unbeatable deals today and fully enjoy your chance!",
+    "search_placeholder": "Search for a product...",
+    "no_result": "No results",
+    "results": "results",
+    "load_more": "Load more",
+    "confirm_delete_title": "Confirm Deletion",
+    "confirm_delete_message": "Are you sure you want to cancel this task?",
+    "state": {
+      "error": "Error loading the prices. Please try again."
     },
-    "Listing": {
-        "title": "Your chance of the day",
-        "description": "Find unbeatable deals today and fully enjoy your chance!",
-        "search_placeholder": "Search for a product...",
-        "no_result": "No results",
-        "results": "results",
-        "load_more": "Load more",
-        "confirm_delete_title": "Confirm Deletion",
-        "confirm_delete_message": "Are you sure you want to cancel this task?",
-        "state": {
-            "error": "Error loading the prices. Please try again."
-        },
-        "task_status":{
+    "task_status": {
       "pending": "Pending",
       "processing": "Processing",
       "completed": "Completed",
       "failed": "Failed"
     }
+  },
+  "TaskWarningModal": {
+    "title": "Comparison in progress",
+    "description": "You are allowed only one product comparison at a time. Please finish your current comparison before starting a new one.",
+    "button": "OK"
+  },
+  "Cheapest": {
+    "title": "Your best deal",
+    "description": "We've compared prices across stores to find the best deal for you.",
+    "best_deal": "Best deal",
+    "unit": "unit",
+    "available_at": "Available at",
+    "wrong_item": "Wrong item?",
+    "other_options": "Other options",
+    "promo": {
+      "unlock": "Unlock more deals",
+      "more_stores": "Compare with 2+ additional stores",
+      "sign_up": "Sign up to unlock"
     },
-    "TaskWarningModal": {
-        "title": "Comparison in progress",
-        "description": "You are allowed only one product comparison at a time. Please finish your current comparison before starting a new one.",
-        "button": "OK"
+    "modal": {
+      "back": "Back",
+      "next": "Next",
+      "confirm": "Confirm",
+      "title": "Verify product match",
+      "description": "Please compare the products to ensure they match.",
+      "current_product": "Current product",
+      "correct": "It's correct",
+      "wrong": "Wrong item",
+      "reference_product": "Reference product"
     },
-    "Cheapest": {
-        "title": "Your best deal",
-        "description": "We've compared prices across stores to find the best deal for you.",
-        "best_deal": "Best deal",
-        "unit": "unit",
-        "available_at": "Available at",
-        "wrong_item": "Wrong item?",
-        "other_options": "Other options",
-        "promo": {
-            "unlock": "Unlock more deals",
-    "more_stores": "Compare with 2+ additional stores",
-    "sign_up": "Sign up to unlock"
-        },
-        "modal": {
-            "back": "Back",
-            "next": "Next",
-            "confirm" : "Confirm",
-            "title": "Verify product match",
-            "description": "Please compare the products to ensure they match.",
-            "current_product": "Current product",
-            "correct": "It's correct",
-            "wrong": "Wrong item",
-            "reference_product": "Reference product"
-        },
-        "state": {
-            "error": "Error loading the best price. Please try again."
-        }
-    },
-    "LoadingCheapest": {
-        "title": "Finding the best deals",
-        "description": "We're fetching the best deals for you. Please wait...",
-        "tips": "While we search, did you know? We compare prices across multiple stores to save you up to 30% on your groceries.",
-        "warning": "Please do not leave this page. The search process may take a few moments to ensure we find the best deals for you.",
-        "progress": {
-            "scanning": "Scanning local stores...",
-            "comparing": "Comparing prices...",
-            "finding": "Finding the best deals...",
-            "analyzing": "Analyzing discounts...",
-            "almost": "Almost there..."
-        }
-
-    },
-    "PasswordModal": {
-        "title": "Welcome Back",
-        "description": "Enter your access code to continue",
-        "placeholder": "Enter access code",
-        "button": "Continue",
-        "cancel": "Cancel",
-        "error": "Invalid access code"
-    },
-    "Footer": {
-        "title": "Spy Grocery",
-        "description": "Find the best deals near you",
-        "copyright": "Spy Grocery. All rights reserved."
-    },
-    "UnderConstruction": { "main": {
-        "title": "We're Building Something Great",
-        "description": "We're working hard to bring you the best grocery deals. Please check back soon!",
-    "newsletter": {
-        "title": "Want to know when we launch?",
-            "community": "🎉 {count} future savings experts have already joined us!",
-            "join": "Join the smart shoppers community",
-            "placeholder": "Enter your email",
-            "button": "Notify Me",
-            "loading": "Subscribing...",
-            "success": "You're all set! We'll notify you when we launch."
-    },
-    "features": {
-            "save_money": {
-            "title": "Save Money",
-            "description": "Compare prices across stores to find the best deals"
-        },
-            "save_time": {
-            "title": "Save Time",
-            "description": "Quick and easy price comparison at your fingertips"
-        },
-            "smart_shopping": {
-            "title": "Smart Shopping",
-            "description": "Make informed decisions with real-time price updates"
-        }
-    },
+    "state": {
+      "error": "Error loading the best price. Please try again."
+    }
+  },
+  "LoadingCheapest": {
+    "title": "Finding the best deals",
+    "description": "We're fetching the best deals for you. Please wait...",
+    "tips": "While we search, did you know? We compare prices across multiple stores to save you up to 30% on your groceries.",
+    "warning": "Please do not leave this page. The search process may take a few moments to ensure we find the best deals for you.",
     "progress": {
+      "scanning": "Scanning local stores...",
+      "comparing": "Comparing prices...",
+      "finding": "Finding the best deals...",
+      "analyzing": "Analyzing discounts...",
+      "almost": "Almost there..."
+    }
+  },
+  "PasswordModal": {
+    "title": "Welcome Back",
+    "description": "Enter your access code to continue",
+    "placeholder": "Enter access code",
+    "button": "Continue",
+    "cancel": "Cancel",
+    "error": "Invalid access code"
+  },
+  "Footer": {
+    "title": "Spy Grocery",
+    "description": "Find the best deals near you",
+    "copyright": "Spy Grocery. All rights reserved."
+  },
+  "UnderConstruction": {
+    "main": {
+      "title": "We're Building Something Great",
+      "description": "We're working hard to bring you the best grocery deals. Please check back soon!",
+      "newsletter": {
+        "title": "Want to know when we launch?",
+        "community": "🎉 {count} future savings experts have already joined us!",
+        "join": "Join the smart shoppers community",
+        "placeholder": "Enter your email",
+        "button": "Notify Me",
+        "loading": "Subscribing...",
+        "success": "You're all set! We'll notify you when we launch."
+      },
+      "features": {
+        "save_money": {
+          "title": "Save Money",
+          "description": "Compare prices across stores to find the best deals"
+        },
+        "save_time": {
+          "title": "Save Time",
+          "description": "Quick and easy price comparison at your fingertips"
+        },
+        "smart_shopping": {
+          "title": "Smart Shopping",
+          "description": "Make informed decisions with real-time price updates"
+        }
+      },
+      "progress": {
         "label": "{percent}% Complete"
-    },
-    "beta": {
+      },
+      "beta": {
         "button": "Access Beta Version"
-          }
+      }
     },
     "errors": {
-    "email_required": "Please enter your email address",
-    "invalid_email": "Please enter a valid email address",
-    "already_subscribed": "This email address is invalid or already subscribed.",
-        "server_error": "We're experiencing technical difficulties. Please try again later.",
-        "connection_error": "Unable to reach the server. Please check your connection.",
-        "generic_error": "An unexpected error occurred. Please try again."
-        }
-    },
-    "HeroSection": {
-        "title": "Compare grocery prices across Quebec in real-time",
-        "subtitle": "Save with the best prices at your favorite stores in seconds",
-        "demo_section": {
-            "title": "Try our comparator",
-            "info_message": "Select a product to start instant comparison"
-        },
-        "custom_search": {
-            "prompt": "Can't find your product?",
-            "button": "Try with your own products"
-        }
-    },
-    "ProblemAgitation": {
-        "title": "The Daily Struggle of Savings",
-        "subtitle": "Why continue to waste time and money on groceries?",
-        "problem1": {
-            "title": "Race Against Time",
-            "icon": "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z",
-            "description": "Quebecers spend an average of <span class='text-red-600 font-medium'>{time}/week</span> comparing prices between stores",
-            "solution": "Instant comparison in <span class='font-bold'>{delay}/seconds</span>"
-        },
-        "problem2": {
-            "title": "Complex Price Hunting",
-            "icon": "M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z",
-            "description": "Up to <span class='text-blue-600 font-medium'>{gap}</span> price difference for the same product across stores",
-            "solution": "Real-time analysis on <span class='font-bold'>{stores}+ grocery stores</span>"
-        },
-        "problem3": {
-            "title": "Missed Savings",
-            "icon": "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
-            "description": "An average family loses <span class='text-green-600 font-medium'>{loss}/year</span> by not taking advantage of best prices",
-            "solution": "Up to <span class='font-bold'>{saving}</span> savings on your grocery bill"
-        },
-        "cta": {
-            "text": "Start Saving Now"
-        }
-    },
-    "DemoVideoSection": {
-        "videoTitle": "Discover the power of our comparator",
-        "videoSubtitle": "Watch in 1 minute how to optimize your daily grocery shopping",
-        "features": {
-            "feature1": {
-                "title": "Exhaustive Database",
-                "description": "Access to over 20,000 listed products"
-            },
-            "feature2": {
-                "title": "Real-Time Updates",
-                "description": "Prices updated every minute"
-            },
-            "feature3": {
-                "title": "Smart Search",
-                "description": "Find any product with one click"
-            }
-        }
-    },
-    "SocialProofSection": {
-        "title": "They Trust Us",
-        "subtitle": "Join thousands of Quebecers saving time and money"
-    },
-    "UserLimitModal": {
-        "title": "Search Limit Reached",
-        "description": "You've reached your search limit. Sign up now to unlock <strong>{search_number}  additional searches</strong>.",
-        "button": "Sign Up"
-    },
-    "UserIconFloating": {
-        "button" : "Sign out"
-    },
-    "Profile":{
-        "name": "Profile",
-        "button": "Sign out"
-    },
-    "General": {
-        "cancel": "Cancel",
-        "confirm": "Confirm"
-    },
-    "Auth": {
-        "email_placeholder": "E-mail address",
-        "sending_progress": "Sending in progress...",
-        "send": "Send the Magic Link",
-        "message": "Magic link sent! Check your emails.",
-        "err_message": "Error sending link" 
+      "email_required": "Please enter your email address",
+      "invalid_email": "Please enter a valid email address",
+      "already_subscribed": "This email address is invalid or already subscribed.",
+      "server_error": "We're experiencing technical difficulties. Please try again later.",
+      "connection_error": "Unable to reach the server. Please check your connection.",
+      "generic_error": "An unexpected error occurred. Please try again."
     }
+  },
+  "HeroSection": {
+    "title": "Compare grocery prices across Quebec in real-time",
+    "subtitle": "Save with the best prices at your favorite stores in seconds",
+    "demo_section": {
+      "title": "Try our comparator",
+      "info_message": "Select a product to start instant comparison"
+    },
+    "custom_search": {
+      "prompt": "Can't find your product?",
+      "button": "Try with your own products"
+    }
+  },
+  "ProblemAgitation": {
+    "title": "The Growing Challenge of Food Expenses",
+    "subtitle": "Why overpay when solutions exist?",
+    "problem1": {
+      "title": "Growing Food Budget",
+      "icon": "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z",
+      "description": "Quebecers allocate <span class='text-red-600 font-medium'>{percent} of their annual budget</span> to food - the highest rate in Canada",
+      "solution": "Potential savings of <span class='font-bold'>{saving}</span> through smart price comparison"
+    },
+    "problem2": {
+      "title": "Significant Price Gaps",
+      "icon": "M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z",
+      "description": "Study of <span class='text-blue-600 font-medium'>{products} common products</span> reveals price differences between <span class='text-blue-600 font-medium'>{stores}+ store chains</span>",
+      "solution": "Track <span class='font-bold'>${economy}B</span> in Quebec food expenses in real-time"
+    },
+    "problem3": {
+      "title": "Inflation Impact",
+      "icon": "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
+      "description": "<span class='text-green-600 font-medium'>{insecurity} of Quebecers</span> experience food insecurity (+{people} since 2019)",
+      "solution": "Prices updated every <span class='font-bold'>{update}</span> to counter inflation"
+    },
+    "cta": {
+      "text": "Optimize My Budget"
+    }
+  },
+  "DemoVideoSection": {
+    "videoTitle": "Discover the power of our comparator",
+    "videoSubtitle": "Watch in 1 minute how to optimize your daily grocery shopping",
+    "features": {
+      "feature1": {
+        "title": "Exhaustive Database",
+        "description": "Access to over 20,000 listed products"
+      },
+      "feature2": {
+        "title": "Real-Time Updates",
+        "description": "Prices updated every minute"
+      },
+      "feature3": {
+        "title": "Smart Search",
+        "description": "Find any product with one click"
+      }
+    }
+  },
+  "SocialProofSection": {
+    "title": "They Trust Us",
+    "subtitle": "Join thousands of Quebecers saving time and money"
+  },
+  "UserLimitModal": {
+    "title": "Limit Reached",
+    "main_message": "You've reached the monthly comparator limit.",
+    "upgrade_part1": "To access the",
+    "upgrade_part2": "unlimited",
+    "upgrade_part3": "option, continue below.",
+    "reset_message": "Your current quota will reset on the 1st of next month.",
+    "button": "Unlock Unlimited Offer",
+    "reminder": "Remind me on the 1st"
+  },
+  "UserIconFloating": {
+    "button": "Sign out"
+  },
+  "Profile": {
+    "email_section": "Email",
+    "current_email": "Current email",
+    "edit_button": "Edit",
+    "save_button": "Save",
+    "cancel_button": "Cancel",
+    "email_placeholder": "New email",
+    "magic_link_message": "We use magic links sent to this email for authentication",
+    "validation": {
+      "empty_email": "Email cannot be empty",
+      "invalid_email": "Please enter a valid email"
+    }
+  },
+  "currentPlan": {
+    "title": "Current Plan",
+    "change": "Change"
+  },
+  "monthlyUsageLimit": {
+    "title": "Monthly Usage Limit",
+    "resetDateLabel": "Reset Date: ",
+    "description": "Your limit will be automatically reset on this date every month"
+  },
+
+  "General": {
+    "cancel": "Cancel",
+    "confirm": "Confirm"
+  },
+  "Auth": {
+    "email_placeholder": "E-mail address",
+    "sending_progress": "Sending in progress...",
+    "send": "Send the Magic Link",
+    "message": "Magic link sent! Check your emails.",
+    "err_message": "Error sending link"
+  },
+  "Pricing": {
+    "title": "Transparent pricing for real savings",
+    "subtitle": "Choose your subscription plan",
+    "free": {
+      "title": "Essential",
+      "price": "0",
+      "month": "month",
+      "badge": "Service discovery",
+      "features": {
+        "searches": "searches/month",
+        "stores": "comparable grocery stores",
+        "support": "24/7 email support"
+      },
+      "cta": "Start for free"
+    },
+    "premium": {
+      "title": "Premium",
+      "price": "5.75",
+      "badge": "Optimal choice",
+      "features": {
+        "comparator": "Unlimited comparator",
+        "all_stores": "All grocery stores",
+        "priority_support": "Priority support",
+        "early_access": "Early access to new features"
+      },
+      "billing": "Annual billing (69$)",
+      "cta": "Choose Premium"
+    },
+    "guarantee": "30-day money-back guarantee"
+  }
 }

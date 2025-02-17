@@ -2,6 +2,7 @@
 import { ref, onMounted, onUnmounted } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
+import { useAuthStore } from "@/stores/useAuthStore";
 
 const router = useRouter();
 const { locale } = useI18n();
@@ -11,6 +12,9 @@ const currentLanguage = ref(storedLanguage.toUpperCase());
 
 const props = defineProps({
   session: {
+    required: true,
+  },
+  client: {
     required: true,
   },
 });
@@ -84,31 +88,21 @@ onUnmounted(() => {
           />
         </svg>
 
-        <span class="text-sm font-medium text-gray-700">
-          <template>
-            <svg
-              class="animate-spin h-5 w-5 text-gray-600"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                class="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                stroke-width="4"
-              ></circle>
-              <path
-                class="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              ></path>
-            </svg>
+        <!-- On encapsule le compteur dans un composant transition -->
+        <transition name="uber-counter" mode="out-in">
+          <span
+            v-if="client"
+            :key="client?.limit_usage"
+            class="text-sm font-medium text-gray-700"
+          >
+            {{ client?.limit_usage }}
+          </span>
+          <template v-else>
+            <div
+              class="h-4 w-4 animate-spin rounded-full border-2 border-gray-600 border-r-transparent"
+            ></div>
           </template>
-          <template> 10 </template>
-        </span>
+        </transition>
       </div>
       <!-- Language Dropdown -->
       <div class="relative inline-block text-left language-dropdown">
@@ -202,3 +196,42 @@ onUnmounted(() => {
     </button>
   --></header>
 </template>
+<style scoped>
+@keyframes uber-counter-enter {
+  0% {
+    transform: scale(1) rotate(0deg);
+  }
+  30% {
+    transform: scale(1.4) rotate(-20deg);
+  }
+  50% {
+    transform: scale(0.8) rotate(20deg);
+  }
+  70% {
+    transform: scale(1.2) rotate(-10deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+/* Animation de l'élément sortant : une disparition en douceur */
+@keyframes uber-counter-leave {
+  0% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.8) rotate(0deg);
+    opacity: 0;
+  }
+}
+
+.uber-counter-enter-active {
+  animation: uber-counter-enter 600ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.uber-counter-leave-active {
+  animation: uber-counter-leave 300ms ease-out;
+}
+</style>

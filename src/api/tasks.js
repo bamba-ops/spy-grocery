@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:8000/api/v2';
+import { API_BASE_URL } from '@/api/config.js'
 
 export const TasksService = {
     setHeaders(session) {
@@ -37,7 +37,6 @@ export const TasksService = {
         }
     },
 
-
     async processTask(task, product, session) {
         try {
 
@@ -58,6 +57,24 @@ export const TasksService = {
             console.error('Erreur dans PricesService.getPrices:', error);
             throw error; // On remonte l'erreur pour la gérer dans le store
         }
-    }
+    },
+    async getTaskByIsTest() {
+        try {
+
+            const response = await fetch(`${API_BASE_URL}/task/is_test`, {
+                method: 'GET'
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('Erreur dans TasksService.getTaskByIsTest:', error);
+            throw error; // Remonte l'erreur pour la gérer dans le store ou ailleurs
+        }
+    },
+
 
 };

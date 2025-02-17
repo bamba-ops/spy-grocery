@@ -3,7 +3,7 @@
 <template>
   <div class="flex justify-center mt-16">
     <a
-      href="/"
+      href="/listing"
       class="inline-flex items-center justify-center w-14 h-14 bg-black text-white rounded-full hover:bg-gray-800 transition-colors duration-300"
     >
       <svg

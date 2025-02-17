@@ -1,7 +1,7 @@
 /**
  * Service pour la gestion des requêtes liées aux prix
  */
-const API_BASE_URL = 'http://localhost:8000/api/v2';
+import { API_BASE_URL } from '@/api/config.js'
 
 export const PricesService = {
     async getAllPrices({ limit, offset }) {

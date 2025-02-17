@@ -3,9 +3,12 @@ import { defineStore } from 'pinia'
 import { PricesService } from '@/api/prices';
 import { TasksService } from '@/api/tasks';
 import { supabase } from '@/api/supabase';
+import { useAuthStore } from './useAuthStore';
 
 export const useListingStore = defineStore('listing', {
     state: () => ({
+        isLimitReached: false,
+        authStore: useAuthStore(),
         session: null,
         task: null,
         realtimeSubscription: null,
@@ -119,6 +122,15 @@ export const useListingStore = defineStore('listing', {
                 this.product = product
                 this.session = session
                 const data = await TasksService.setTaskByProductId({ product_id, session })
+                if (!data) return;
+                if (this.authStore.client) {
+                    if (this.authStore.client.limit_usage <= 0) {
+                        this.isLimitReached = true;
+                        return;
+                    } else {
+                        await this.authStore.updateLimitUsageClient()
+                    }
+                }
                 this.task = data
                 this.setLocalStorageTask(data)
             } catch (error) {
@@ -172,6 +184,7 @@ export const useListingStore = defineStore('listing', {
 
         async getPriceBySearchTerm() {
             try {
+                const currentTerm = this.searchTerm; // Stocke la valeur actuelle
                 this.isLoading = true;
                 this.offset = 0; // Reset à chaque nouvelle recherche
 
@@ -180,6 +193,11 @@ export const useListingStore = defineStore('listing', {
                 if (!data) {
                     this.isError = true
                     return
+                }
+
+                // Mettez à jour seulement si l'utilisateur n'a pas modifié le champ entre temps
+                if (this.searchTerm === currentTerm) {
+                    this.prices = data;
                 }
 
                 this.prices = data;

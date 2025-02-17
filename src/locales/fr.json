@@ -142,28 +142,28 @@
     }
   },
   "ProblemAgitation": {
-    "title": "Le combat quotidien des économies",
-    "subtitle": "Pourquoi continuer à perdre temps et argent dans vos courses ?",
+    "title": "L'Enjeu Croissant des Dépenses Alimentaires",
+    "subtitle": "Pourquoi surpayer alors que des solutions existent ?",
     "problem1": {
-      "title": "Course contre la montre",
+      "title": "Budget Alimentaire Croissant",
       "icon": "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z",
-      "description": "Les Québécois passent en moyenne <span class='text-red-600 font-medium'>{time}/semaines</span> à comparer les prix entre épiceries",
-      "solution": "Comparaison instantanée en <span class='font-bold'>{delay}/secondes</span>"
+      "description": "Les Québécois consacrent <span class='text-red-600 font-medium'>{percent} de leur budget annuel</span> à l'alimentation - le taux le plus élevé au Canada",
+      "solution": "Économies potentielles de <span class='font-bold'>{saving}</span> grâce à une comparaison intelligente"
     },
     "problem2": {
-      "title": "Chasse aux prix complexe",
+      "title": "Écart de Prix Important",
       "icon": "M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z",
-      "description": "Jusqu'à <span class='text-blue-600 font-medium'>{gap}</span> d'écart sur un même produit entre différentes enseignes",
-      "solution": "Analyse en temps réel sur <span class='font-bold'>{stores}+ épiceries</span>"
+      "description": "Étude de <span class='text-blue-600 font-medium'>{products} produits courants</span> révélant des écarts entre <span class='text-blue-600 font-medium'>{stores}+ enseignes</span>",
+      "solution": "Suivi en temps réel de <span class='font-bold'>{economy} G$</span> de dépenses alimentaires au Québec"
     },
     "problem3": {
-      "title": "Économies manquées",
+      "title": "Impact de l'Inflation",
       "icon": "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
-      "description": "Une famille moyenne perd <span class='text-green-600 font-medium'>{loss}/an</span> en ne profitant pas des meilleurs prix",
-      "solution": "Jusqu'à <span class='font-bold'>{saving}</span> d'économies sur votre panier"
+      "description": "<span class='text-green-600 font-medium'>{insecurity} des Québécois</span> en insécurité alimentaire (+{people} depuis 2019)",
+      "solution": "Prix actualisés toutes les <span class='font-bold'>{update}</span> pour contrer l'inflation"
     },
     "cta": {
-      "text": "Commencez à économiser"
+      "text": "Optimiser Mon Budget"
     }
   },
   "DemoVideoSection": {
@@ -189,22 +189,77 @@
     "subtitle": "Rejoignez des milliers de Québécois qui économisent temps et argent"
   },
   "UserLimitModal": {
-    "title": "Limite de recherche atteinte",
-    "description": "Vous avez atteint votre limite de recherche. Inscrivez-vous dès maintenant pour débloquer <strong>{search_number} recherches</strong> supplémentaires.",
-    "button": "S'inscrire"
+    "title": "Limite atteinte",
+    "main_message": "Vous avez atteint la limite mensuelle du comparateur.",
+    "upgrade_part1": "Pour accéder à l'option",
+    "upgrade_part2": "illimitée",
+    "upgrade_part3": ", poursuivez la mise à niveau.",
+    "reset_message": "Votre quota actuel sera réinitialisé le 1er du mois prochain.",
+    "button": "Débloquer l'offre illimitée",
+    "reminder": "Me rappeler le 1er du mois"
   },
   "UserIconFloating": {
-        "button" : "Déconnexion"
-    },
-    "Profile":{
-        "name": "Profile",
-        "button": "Déconnexion"
-    },
-    "Auth": {
-      "email_placeholder": "Address email",
-      "sending_progress": "Envoi en cours...",
-      "send": "Envoyer le Magic Link",
-      "message": "Lien magique envoyé ! Vérifiez vos emails.",
-      "err_message": "Erreur lors de l'envoi du lien"
+    "button": "Déconnexion"
+  },
+  "Profile": {
+    "email_section": "Email",
+    "current_email": "Email actuel",
+    "edit_button": "Modifier",
+    "save_button": "Enregistrer",
+    "cancel_button": "Annuler",
+    "email_placeholder": "Nouvel email",
+    "magic_link_message": "Nous utilisons des liens magiques envoyés à cet email pour la connexion",
+    "validation": {
+      "empty_email": "L'email ne peut pas être vide",
+      "invalid_email": "Veuillez entrer un email valide"
     }
+  },
+  "Auth": {
+    "email_placeholder": "Address email",
+    "sending_progress": "Envoi en cours...",
+    "send": "Envoyer le Magic Link",
+    "message": "Lien magique envoyé ! Vérifiez vos emails.",
+    "err_message": "Erreur lors de l'envoi du lien"
+  },
+  "currentPlan": {
+    "title": "Plan actuel",
+    "change": "Changer"
+  },
+
+  "monthlyUsageLimit": {
+    "title": "Limite d'utilisation mensuelle",
+    "resetDateLabel": "Date de réinitialisation : ",
+    "description": "Votre limite sera réinitialisée automatiquement à cette date chaque mois"
+  },
+
+  "Pricing": {
+    "title": "Des prix transparents pour des économies réelles",
+    "subtitle": "Choisissez votre formule d'abonnement",
+    "free": {
+      "title": "Essentiel",
+      "price": "0",
+      "month": "mois",
+      "badge": "Découverte du service",
+      "features": {
+        "searches": "recherches/mois",
+        "stores": "épiceries comparables",
+        "support": "support email 24/7"
+      },
+      "cta": "Commencer gratuitement"
+    },
+    "premium": {
+      "title": "Premium",
+      "price": "5.75",
+      "badge": "Choix optimal",
+      "features": {
+        "comparator": "Comparateur illimité",
+        "all_stores": "Toutes les épiceries",
+        "priority_support": "Support prioritaire",
+        "early_access": "Nouveautés en avant-première"
+      },
+      "billing": "Facturation annuelle (69$)",
+      "cta": "Choisir Premium"
+    },
+    "guarantee": "Garantie satisfait ou remboursé sous 30 jours"
+  }
 }
