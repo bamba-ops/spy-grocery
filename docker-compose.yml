@@ -1,0 +1,18 @@
+
+services:
+  backend:
+    build: ./spy-grocery-backend-v2
+    container_name: spy-grocery-backend-v2
+    volumes:
+      - ./spy-grocery-backend-v2:/app
+    ports:
+      - "8000:8000"  # Expose le port pour le frontend local
+    env_file:
+      - .env.dev
+    command: uvicorn main:app --reload --host 0.0.0.0 --port 8000
+    networks:
+      - spy-network
+
+networks:
+  spy-network:
+    driver: bridge
