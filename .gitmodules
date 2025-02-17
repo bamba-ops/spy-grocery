@@ -1,0 +1,6 @@
+[submodule "spy-grocery-backend"]
+	path = spy-grocery-backend
+	url = https://github.com/bamba-ops/spy-grocery-backend.git
+[submodule "spy-grocery-frontend"]
+	path = spy-grocery-frontend
+	url = https://github.com/bamba-ops/spy-grocery-frontend.git
