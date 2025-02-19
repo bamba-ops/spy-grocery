@@ -84,7 +84,15 @@
   "Footer": {
     "title": "Spy Grocery",
     "description": "Trouvez les meilleures offres près de chez vous",
-    "copyright": "© 2025 Spy Grocery. Tous droits réservés."
+    "copyright": "© 2025 Spy Grocery. Tous droits réservés.",
+    "supportTitle": "Support Technique",
+    "fullName": "Nom complet",
+    "email": "Adresse email",
+    "problemDescription": "Description du problème",
+    "sendMessage": "Envoyer le message",
+    "sending": "Envoi en cours",
+    "submitSuccess": "Message envoyé avec succès !",
+    "submitError": "Erreur lors de l'envoi - Veuillez réessayer"
   },
   "UnderConstruction": {
     "main": {

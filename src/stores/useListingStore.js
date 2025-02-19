@@ -77,6 +77,7 @@ export const useListingStore = defineStore('listing', {
             }
 
             this.task = task;
+            console.log("hey")
             await this.subscribeToTaskUpdates(this.task.id);
 
             // Calcule le temps restant

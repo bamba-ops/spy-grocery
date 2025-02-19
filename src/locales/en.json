@@ -81,7 +81,15 @@
   "Footer": {
     "title": "Spy Grocery",
     "description": "Find the best deals near you",
-    "copyright": "Spy Grocery. All rights reserved."
+    "copyright": "Spy Grocery. All rights reserved.",
+    "supportTitle": "Technical Support",
+    "fullName": "Full Name",
+    "email": "Email Address",
+    "problemDescription": "Problem Description",
+    "sendMessage": "Send Message",
+    "sending": "Sending",
+    "submitSuccess": "Message sent successfully!",
+    "submitError": "Error sending - Please try again"
   },
   "UnderConstruction": {
     "main": {
