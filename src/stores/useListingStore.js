@@ -46,6 +46,7 @@ export const useListingStore = defineStore('listing', {
                     },
                     (payload) => {
                         // Mise à jour de la task et sauvegarde
+                        console.log(payload)
                         this.task = { ...payload.new };
                         this.setLocalStorageTask(this.task)
                     }
@@ -54,6 +55,8 @@ export const useListingStore = defineStore('listing', {
 
             // Exécuter processTask UNE SEULE FOIS après la création de la souscription
             if (this.realtimeSubscription && this.task && !this.task.process_init) {
+                console.log('MiltonB')
+                console.log(`RealtimeSubscription:${this.realtimeSubscription}`)
                 await TasksService.processTask(this.task, this.product, this.session);
             }
 
