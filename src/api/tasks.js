@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '@/api/config.js'
+import { supabase } from '@/api/supabase'
 
 export const TasksService = {
     setHeaders(session) {
@@ -14,26 +15,28 @@ export const TasksService = {
 
     async setTaskByProductId({ product_id, session }) {
         try {
-            // Construction dynamique du payload
-            const payload = { product_id };
-            if (session?.user?.id) {
-                payload.user_id = session.user.id;
-            }
+            const payload = {
+                product_id,
+                user_id: session?.user?.id || null,
+                status: "pending"
+            };
 
-            const response = await fetch(`${API_BASE_URL}/task/product/id`, {
-                method: 'POST',
-                headers: this.setHeaders(session),
-                body: JSON.stringify(payload)
-            });
+            console.log(payload)
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
+            const { data, error } = await supabase
+                .from('tasks')
+                .insert(payload)
+                .select()
+                .single();
 
-            return await response.json();
+            if (error) throw error;
+
+            console.log(data)
+            return data;
+
         } catch (error) {
             console.error('Erreur dans TasksService.setTaskByProductId:', error);
-            throw error; // Remonte l'erreur pour la gérer dans le store ou ailleurs
+            throw error;
         }
     },
 
@@ -60,18 +63,34 @@ export const TasksService = {
     },
     async getTaskByIsTest() {
         try {
+            const { data, error } = await supabase
+                .from('tasks')
+                .select('*')
+                .eq('is_test', true);
 
-            const response = await fetch(`${API_BASE_URL}/task/is_test`, {
-                method: 'GET'
-            });
+            if (error) throw error;
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            return await response.json();
+            return data;
         } catch (error) {
             console.error('Erreur dans TasksService.getTaskByIsTest:', error);
+            throw error; // Remonte l'erreur pour la gérer dans le store ou ailleurs
+        }
+    },
+
+    async getTaskById(id) {
+        try {
+            const { data, error } = await supabase
+                .from('tasks')
+                .select('*')
+                .eq('id', id) // Filtrer par l'ID de la tâche
+                .single(); // Récupérer une seule tâche
+
+            if (error) throw error; // Gérer l'erreur si elle se produit
+
+            return data; // Retourner la tâche récupérée
+
+        } catch (error) {
+            console.error('Erreur dans TasksService.getTaskById:', error);
             throw error; // Remonte l'erreur pour la gérer dans le store ou ailleurs
         }
     },

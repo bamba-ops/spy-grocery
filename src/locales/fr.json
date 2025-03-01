@@ -42,7 +42,7 @@
     "other_options": "Autres options",
     "promo": {
       "unlock": "Débloquez plus d'offres",
-      "more_stores": "Comparez avec 2+ magasins supplémentaires",
+      "more_stores": "Comparez avec 5+ magasins",
       "sign_up": "S'inscrire pour déverrouiller"
     },
     "modal": {
@@ -198,13 +198,12 @@
   },
   "UserLimitModal": {
     "title": "Limite atteinte",
-    "main_message": "Vous avez atteint la limite mensuelle du comparateur.",
+    "main_message": "Vous avez atteint la limite du comparateur.",
     "upgrade_part1": "Pour accéder à l'option",
     "upgrade_part2": "illimitée",
     "upgrade_part3": ", poursuivez la mise à niveau.",
     "reset_message": "Votre quota actuel sera réinitialisé le 1er du mois prochain.",
-    "button": "Débloquer l'offre illimitée",
-    "reminder": "Me rappeler le 1er du mois"
+    "button": "Débloquer l'offre illimitée"
   },
   "UserIconFloating": {
     "button": "Déconnexion"
@@ -249,7 +248,7 @@
       "month": "mois",
       "badge": "Découverte du service",
       "features": {
-        "searches": "recherches/mois",
+        "searches": "recherches",
         "stores": "épiceries comparables",
         "support": "support email 24/7"
       },

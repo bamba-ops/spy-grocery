@@ -42,9 +42,9 @@ defineProps({
               {{ t("Pricing.free.title") }}
             </h3>
             <p class="text-5xl font-bold text-gray-900 mb-4">
-              {{ t("Pricing.free.price") }}$<span class="text-lg text-gray-500"
-                >/{{ t("Pricing.free.month") }}</span
-              >
+              {{ t("Pricing.free.price") }}$<span
+                class="text-lg text-gray-500"
+              ></span>
             </p>
             <div class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm">
               {{ t("Pricing.free.badge") }}
@@ -66,7 +66,7 @@ defineProps({
                   d="M5 13l4 4L19 7"
                 />
               </svg>
-              <span>10 {{ t("Pricing.free.features.searches") }}</span>
+              <span>5 {{ t("Pricing.free.features.searches") }}</span>
             </li>
             <li class="flex items-center text-gray-700">
               <svg
