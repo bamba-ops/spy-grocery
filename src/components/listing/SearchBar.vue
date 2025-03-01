@@ -13,7 +13,7 @@ defineProps({
 // Créez une fonction debounced
 const handleSearchTermDebounced = debounce((value) => {
   listingStore.searchTerm = value;
-}, 800);
+}, 300);
 
 const handleSearchTerm = (event) => {
   handleSearchTermDebounced(event.target.value);

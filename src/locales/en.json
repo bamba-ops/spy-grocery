@@ -39,7 +39,7 @@
     "other_options": "Other options",
     "promo": {
       "unlock": "Unlock more deals",
-      "more_stores": "Compare with 2+ additional stores",
+      "more_stores": "Compare with 5+ stores",
       "sign_up": "Sign up to unlock"
     },
     "modal": {
@@ -195,13 +195,11 @@
   },
   "UserLimitModal": {
     "title": "Limit Reached",
-    "main_message": "You've reached the monthly comparator limit.",
+    "main_message": "You've reached comparator limit.",
     "upgrade_part1": "To access the",
     "upgrade_part2": "unlimited",
     "upgrade_part3": "option, continue below.",
-    "reset_message": "Your current quota will reset on the 1st of next month.",
-    "button": "Unlock Unlimited Offer",
-    "reminder": "Remind me on the 1st"
+    "button": "Unlock Unlimited Offer"
   },
   "UserIconFloating": {
     "button": "Sign out"
@@ -249,7 +247,7 @@
       "month": "month",
       "badge": "Service discovery",
       "features": {
-        "searches": "searches/month",
+        "searches": "searches",
         "stores": "comparable grocery stores",
         "support": "24/7 email support"
       },

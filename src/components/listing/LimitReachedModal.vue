@@ -25,10 +25,6 @@
               </strong>
               {{ $t("UserLimitModal.upgrade_part3") }}
             </span>
-
-            <span class="block mt-3 text-sm text-gray-500 dark:text-gray-400">
-              {{ $t("UserLimitModal.reset_message") }}
-            </span>
           </p>
         </div>
 
@@ -39,13 +35,6 @@
           >
             {{ $t("UserLimitModal.button") }}
           </button>
-
-          <p
-            @click="handleNavToHome"
-            class="text-center text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors cursor-pointer"
-          >
-            {{ $t("UserLimitModal.reminder") }}
-          </p>
         </div>
       </div>
     </div>

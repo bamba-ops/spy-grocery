@@ -34,7 +34,8 @@ defineProps({
 
 onMounted(async () => {
   await listingStore.getAllPrices();
-  listingStore.initLocalStorageTask();
+  //await listingStore.getAllProductNames();
+  await listingStore.initLocalStorageTask();
 });
 
 onUnmounted(() => {
@@ -69,7 +70,7 @@ watch(
       } finally {
         listingStore.isLoading = false;
       }
-    }, 800); // Réduit le debounce à 300ms pour une meilleure réactivité
+    }, 300); // Réduit le debounce à 300ms pour une meilleure réactivité
   }
 );
 </script>

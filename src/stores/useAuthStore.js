@@ -61,8 +61,6 @@ export const useAuthStore = defineStore('auth', {
             try {
                 if (this.client.limit_usage <= 0) return;
 
-                this.client.limit_usage--;
-
                 const response = await ClientService.updateLimitUsageClient({
                     session: this.session,
                     client: this.client
@@ -82,9 +80,7 @@ export const useAuthStore = defineStore('auth', {
             if (!this.session) return;
 
             try {
-                const response = await ClientService.setClient({
-                    session: this.session
-                });
+                const response = await ClientService.setClient();
 
                 if (!response) return;
 

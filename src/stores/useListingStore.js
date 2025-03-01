@@ -7,6 +7,7 @@ import { useAuthStore } from './useAuthStore';
 
 export const useListingStore = defineStore('listing', {
     state: () => ({
+        //allProductNames: [],
         isLimitReached: false,
         authStore: useAuthStore(),
         session: null,
@@ -23,7 +24,17 @@ export const useListingStore = defineStore('listing', {
         expirationTimeoutId: null,
     }),
     actions: {
-
+        /*
+        async getAllProductNames() {
+            try {
+                this.allProductNames = await PricesService.getAllProductNames()
+                console.log(this.allProductNames)
+            } catch (error) {
+                console.log("Erreur lors de la collecte des noms des produits", error)
+                this.isError = true
+            }
+        },
+        */
         async subscribeToTaskUpdates(taskId) {
             if (!taskId) {
                 return;
@@ -79,7 +90,10 @@ export const useListingStore = defineStore('listing', {
                 return;
             }
 
-            this.task = task;
+            // chercher un task par id
+            const data = await TasksService.getTaskById(task.id)
+            console.log(data)
+            this.task = data;
             console.log("hey")
             await this.subscribeToTaskUpdates(this.task.id);
 
@@ -171,16 +185,25 @@ export const useListingStore = defineStore('listing', {
                 this.isLoading = true;
                 this.offset += this.limit;
 
-                const data = await PricesService.getAllPrices({
-                    limit: this.limit,
-                    offset: this.offset
-                });
+                let data;
+                if (this.searchTerm) {
+                    data = await PricesService.getPriceBySearchTerm({
+                        term: this.searchTerm,
+                        limit: this.limit,
+                        offset: this.offset
+                    });
+                } else {
+                    data = await PricesService.getAllPrices({
+                        limit: this.limit,
+                        offset: this.offset
+                    });
+                }
 
                 this.prices = [...this.prices, ...data];
             } catch (error) {
                 console.error('Erreur lors du chargement supplémentaire:', error);
-                this.isError = true
-                this.prices = []
+                this.isError = true;
+                this.prices = [];
             } finally {
                 this.isLoading = false;
             }
@@ -193,7 +216,6 @@ export const useListingStore = defineStore('listing', {
                 this.offset = 0; // Reset à chaque nouvelle recherche
 
                 const data = await PricesService.getPriceBySearchTerm({ term: this.searchTerm, limit: this.limit, offset: this.offset });
-                console.log(data)
                 if (!data) {
                     this.isError = true
                     return
@@ -221,6 +243,11 @@ export const useListingStore = defineStore('listing', {
             this.realtimeSubscription = null;
             this.expirationTimeoutId = null;
             sessionStorage.removeItem("user-task");
+        },
+
+        setSearchTerm(term) {
+            this.searchTerm = term;
+            this.offset = 0; // Réinitialiser la pagination lors d'une nouvelle recherche
         },
 
     }
