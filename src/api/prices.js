@@ -5,11 +5,11 @@ import { API_BASE_URL } from '@/api/config.js'
 import { supabase } from '@/api/supabase'
 import { format } from 'date-fns'
 
+const today = new Date().toISOString().split('T')[0];
+
 export const PricesService = {
     async getAllPrices({ limit, offset }) {
         try {
-            const today = format(new Date(), 'yyyy-MM-dd')
-
             // Étape 1: Récupérer les produits avec pagination et date d'aujourd'hui
             const { data: products, error: productsError } = await supabase
                 .from('products')
@@ -48,8 +48,7 @@ export const PricesService = {
     },
     async getPriceBySearchTerm({ term, limit, offset }) {
         try {
-            const today = format(new Date(), 'yyyy-MM-dd')
-
+            console.log(today)
             // Étape 1: Appeler la fonction RPC de recherche
             const { data: products, error: searchError } = await supabase
                 .rpc('search_products_v2', {
@@ -59,6 +58,8 @@ export const PricesService = {
                 });
 
             if (searchError) throw searchError;
+
+            console.log(products)
 
             // Étape 2: Récupérer les prix associés filtrés par date d'aujourd'hui
             const productIds = products.map(p => p.id);
