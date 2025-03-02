@@ -1,4 +1,108 @@
 <script setup>
+import { useHead } from "@unhead/vue";
+import { computed } from "vue";
+import { useI18n } from "vue-i18n";
+
+// Récupérer la langue active via vue-i18n
+const { locale } = useI18n();
+
+// Définir dynamiquement les meta tags en fonction de la langue
+const metaData = computed(() => {
+  if (locale.value === "fr") {
+    return {
+      title: "Liste des prix d'épicerie en temps réel | Spy Grocery",
+      meta: [
+        {
+          name: "description",
+          content:
+            "Découvrez et comparez en temps réel les prix des produits d'épicerie au Québec sur Spy Grocery.",
+        },
+        {
+          name: "keywords",
+          content:
+            "épicerie, comparaison de prix, liste, Québec, Spy Grocery, prix, courses",
+        },
+        {
+          property: "og:title",
+          content: "Liste des prix d'épicerie en temps réel | Spy Grocery",
+        },
+        {
+          property: "og:description",
+          content:
+            "Explorez notre liste détaillée des prix d'épicerie et trouvez les meilleures offres sur Spy Grocery.",
+        },
+        { property: "og:url", content: "https://spygrocery.com/listing" },
+        { property: "og:type", content: "website" },
+        {
+          property: "og:image",
+          content: "https://spygrocery.com/path-to-your-listing-image.jpg",
+        },
+        { name: "twitter:card", content: "summary_large_image" },
+        {
+          name: "twitter:title",
+          content: "Liste des prix d'épicerie en temps réel | Spy Grocery",
+        },
+        {
+          name: "twitter:description",
+          content:
+            "Découvrez la liste des prix d'épicerie et comparez pour économiser sur vos courses au Québec.",
+        },
+        {
+          name: "twitter:image",
+          content: "https://spygrocery.com/path-to-your-listing-image.jpg",
+        },
+      ],
+    };
+  } else {
+    return {
+      title: "Real-Time Grocery Price Listings | Spy Grocery",
+      meta: [
+        {
+          name: "description",
+          content:
+            "Explore and compare real-time grocery prices across Quebec on Spy Grocery.",
+        },
+        {
+          name: "keywords",
+          content:
+            "grocery, price listing, comparison, Quebec, Spy Grocery, prices, shopping",
+        },
+        {
+          property: "og:title",
+          content: "Real-Time Grocery Price Listings | Spy Grocery",
+        },
+        {
+          property: "og:description",
+          content:
+            "Check our detailed list of real-time grocery prices and find the best deals on Spy Grocery.",
+        },
+        { property: "og:url", content: "https://spygrocery.com/listing" },
+        { property: "og:type", content: "website" },
+        {
+          property: "og:image",
+          content: "https://spygrocery.com/path-to-your-listing-image.jpg",
+        },
+        { name: "twitter:card", content: "summary_large_image" },
+        {
+          name: "twitter:title",
+          content: "Real-Time Grocery Price Listings | Spy Grocery",
+        },
+        {
+          name: "twitter:description",
+          content:
+            "Discover real-time grocery price listings and compare deals to save money on your shopping.",
+        },
+        {
+          name: "twitter:image",
+          content: "https://spygrocery.com/path-to-your-listing-image.jpg",
+        },
+      ],
+    };
+  }
+});
+
+// Appliquer dynamiquement les meta tags via Unhead
+useHead(metaData.value);
 import Header from "@/components/listing/Header.vue";
 import SearchBar from "@/components/listing/SearchBar.vue";
 import LoadingPriceList from "@/components/listing/LoadingPriceList.vue";
