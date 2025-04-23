@@ -58,7 +58,7 @@ router.beforeEach(async (to, from, next) => {
   if (to.name === 'Auth') {
     // on récupère la session courante
     const { data: { session } } = await supabase.auth.getSession()
-    if (session?.user) {
+    if (session) {
       // si l'utilisateur est déjà connecté, on le renvoie sur la Landing (ou Listing)
       return next({ name: 'Landing' })
     }
