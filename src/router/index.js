@@ -5,6 +5,7 @@ import Product from '@/views/Product.vue'
 import Auth from '@/views/Auth.vue'
 import MaintenancePage from '@/views/Maintenance.vue'
 import CartListing from '@/views/CartListing.vue'
+import { supabase } from '@/api/supabase'
 
 const routes = [
   {
@@ -48,13 +49,25 @@ const router = createRouter({
 })
 
 // Global beforeEach pour rediriger vers la page de maintenance
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   // Si le site est en maintenance et que l'utilisateur n'est pas déjà sur /maintenance
   if (import.meta.env.VITE_SITE_MAINTENANCE === 'true' && to.path !== '/maintenance') {
     next('/maintenance')
-  } else {
-    next()
   }
+
+  if (to.name === 'Auth') {
+    // on récupère la session courante
+    const { data: { session } } = await supabase.auth.getSession()
+    if (session?.user) {
+      // si l'utilisateur est déjà connecté, on le renvoie sur la Landing (ou Listing)
+      return next({ name: 'Landing' })
+    }
+  }
+
+  // on continue la navigation normalement
+  next()
+
+
 })
 
 export default router
