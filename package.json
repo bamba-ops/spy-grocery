@@ -9,6 +9,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@duckdb/duckdb-wasm": "^1.29.1-dev132.0",
+    "@heroicons/vue": "^2.2.0",
     "@supabase/supabase-js": "^2.48.1",
     "@unhead/vue": "^1.11.20",
     "@vueuse/core": "^12.5.0",

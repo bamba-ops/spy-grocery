@@ -1,12 +1,10 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Listing from '../views/Listing.vue'
-import Compare from '@/views/Compare.vue'
-import Auth from '@/views/Auth.vue'
-import Profile from '@/views/Profile.vue'
 import Landing from '@/views/Landing.vue'
-import Pricing from '@/views/Pricing.vue'
+import Product from '@/views/Product.vue'
+import Auth from '@/views/Auth.vue'
 import MaintenancePage from '@/views/Maintenance.vue'
-import { useAuthStore } from '@/stores/useAuthStore'
+import CartListing from '@/views/CartListing.vue'
 
 const routes = [
   {
@@ -15,43 +13,29 @@ const routes = [
     component: Landing
   },
   {
-    path: '/pricing',
-    name: 'Pricing',
-    component: Pricing
-  },
-  {
     path: '/listing',
     name: 'Listing',
     component: Listing,
   },
   {
-    path: '/compare',
-    name: 'Compare',
-    component: Compare
+    path: '/product/:id',
+    name: 'Product',
+    component: Product
   },
   {
-    path: '/auth',
-    name: 'Auth',
-    component: Auth
-  },
-  {
-    path: '/profile',
-    name: 'Profile',
-    component: Profile,
-    beforeEnter: async (to, from, next) => {
-      const authStore = useAuthStore();
-      await authStore.initUserSession()
-      if (await authStore.session) {
-        next();
-      } else {
-        next('/auth'); // Redirection vers la page d'authentification
-      }
-    }
+    path: '/cart',
+    name: 'CartListing',
+    component: CartListing
   },
   {
     path: '/maintenance',
     name: 'Maintenance',
     component: MaintenancePage
+  },
+  {
+    path: '/auth',
+    name: 'Auth',
+    component: Auth
   }
 ]
 

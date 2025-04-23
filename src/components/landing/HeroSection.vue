@@ -1,10 +1,17 @@
 <script setup>
-import { useLandingStore } from "@/stores/useLandingStore";
 import { useRouter } from "vue-router";
 import HeroLoading from "./HeroLoading.vue";
+import { supabase } from "@/api/supabase";
+import { ref, onMounted } from "vue";
 
-const landingStore = useLandingStore();
+const productIds = ref([
+  "2a5f498d-1e24-48c1-aa8f-d1ba05f5e7bb",
+  "2fa35864-f84f-4b19-bb5d-af2edcc8fb04",
+  "0745b088-c28c-4014-a56a-9f6e8919a077",
+]);
+
 const router = useRouter();
+const productsByIds = ref([]);
 
 defineProps({
   t: {
@@ -16,6 +23,29 @@ defineProps({
 function handleNavToListing() {
   router.push("/listing");
 }
+
+function handleNavToProduct(id){
+  router.push(`/product/${id}`)
+}
+
+async function fetchProductsByIds(ids) {
+  try {
+    const { data, error: rpcError } = await supabase.rpc(
+      "get_products_by_ids",
+      { p_ids: ids }
+    );
+
+    if (rpcError) throw rpcError;
+    productsByIds.value = data;
+    console.log("Produits récupérés :", data);
+  } catch (err) {
+    console.error("Erreur fetchProductsByIds :", err.message);
+  }
+}
+
+onMounted(async () => {
+  await fetchProductsByIds(productIds.value);
+});
 </script>
 
 <template>
@@ -38,11 +68,11 @@ function handleNavToListing() {
           </p>
         </div>
 
-        <HeroLoading v-if="!landingStore.tasks_test.length" />
+        <HeroLoading v-if="!productsByIds.length" />
 
         <!-- Zone de test de comparaison (style Uber) -->
         <div
-          v-if="landingStore.tasks_test.length"
+          v-if="productsByIds.length"
           class="bg-white rounded-xl md:rounded-2xl shadow-lg md:shadow-xl p-4 md:p-8 max-w-3xl mx-2 sm:mx-0"
         >
           <h3
@@ -54,9 +84,9 @@ function handleNavToListing() {
           <div>
             <div class="grid grid-cols-1 gap-3 md:gap-4 mb-4 md:mb-6">
               <button
-                v-for="task in landingStore.tasks_test"
-                :key="task.target_product.product.id"
-                @click="landingStore.selectProduct(task)"
+                v-for="product in productsByIds"
+                :key="product.id"
+                @click="handleNavToProduct(product.id)"
                 class="p-3 md:p-4 border-2 border-gray-200 rounded-lg md:rounded-xl hover:border-blue-500 transition-all duration-300 group text-left"
               >
                 <div class="flex items-center space-x-2 md:space-x-3">
@@ -64,10 +94,10 @@ function handleNavToListing() {
                     class="w-8 h-8 md:w-10 md:h-10 bg-blue-100 rounded-md md:rounded-lg flex items-center justify-center overflow-hidden"
                   >
                     <img
-                      v-if="task.target_product.product.image_url"
-                      :src="task.target_product.product.image_url"
+                      v-if="product.image_url"
+                      :src="product.image_url"
                       class="w-full h-full object-cover"
-                      :alt="task.target_product.product.name"
+                      :alt="product.name"
                     />
                     <span v-else class="text-blue-600 text-lg md:text-xl"
                       >🛒</span
@@ -77,13 +107,13 @@ function handleNavToListing() {
                     <h4
                       class="text-base md:text-lg font-medium text-gray-900 group-hover:text-blue-600"
                     >
-                      {{ task.target_product.product.name_raw }}
+                      {{ product.name }}
                     </h4>
                     <p>
-                      {{ task.target_product.product.brand || "" }}
+                      {{ product.brand || "" }}
                     </p>
                     <p class="text-sm text-green-600 font-medium mt-1">
-                      ${{ task.target_product.price_un }}
+                      ${{ product.price_un }}
                     </p>
                   </div>
                 </div>

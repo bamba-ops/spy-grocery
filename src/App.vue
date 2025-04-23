@@ -1,30 +1,53 @@
 <script setup>
 import Header from "@/components/layout/Header.vue";
 import Footer from "@/components/layout/Footer.vue";
-import AuthIconFloating from "./components/auth/AuthIconFloating.vue";
+import NavBar from "@/components/layout/NavBar.vue";
 import { useI18n } from "vue-i18n";
-import { onMounted } from "vue";
-import { useAuthStore } from "./stores/useAuthStore";
+import { onMounted, onUnmounted, ref } from "vue";
 import { useRoute } from "vue-router";
+import { supabase } from "@/api/supabase";
 
-const authStore = useAuthStore();
 const { t } = useI18n();
 const route = useRoute();
+const session = ref(null)
+
+// On garde la référence pour pouvoir se désabonner
+let authSubscription = null;
 
 onMounted(async () => {
-  await authStore.initUserSession();
-  await authStore.initClientAfterSignUp();
+  const { data: { session: initial } } = await supabase.auth.getSession()
+  session.value = initial
+
+  const { data } = supabase.auth.onAuthStateChange((event, session) => {
+    if (event === "SIGNED_IN" && session?.user) {
+      const { id: user_id, email } = session.user;
+      supabase
+        .from("client")
+        .upsert({ user_id, email }, { onConflict: "user_id" })
+        .then(({ error }) => {
+          if (error) console.error("Erreur création client :", error);
+        });
+    }
+  });
+  authSubscription = data.subscription;
+});
+
+onUnmounted(() => {
+  authSubscription?.unsubscribe();
 });
 </script>
 
 <template>
   <div class="bg-white min-h-screen flex flex-col">
-    <Header :session="authStore.session" :client="authStore.client" />
+    <Header />
 
     <main class="flex-1">
-      <router-view :t="t" :session="authStore.session" />
+      <router-view :t="t" :session="session" />
     </main>
-    <AuthIconFloating v-if="route.name !== 'Auth'" />
+
+    <!-- NavBar (bas en mobile, gauche desktop) -->
+    <NavBar v-if="route.name !== 'Landing'" />
+
     <Footer />
   </div>
 </template>
