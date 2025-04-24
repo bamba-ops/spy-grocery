@@ -116,15 +116,30 @@
               <div
                 v-for="store in groupedStores(openedCart.items)"
                 :key="store.id"
-                class="mb-6 last:mb-0"
+                class="mb-6 last:mb-0 bg-gray-50 p-4 rounded-xl"
               >
-                <div class="flex items-center gap-3 mb-4">
-                  <img
-                    :src="store.image"
-                    @error="onImgError"
-                    class="w-8 h-8 rounded-full object-cover border"
-                  />
-                  <h4 class="font-semibold text-gray-900">{{ store.name }}</h4>
+                <div class="flex items-center gap-3 justify-between mb-4">
+                  <div class="flex items-center gap-3">
+                    <img
+                      :src="store.image"
+                      @error="onImgError"
+                      class="w-8 h-8 rounded-full object-cover border"
+                    />
+                    <div>
+                      <h4 class="font-semibold text-gray-900">
+                        {{ store.name }}
+                      </h4>
+                      <p class="text-xs text-gray-500">
+                        {{ store.products.length }} articles
+                      </p>
+                    </div>
+                  </div>
+                  <div class="text-right">
+                    <p class="text-lg font-bold text-gray-900">
+                      {{ store.total.toFixed(2) }} $
+                    </p>
+                    <p class="text-xs text-gray-500">Total magasin</p>
+                  </div>
                 </div>
 
                 <!-- Articles -->
@@ -242,7 +257,8 @@
             <p class="text-gray-600">
               Êtes-vous sûr de vouloir supprimer définitivement "<strong>{{
                 cartToDelete
-              }}</strong>" ?
+              }}</strong
+              >" ?
             </p>
             <div class="flex gap-3 mt-6">
               <button
@@ -313,14 +329,16 @@ const groupedStores = (items) => {
         id: item.store_id,
         name: item.store_name,
         image: item.store_image_url,
+        total: 0,
         products: [],
       };
     }
+    const itemTotal = item.price_un * item.product_quantity;
+    groups[item.store_id].total += itemTotal;
     groups[item.store_id].products.push(item);
   });
   return Object.values(groups);
 };
-
 const totalItems = (cart) => {
   return cart.items.reduce((sum, item) => sum + item.product_quantity, 0);
 };
