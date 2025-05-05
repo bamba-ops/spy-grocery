@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gray-50 relative">
+  <div class="min-h-screen bg-white relative">
     <!-- État de chargement -->
     <div v-if="isLoading" class="max-w-4xl mx-auto px-4 py-6 animate-pulse">
       <!-- En-tête -->
@@ -59,7 +59,7 @@
         </div>
 
         <!-- Produits -->
-        <div class="overflow-x-auto pb-4 scrollbar-hide">
+        <div class="overflow-x-auto pb-4 scrollbar-hidden">
           <div class="flex gap-4 w-max">
             <div
               v-for="n in 3"
@@ -91,7 +91,7 @@
       </header>
 
       <!-- Contenu principal -->
-      <main class="max-w-4xl mx-auto px-4 py-6 space-y-8">
+      <main class="max-w-3xl mx-auto px-4 py-6 space-y-8">
         <!-- Section produit principal -->
         <section class="bg-white rounded-xl p-6 shadow-sm">
           <div class="flex flex-col md:flex-row gap-6">
@@ -226,7 +226,7 @@
             </div>
           </div>
 
-          <div class="overflow-x-auto pb-4 scrollbar-hide">
+          <div class="overflow-x-auto pb-4 scrollbar-hidden">
             <div class="flex gap-4 w-max">
               <div
                 v-for="product in store.products"
@@ -559,3 +559,13 @@ function getDiff(product) {
   return getLeftPrice(product) - getRightPrice(product);
 }
 </script>
+<style scoped>
+/* Masquage de la scrollbar natif */
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hidden {
+  -ms-overflow-style: none; /* IE et Edge */
+  scrollbar-width: none; /* Firefox */
+}
+</style>

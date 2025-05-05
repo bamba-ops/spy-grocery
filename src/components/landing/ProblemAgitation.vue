@@ -20,14 +20,15 @@ function navToListing() {
     <div class="container mx-auto max-w-6xl">
       <div class="text-center mb-14 md:mb-20">
         <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-          {{ t("ProblemAgitation.title") }}
+          Quand l’épicerie dévore votre budget
         </h2>
         <p class="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto">
-          {{ t("ProblemAgitation.subtitle") }}
+          Fermer les yeux, c’est :
         </p>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
+        <!-- Problème 1 -->
         <!-- Problème 1 -->
         <div
           class="p-6 md:p-8 bg-gray-50 rounded-2xl hover:shadow-lg transition-all duration-300"
@@ -50,21 +51,16 @@ function navToListing() {
             </svg>
           </div>
           <h3 class="text-xl font-semibold text-gray-900 mb-3">
-            {{ t("ProblemAgitation.problem1.title") }}
+            Voir jusqu’à 1 500 $ s’échapper de votre compte chaque année
           </h3>
-          <p
-            class="text-gray-600 mb-4"
-            v-html="
-              t('ProblemAgitation.problem1.description', { percent: '9%' })
-            "
-          ></p>
+          <p class="text-gray-600 mb-4">
+            Un gouffre pour votre budget, repas après repas.
+          </p>
           <div class="bg-red-50 p-4 rounded-xl">
-            <p
-              class="text-sm text-red-700"
-              v-html="
-                t('ProblemAgitation.problem1.solution', { saving: '35%' })
-              "
-            ></p>
+            <p class="text-sm text-red-700">
+              Chaque visite en caisse épuise votre épargne et vous prive de vos
+              projets.
+            </p>
           </div>
         </div>
 
@@ -90,24 +86,15 @@ function navToListing() {
             </svg>
           </div>
           <h3 class="text-xl font-semibold text-gray-900 mb-3">
-            {{ t("ProblemAgitation.problem2.title") }}
+            Payer jusqu’à 35 % de plus pour le même panier
           </h3>
-          <p
-            class="text-gray-600 mb-4"
-            v-html="
-              t('ProblemAgitation.problem2.description', {
-                products: '49',
-                stores: '6',
-              })
-            "
-          ></p>
+          <p class="text-gray-600 mb-4">
+            Les écarts invisibles entre enseignes vous coûtent cher.
+          </p>
           <div class="bg-blue-50 p-4 rounded-xl">
-            <p
-              class="text-sm text-blue-700"
-              v-html="
-                t('ProblemAgitation.problem2.solution', { economy: '65,8' })
-              "
-            ></p>
+            <p class="text-sm text-blue-700">
+              Sans comparaison, chaque dollar s’évapore.
+            </p>
           </div>
         </div>
 
@@ -133,24 +120,15 @@ function navToListing() {
             </svg>
           </div>
           <h3 class="text-xl font-semibold text-gray-900 mb-3">
-            {{ t("ProblemAgitation.problem3.title") }}
+            Subir des hausses imprévisibles mois après mois
           </h3>
-          <p
-            class="text-gray-600 mb-4"
-            v-html="
-              t('ProblemAgitation.problem3.description', {
-                insecurity: '14,9%',
-                people: '1M',
-              })
-            "
-          ></p>
+          <p class="text-gray-600 mb-4">
+            +14 % des Québécois en insécurité alimentaire depuis 2019.
+          </p>
           <div class="bg-green-50 p-4 rounded-xl">
-            <p
-              class="text-sm text-green-700"
-              v-html="
-                t('ProblemAgitation.problem3.solution', { update: 'minutes' })
-              "
-            ></p>
+            <p class="text-sm text-green-700">
+              Votre budget reste à la merci de l’inflation.
+            </p>
           </div>
         </div>
       </div>
@@ -161,9 +139,7 @@ function navToListing() {
           @click="navToListing"
           class="bg-black text-white px-8 py-4 rounded-full hover:from-blue-700 hover:to-blue-600 transition-all duration-300 flex items-center space-x-3 mx-auto shadow-lg hover:shadow-xl"
         >
-          <span class="font-semibold text-lg">
-            {{ t("ProblemAgitation.cta.text") }}
-          </span>
+          <span class="font-semibold text-lg"> Comparer les prix </span>
           <svg
             class="w-5 h-5 text-white"
             fill="none"
@@ -182,6 +158,7 @@ function navToListing() {
     </div>
   </section>
 </template>
+
 <style scoped>
 /* Animations supplémentaires si nécessaire */
 </style>
