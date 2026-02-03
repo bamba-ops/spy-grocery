@@ -1,0 +1,3 @@
+Your web app (“SpyGrocery”) is a grocery price-comparison tool: it lets someone search a product once and instantly see which stores carry it and the current price (plus unit price / promos) in each store.
+
+The problem it solves is price transparency + time: grocery prices and formats vary across retailers, and manually checking multiple store sites/flyers is slow and messy. A comparator makes it easier to compare like-for-like (especially with unit pricing) and pick the best deal for your budget.
