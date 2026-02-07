@@ -1,88 +1,93 @@
 <script setup lang="ts">
-const viewMode = ref('grid')
+import { useDebounceFn } from '@vueuse/core'
+import { Search } from 'lucide-vue-next'
+import { useShoppingListStore } from '~/stores/shoppingList'
+import { useSearchStore } from '~/stores/search'
 
-const products = ref([
-  {
-    id: 1,
-    name: 'Organic Whole Milk',
-    brand: 'Horizon Organic',
-    size: '1 Gallon',
-    tags: ['ORGANIC', 'SPECIALTY'],
-    hasDeal: true,
-    prices: [
-      { store: 'WALMART', price: 4.89, isBest: true },
-      { store: 'TARGET', price: 5.24 },
-      { store: 'WHOLE FOODS', price: 5.99 }
-    ]
-  },
-  {
-    id: 2,
-    name: '2% Reduced Fat Milk',
-    brand: 'Great Value',
-    size: '1 Gallon',
-    tags: ['STORE BRAND', 'POPULAR'],
-    hasDeal: false,
-    prices: [
-      { store: 'WALMART', price: 3.42, isBest: true },
-      { store: 'TARGET', price: 3.65 },
-      { store: 'KROGER', price: null, outOfStock: true }
-    ]
-  },
-  {
-    id: 3,
-    name: 'Lactose Free Whole Milk',
-    brand: 'Fairlife',
-    size: '52 FL OZ',
-    tags: ['SPECIALTY', 'PREMIUM'],
-    hasDeal: false,
-    prices: [
-      { store: 'TARGET', price: 4.50, isBest: true },
-      { store: 'WALMART', price: 4.98 },
-      { store: 'PUBLIX', price: 5.25 }
-    ]
-  },
-  {
-    id: 4,
-    name: 'Unsweetened Oat Milk',
-    brand: 'Oatly',
-    size: '64 FL OZ',
-    tags: ['PLANT-BASED', 'PREMIUM'],
-    hasDeal: true,
-    prices: [
-      { store: 'WHOLE FOODS', price: 5.49, isBest: true },
-      { store: 'TARGET', price: 5.88 },
-      { store: 'WALMART', price: 5.78 }
-    ]
-  }
-])
+const shoppingListStore = useShoppingListStore()
+const searchStore = useSearchStore()
+const { getImageDisplay } = useProductImage()
+
+const viewMode = ref('grid')
+const searchQuery = ref('')
+
+const products = computed(() => searchStore.results)
+const isLoading = computed(() => searchStore.loading)
+const hasError = computed(() => !!searchStore.error)
+
+// Watch search query input
+watch(searchQuery, (newQuery) => {
+  searchStore.setQuery(newQuery)
+})
+
+// Debounced search
+const debouncedSearch = useDebounceFn(() => {
+  searchStore.search()
+}, 400)
+
+watch(() => searchStore.query, () => {
+  debouncedSearch()
+})
+
+const resetSearch = () => {
+  searchQuery.value = ''
+  searchStore.setQuery('')
+  searchStore.search()
+}
+
+// Format price display
+const formatPrice = (price: number | null) => {
+  if (price === null) return 'N/A'
+  return price.toFixed(2)
+}
+
+const formatUnitPrice = (price_un: number | null, unit: string | null) => {
+  if (price_un === null) return ''
+  const formattedPrice = price_un.toFixed(3)
+  const displayUnit = unit || 'unit'
+  return `$${formattedPrice}/${displayUnit}`
+}
 </script>
 
 <template>
   <div>
     <!-- Header -->
-    <div class="mb-8">
-      <h1 class="mb-2 text-6xl font-black italic uppercase leading-none tracking-tighter md:text-7xl">
-        <span class="text-black">MILK </span>
+    <div class="mb-6 sm:mb-8">
+      <h1 class="mb-2 text-4xl font-black italic uppercase leading-none tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl">
+        <span class="text-black">{{ searchQuery || 'GROCERY' }} </span>
         <span class="bg-[#39FF14] px-2 text-black">FINDER</span>
       </h1>
-      <p class="text-[11px] font-bold uppercase tracking-wider text-black/60">
-        Scanning 42 results across your local retailers
+      <p class="text-[10px] font-bold uppercase tracking-wider text-black/60 sm:text-[11px]">
+        SCANNING {{ searchStore.total }} PRODUCTS ACROSS LOCAL RETAILERS
       </p>
+
+      <!-- Search Bar -->
+      <div class="mt-6 flex max-w-2xl items-center border-4 border-black bg-white shadow-[6px_6px_0_#000] transition-shadow focus-within:shadow-[8px_8px_0_#000]">
+        <div class="flex h-12 w-12 items-center justify-center border-r-4 border-black bg-[#39FF14] sm:h-14 sm:w-14">
+          <Search :size="24" :stroke-width="3" />
+        </div>
+        <input 
+          v-model="searchQuery"
+          type="text" 
+          placeholder="SEARCH PRODUCTS..." 
+          class="h-12 w-full bg-transparent px-4 font-bold uppercase tracking-wide text-black placeholder:text-black/40 focus:outline-none sm:h-14"
+        />
+      </div>
     </div>
 
     <!-- View Toggle -->
-    <div class="mb-6 flex justify-end">
+    <div class="mb-4 flex justify-end sm:mb-6">
       <div class="inline-flex border-2 border-black">
         <button 
           :class="viewMode === 'grid' ? 'bg-[#39FF14]' : 'bg-white'"
-          class="px-6 py-2 text-xs font-black uppercase tracking-wider text-black transition"
+          class="px-4 py-2 text-xs font-black uppercase tracking-wider text-black transition sm:px-6"
           @click="viewMode = 'grid'"
         >
           Grid
         </button>
         <button 
           :class="viewMode === 'list' ? 'bg-[#39FF14]' : 'bg-white'"
-          class="border-l-2 border-black px-6 py-2 text-xs font-black uppercase tracking-wider text-black transition"
+          class="border-l-2 border-black px-4 py-2 text-xs font-black uppercase tracking-wider text-black transition sm:px-6"
           @click="viewMode = 'list'"
         >
           List
@@ -90,82 +95,190 @@ const products = ref([
       </div>
     </div>
 
-    <!-- Product Grid -->
-    <div class="mb-12 grid gap-6 sm:grid-cols-2">
+    <!-- Error State -->
+    <div v-if="hasError" class="mb-8 border-4 border-black bg-red-50 p-6 text-center">
+      <p class="text-sm font-bold text-red-600">{{ searchStore.error }}</p>
+      <button 
+        @click="searchStore.search()"
+        class="mt-4 border-2 border-black bg-black px-6 py-2 text-xs font-black uppercase text-white hover:bg-[#39FF14] hover:text-black"
+      >
+        Try Again
+      </button>
+    </div>
+
+    <!-- Loading State -->
+    <div v-if="isLoading" class="mb-8 grid gap-4 sm:mb-12 sm:grid-cols-2 sm:gap-6">
+      <div v-for="i in 6" :key="i" class="animate-pulse border-4 border-black bg-white p-4 shadow-[8px_8px_0_#E5E5DC]">
+        <div class="mb-4 h-48 w-full bg-gray-200"></div>
+        <div class="space-y-3">
+          <div class="h-6 w-3/4 bg-gray-200"></div>
+          <div class="h-4 w-1/2 bg-gray-200"></div>
+          <div class="mt-4 flex items-center justify-between">
+            <div class="h-8 w-24 bg-gray-200"></div>
+            <div class="h-8 w-8 bg-gray-200"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div v-else-if="products.length === 0" class="mb-12 flex flex-col items-center justify-center border-4 border-black bg-white px-4 py-20 text-center shadow-[8px_8px_0_#E5E5DC]">
+      <div class="mb-6 flex h-24 w-24 items-center justify-center rounded-full border-4 border-black bg-[#E5E5DC]">
+        <Search :size="48" :stroke-width="2" class="text-black/50" />
+      </div>
+      <h2 class="mb-2 text-3xl font-black italic uppercase tracking-tighter sm:text-4xl">No Products Found</h2>
+      <p class="max-w-md text-sm font-bold uppercase tracking-wide text-gray-500">
+        We couldn't find any matches for your search. Try adjusting your filters or search terms.
+      </p>
+      <button 
+        @click="resetSearch"
+        class="mt-8 border-2 border-black bg-black px-8 py-3 text-xs font-black uppercase tracking-wider text-[#39FF14] transition hover:-translate-y-1 hover:shadow-[4px_4px_0_#39FF14]"
+      >
+        Clear Search
+      </button>
+    </div>
+
+    <!-- Product Grid View -->
+    <div v-else-if="viewMode === 'grid'" class="mb-8 grid gap-4 sm:mb-12 sm:grid-cols-2 sm:gap-6">
       <div 
         v-for="product in products" 
         :key="product.id"
         class="relative border-4 border-black bg-white shadow-[6px_6px_0_#000]"
       >
         <!-- Product Image Section -->
-        <div class="relative aspect-[4/3] border-b-4 border-black bg-[#E5E5DC] p-6">
-          <!-- Tags -->
-          <div class="absolute left-4 top-4 flex flex-wrap gap-2">
-            <span 
-              v-for="tag in product.tags" 
-              :key="tag"
-              :class="tag === 'ORGANIC' || tag === 'PREMIUM' ? 'bg-[#39FF14]' : tag === 'SPECIALTY' ? 'bg-white' : 'bg-[#FF6B35]'"
-              class="border-2 border-black px-2 py-1 text-[9px] font-black uppercase text-black"
-            >
-              {{ tag }}
-            </span>
-          </div>
-
+        <div class="relative aspect-[4/3] border-b-4 border-black bg-[#E5E5DC] p-4 sm:p-6">
           <!-- Deal Badge -->
           <div 
-            v-if="product.hasDeal"
-            class="absolute right-4 top-4 rounded-full border-2 border-black bg-[#39FF14] px-3 py-1 text-[10px] font-black uppercase text-black shadow-[2px_2px_0_#000]"
+            v-if="product.is_promo"
+            class="absolute right-3 top-3 rounded-full border-2 border-black bg-[#39FF14] px-2 py-0.5 text-[9px] font-black uppercase text-black shadow-[2px_2px_0_#000] sm:right-4 sm:top-4 sm:px-3 sm:py-1 sm:text-[10px]"
           >
             SPY DEAL
           </div>
 
-          <!-- Product Image Placeholder -->
+          <!-- Product Image -->
           <div class="flex h-full items-center justify-center">
-            <span class="text-7xl">🥛</span>
+            <img 
+              v-if="getImageDisplay(product.image_url, product.name).type === 'url'"
+              :src="getImageDisplay(product.image_url, product.name).value"
+              :alt="product.name"
+              loading="lazy"
+              class="h-full w-full object-contain"
+              @error="(e) => (e.target as HTMLImageElement).style.display = 'none'"
+            />
+            <span 
+              v-else
+              class="text-5xl sm:text-7xl"
+            >
+              {{ getImageDisplay(product.image_url, product.name).value }}
+            </span>
           </div>
         </div>
 
         <!-- Product Details -->
-        <div class="p-4">
-          <h3 class="mb-1 text-xl font-black italic uppercase leading-tight text-black">
+        <div class="p-3 sm:p-4">
+          <h3 class="mb-1 text-lg font-black italic uppercase leading-tight text-black sm:text-xl">
             {{ product.name }}
           </h3>
-          <p class="mb-4 text-[11px] font-semibold uppercase tracking-wide text-black/60">
-            {{ product.brand }} • {{ product.size }}
+          <p class="mb-3 text-[10px] font-semibold uppercase tracking-wide text-black/60 sm:mb-4 sm:text-[11px]">
+            {{ product.brand || 'No Brand' }} • {{ product.unit || 'N/A' }}
           </p>
 
-          <!-- Store Prices -->
-          <div class="mb-4 space-y-2">
-            <div 
-              v-for="(priceInfo, idx) in product.prices" 
-              :key="idx"
-              class="flex items-center justify-between"
-            >
+          <!-- Store & Price -->
+          <div class="mb-3 sm:mb-4">
+            <div class="mb-2 flex items-center gap-2">
+              <span class="h-2 w-2 rounded-full bg-black"></span>
+              <span class="text-[10px] font-black uppercase tracking-wide text-black/70 sm:text-xs">
+                {{ product.store.name }}
+              </span>
+            </div>
+            <div class="flex items-baseline gap-2">
+              <span class="text-2xl font-black text-black sm:text-3xl">
+                ${{ formatPrice(product.price) }}
+              </span>
+              <span v-if="product.price_un" class="text-[10px] font-bold uppercase tracking-wide text-black/40">
+                {{ formatUnitPrice(product.price_un, product.price_unit) }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Add Button -->
+          <button 
+            @click="shoppingListStore.addItem(product)"
+            class="w-full border-2 border-black bg-black py-2.5 text-xs font-black uppercase tracking-wider text-white transition hover:bg-[#39FF14] hover:text-black sm:py-3"
+          >
+            Buy List Add
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Product List View -->
+    <div v-else class="mb-8 space-y-4 sm:mb-12">
+      <div 
+        v-for="product in products" 
+        :key="product.id"
+        class="relative flex border-4 border-black bg-white shadow-[6px_6px_0_#000]"
+      >
+        <!-- Product Image Section -->
+        <div class="relative w-32 shrink-0 border-r-4 border-black bg-[#E5E5DC] p-3 sm:w-40 sm:p-4">
+          <!-- Deal Badge -->
+          <div 
+            v-if="product.is_promo"
+            class="absolute right-2 top-2 rounded-full border-2 border-black bg-[#39FF14] px-2 py-0.5 text-[8px] font-black uppercase text-black shadow-[2px_2px_0_#000]"
+          >
+            DEAL
+          </div>
+          
+          <!-- Product Image -->
+          <div class="flex h-full items-center justify-center">
+            <img 
+              v-if="getImageDisplay(product.image_url, product.name).type === 'url'"
+              :src="getImageDisplay(product.image_url, product.name).value"
+              :alt="product.name"
+              loading="lazy"
+              class="h-full w-full object-contain"
+              @error="(e) => (e.target as HTMLImageElement).style.display = 'none'"
+            />
+            <span v-else class="text-4xl sm:text-5xl">
+              {{ getImageDisplay(product.image_url, product.name).value }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Product Info -->
+        <div class="flex flex-1 flex-col p-3 sm:p-4">
+          <div class="mb-3 flex-1">
+            <!-- Product Title -->
+            <h3 class="mb-1 text-base font-black italic uppercase leading-tight text-black sm:text-lg">
+              {{ product.name }}
+            </h3>
+            <p class="mb-3 text-[10px] font-semibold uppercase tracking-wide text-black/60">
+              {{ product.brand || 'No Brand' }} • {{ product.unit || 'N/A' }}
+            </p>
+
+            <!-- Store & Price -->
+            <div class="flex items-center gap-3">
               <div class="flex items-center gap-2">
                 <span class="h-2 w-2 rounded-full bg-black"></span>
                 <span class="text-[10px] font-black uppercase tracking-wide text-black/70">
-                  {{ priceInfo.store }}
+                  {{ product.store.name }}
                 </span>
               </div>
-              <div 
-                v-if="priceInfo.outOfStock"
-                class="text-[10px] font-black uppercase tracking-wide text-red-600"
-              >
-                Out of Stock
-              </div>
-              <div 
-                v-else
-                :class="priceInfo.isBest ? 'bg-[#39FF14]' : 'bg-gray-100'"
-                class="border-2 border-black px-3 py-1 text-sm font-black text-black"
-              >
-                ${{ priceInfo.price.toFixed(2) }}
+              <div class="flex items-baseline gap-2">
+                <span class="text-xl font-black text-black sm:text-2xl">
+                  ${{ formatPrice(product.price) }}
+                </span>
+                <span v-if="product.price_un" class="text-[9px] font-bold uppercase tracking-wide text-black/40">
+                  {{ formatUnitPrice(product.price_un, product.price_unit) }}
+                </span>
               </div>
             </div>
           </div>
 
           <!-- Add Button -->
           <button 
-            class="w-full border-2 border-black bg-black py-3 text-xs font-black uppercase tracking-wider text-white transition hover:bg-[#39FF14] hover:text-black"
+            @click="shoppingListStore.addItem(product)"
+            class="mt-auto w-full border-2 border-black bg-black py-2 text-xs font-black uppercase tracking-wider text-white transition hover:bg-[#39FF14] hover:text-black sm:w-auto sm:px-6"
           >
             Buy List Add
           </button>
@@ -174,24 +287,30 @@ const products = ref([
     </div>
 
     <!-- Pagination -->
-    <div class="flex items-center justify-center gap-2">
-      <button class="flex h-10 w-10 items-center justify-center border-2 border-black bg-white text-sm font-black text-black transition hover:bg-gray-100">
+    <div v-if="!isLoading && products.length > 0" class="flex items-center justify-center gap-1 sm:gap-2">
+      <button 
+        @click="searchStore.prevPage()"
+        :disabled="searchStore.page === 1"
+        class="flex h-8 w-8 items-center justify-center border-2 border-black bg-white text-sm font-black text-black transition hover:bg-gray-100 disabled:opacity-50 sm:h-10 sm:w-10"
+      >
         ←
       </button>
-      <button class="flex h-10 w-10 items-center justify-center border-2 border-black bg-[#39FF14] text-sm font-black text-black">
-        1
-      </button>
-      <button class="flex h-10 w-10 items-center justify-center border-2 border-black bg-white text-sm font-black text-black transition hover:bg-gray-100">
-        2
-      </button>
-      <button class="flex h-10 w-10 items-center justify-center border-2 border-black bg-white text-sm font-black text-black transition hover:bg-gray-100">
-        3
-      </button>
-      <span class="px-2 text-sm font-bold text-black">...</span>
-      <button class="flex h-10 w-10 items-center justify-center border-2 border-black bg-white text-sm font-black text-black transition hover:bg-gray-100">
-        12
-      </button>
-      <button class="flex h-10 w-10 items-center justify-center border-2 border-black bg-white text-sm font-black text-black transition hover:bg-gray-100">
+      
+      <template v-for="pageNum in Math.min(searchStore.totalPages, 5)" :key="pageNum">
+        <button 
+          @click="searchStore.goToPage(pageNum)"
+          :class="searchStore.page === pageNum ? 'bg-[#39FF14]' : 'bg-white hover:bg-gray-100'"
+          class="flex h-8 w-8 items-center justify-center border-2 border-black text-sm font-black text-black transition sm:h-10 sm:w-10"
+        >
+          {{ pageNum }}
+        </button>
+      </template>
+      
+      <button 
+        @click="searchStore.nextPage()"
+        :disabled="searchStore.page >= searchStore.totalPages"
+        class="flex h-8 w-8 items-center justify-center border-2 border-black bg-white text-sm font-black text-black transition hover:bg-gray-100 disabled:opacity-50 sm:h-10 sm:w-10"
+      >
         →
       </button>
     </div>
