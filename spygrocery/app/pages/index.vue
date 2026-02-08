@@ -1,6 +1,6 @@
 <script setup lang="ts">
 useHead({
-  title: 'SpyGrocery — Cut your grocery bill',
+  title: 'SpyGrocery — Locate the lowest prices',
   link: [
     {
       rel: 'preconnect',
@@ -13,19 +13,20 @@ useHead({
     },
     {
       rel: 'stylesheet',
-      href: 'https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,700;1,700;1,800&display=swap'
+      href: 'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=Manrope:wght@400;500;600&display=swap'
     }
   ]
 })
 </script>
 
 <template>
-  <div class="bg-white font-['Barlow_Condensed']">
-    <AppNavBar />
+  <div class="bg-black font-['Manrope'] text-white">
+    <AppHeader />
     <HeroSection />
-    <HowItWorks />
-    <WallOfLove />
-    <CtaSection />
+    <TryItNowSection />
+    <StepsSection />
+    <FeaturesGridSection />
+    <TikTokTestimonialSection />
     <AppFooter />
   </div>
 </template>

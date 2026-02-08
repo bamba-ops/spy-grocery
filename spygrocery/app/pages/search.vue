@@ -1,17 +1,8 @@
 <script setup lang="ts">
-import {SlidersHorizontal, ShoppingBag } from 'lucide-vue-next'
+import { Search } from 'lucide-vue-next'
 import { useShoppingListStore } from '~/stores/shoppingList'
 
 const store = useShoppingListStore()
-const showFilters = ref(false)
-
-const toggleFilters = () => {
-  showFilters.value = !showFilters.value
-}
-
-const closeFilters = () => {
-  showFilters.value = false
-}
 
 useHead({
   title: 'Search Products — SpyGrocery',
@@ -27,64 +18,50 @@ useHead({
     },
     {
       rel: 'stylesheet',
-      href: 'https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,700;1,700;1,800&display=swap'
+      href: 'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=Manrope:wght@400;500;600&display=swap'
     }
   ]
 })
 </script>
 
 <template>
-  <div class="min-h-screen bg-[#F5F5DC] font-['Barlow_Condensed']">
-    <AppNavBar />
-    
-    <main class="mx-auto max-w-[1400px] px-4 py-6 sm:px-6 sm:py-8">
-      <!-- Mobile Filter Button -->
-      <button
-        class="mb-4 flex w-full items-center justify-center gap-2 border-4 border-black bg-[#39FF14] px-4 py-3 text-xs font-black uppercase tracking-wider text-black shadow-[4px_4px_0_#000] transition hover:shadow-[6px_6px_0_#000] lg:hidden"
-        @click="toggleFilters"
-      >
-        <SlidersHorizontal :size="16" :stroke-width="3" />
-        {{ showFilters ? 'Hide Filters' : 'Show Filters' }}
-      </button>
-
-      <div class="flex flex-col gap-6 lg:flex-row lg:gap-8">
-        <!-- Sidebar - Desktop & Mobile Drawer -->
-        <aside 
-          :class="[
-            'w-full lg:w-64 lg:shrink-0',
-            showFilters ? 'block' : 'hidden lg:block'
-          ]"
-        >
-          <SearchSidebar @close="closeFilters" />
-        </aside>
-
-        <!-- Main Content -->
-        <div class="flex-1">
-          <SearchResults />
+  <div class="min-h-screen bg-black font-['Manrope'] text-white">
+    <header class="border-b border-white/10">
+      <div class="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
+        <div class="flex items-center gap-3">
+          <span class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-white/20">
+            <Search class="h-4 w-4" />
+          </span>
+          <span class="font-['Cormorant_Garamond'] text-xl font-semibold italic tracking-tight">Spygrocery</span>
+        </div>
+        <div class="hidden items-center gap-6 text-[10px] uppercase tracking-[0.35em] text-white/70 sm:flex">
+          <button
+            class="rounded-full border border-white/20 bg-white px-4 py-2 text-[10px] uppercase tracking-[0.35em] text-black transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+            @click="store.toggleDrawer()"
+          >
+            View Compare List
+          </button>
         </div>
       </div>
+    </header>
+
+    <main class="mx-auto grid max-w-7xl gap-6 px-4 py-8 sm:px-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+      <section>
+        <SearchResults />
+      </section>
+
+      <aside class="hidden lg:block">
+        <SearchListPanel />
+      </aside>
     </main>
 
-    <!-- Shopping List Drawer -->
     <ShoppingListDrawer />
 
-    <!-- Floating List Button (Mobile/Desktop) -->
     <button
-      v-if="!store.isOpen && store.itemCount > 0"
+      class="fixed bottom-6 right-6 z-30 inline-flex items-center justify-center rounded-full border border-white/20 bg-white px-4 py-3 text-[10px] uppercase tracking-[0.35em] text-black shadow-[0_10px_30px_rgba(0,0,0,0.4)] transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black lg:hidden"
       @click="store.toggleDrawer()"
-      :class="[
-        'fixed bottom-6 right-6 z-30 flex h-16 w-16 items-center justify-center rounded-full border-4 border-black bg-[#39FF14] shadow-[4px_4px_0_#000] transition-all duration-300 hover:-translate-y-1 hover:shadow-[6px_6px_0_#000] sm:bottom-8 sm:right-8',
-        store.justAdded ? 'scale-125 -rotate-6 shadow-[8px_8px_0_#000] bg-white' : ''
-      ]"
     >
-      <div class="relative">
-        <ShoppingBag :size="28" :stroke-width="3" />
-        <span class="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full border-2 border-black bg-white text-xs font-black">
-          {{ store.itemCount }}
-        </span>
-      </div>
+      Compare List ({{ store.itemCount }})
     </button>
-
-    <AppFooter />
   </div>
 </template>

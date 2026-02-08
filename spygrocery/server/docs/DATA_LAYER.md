@@ -21,7 +21,7 @@ Clean, simple data layer architecture for SpyGrocery built with Nuxt 4 + Supabas
 │         searchStore, storesStore, shoppingList           │
 └────────────────────┬────────────────────────────────────┘
                      │
-┌────────────────────▼────────────────────────────────────┐
+┌──────────────────▼────────────────────────────────────┐
 │                Server API (Nuxt)                         │
 │     GET /api/stores, GET /api/products/search            │
 └────────────────────┬────────────────────────────────────┘

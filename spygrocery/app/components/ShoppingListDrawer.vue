@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { X, Trash2, Plus, Minus, ShoppingBag } from 'lucide-vue-next'
+import { X, Trash2, Plus, Minus } from 'lucide-vue-next'
 import { useShoppingListStore } from '~/stores/shoppingList'
 
 const store = useShoppingListStore()
@@ -34,93 +34,91 @@ const store = useShoppingListStore()
     >
       <div 
         v-if="store.isOpen" 
-        class="fixed inset-y-0 right-0 flex w-full max-w-md flex-col border-l-4 border-black bg-white shadow-[-6px_0_0_#000] sm:max-w-lg"
+        class="fixed inset-y-0 right-0 flex w-full max-w-md flex-col border-l border-white/10 bg-black text-white shadow-[-10px_0_30px_rgba(0,0,0,0.5)]"
       >
-        
-        <!-- Header -->
-        <div class="flex items-center justify-between border-b-4 border-black bg-[#39FF14] p-4">
-          <div class="flex items-center gap-2">
-            <ShoppingBag :size="24" :stroke-width="3" />
-            <h2 class="text-xl font-black uppercase italic tracking-tighter text-black">Your List</h2>
-            <span class="rounded-full border-2 border-black bg-white px-2 py-0.5 text-xs font-black">{{ store.itemCount }}</span>
+        <div class="flex items-center justify-between border-b border-white/10 px-5 py-4">
+          <div>
+            <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Shopping list</p>
+            <p class="mt-2 font-['Cormorant_Garamond'] text-2xl font-semibold italic">Compare list</p>
           </div>
-          <button 
+          <button
             @click="store.closeDrawer()"
-            class="flex h-10 w-10 items-center justify-center border-2 border-black bg-white transition hover:bg-black hover:text-white"
+            class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 text-white/70 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
           >
-            <X :size="24" :stroke-width="3" />
+            <X class="h-4 w-4" />
           </button>
         </div>
 
-        <!-- Content -->
-        <div class="flex-1 overflow-y-auto p-4 sm:p-6">
-          <div v-if="store.items.length === 0" class="flex h-full flex-col items-center justify-center text-center opacity-50">
-            <ShoppingBag :size="64" :stroke-width="2" class="mb-4" />
-            <p class="text-xl font-black uppercase">Your list is empty</p>
-            <p class="mt-2 text-sm font-bold uppercase">Start adding products to build your cart</p>
+        <div class="flex-1 overflow-y-auto px-5 py-4">
+          <div v-if="store.items.length === 0" class="py-12 text-center text-xs uppercase tracking-[0.35em] text-white/40">
+            No items yet
           </div>
 
-          <div v-else class="space-y-8">
-            <!-- Store Group -->
-            <div v-for="(items, storeName) in store.groupedItems" :key="storeName" class="border-4 border-black bg-white shadow-[6px_6px_0_#000]">
-              <!-- Store Header -->
-              <div class="border-b-4 border-black bg-[#E5E5DC] p-3">
-                <h3 class="flex items-center justify-between text-lg font-black uppercase tracking-wide">
+          <div v-else class="space-y-6">
+            <div v-for="(items, storeName) in store.groupedItems" :key="storeName" class="space-y-3">
+              <div class="flex items-center justify-between text-[10px] uppercase tracking-[0.35em] text-white/60">
+                <div class="flex items-center gap-2">
+                  <div class="flex h-7 w-7 items-center justify-center rounded-full border border-white/15 bg-white/10 text-[10px] text-white/60">
+                    <img
+                      v-if="items[0]?.product.store.image_url"
+                      :src="items[0]?.product.store.image_url"
+                      :alt="items[0]?.product.store.name"
+                      class="h-5 w-5 rounded-full object-contain"
+                      loading="lazy"
+                    />
+                    <span v-else>◎</span>
+                  </div>
                   <span>{{ storeName }}</span>
-                  <span class="text-base">${{ store.storeTotals[storeName]?.toFixed(2) }}</span>
-                </h3>
+                </div>
+                <span>${{ store.storeTotals[storeName]?.toFixed(2) }}</span>
               </div>
 
-              <!-- Items -->
-              <div class="divide-y-2 divide-black">
-                <div v-for="item in items" :key="item.product.id" class="flex gap-4 p-3">
-                  <!-- Image -->
-                  <div class="flex h-16 w-16 shrink-0 items-center justify-center border-2 border-black bg-white">
-                    <span class="text-2xl">🥛</span>
-                  </div>
-
-                  <!-- Info -->
-                  <div class="flex flex-1 flex-col justify-between">
-                    <div>
-                      <h4 class="text-sm font-black uppercase leading-tight">{{ item.product.name }}</h4>
-                      <p class="text-[10px] font-bold uppercase text-gray-500">{{ item.product.brand }} • {{ item.product.unit }}</p>
+              <div v-for="item in items" :key="item.product.id" class="flex gap-4 rounded-2xl border border-white/10 bg-white/5 p-3">
+                <div class="flex h-16 w-16 items-center justify-center rounded-xl border border-white/10 bg-white/10 text-white/60">
+                  ◻
+                </div>
+                <div class="flex-1">
+                  <p class="text-sm font-semibold italic">{{ item.product.name }}</p>
+                  <p class="mt-1 text-[10px] uppercase tracking-[0.3em] text-white/60">
+                    ${{ item.product.price?.toFixed(2) ?? 'N/A' }}/EA
+                  </p>
+                  <div class="mt-3 flex items-center gap-3">
+                    <div class="flex items-center rounded-full border border-white/20">
+                      <button
+                        class="px-2 py-1 text-white/70 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                        @click="store.updateQuantity(item.product.id, item.quantity - 1)"
+                      >
+                        <Minus class="h-3 w-3" />
+                      </button>
+                      <span class="px-2 text-xs uppercase tracking-[0.3em] text-white/80">{{ item.quantity }}</span>
+                      <button
+                        class="px-2 py-1 text-white/70 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                        @click="store.addItem(item.product)"
+                      >
+                        <Plus class="h-3 w-3" />
+                      </button>
                     </div>
-                    
-                    <div class="flex items-center justify-between mt-2">
-                      <div class="font-black text-black">${{ (item.product.price * item.quantity).toFixed(2) }}</div>
-                      
-                      <!-- Controls -->
-                      <div class="flex items-center border-2 border-black bg-white">
-                        <button 
-                          @click="store.updateQuantity(item.product.id, item.quantity - 1)"
-                          class="px-2 py-1 hover:bg-gray-100"
-                        >
-                          <Minus :size="12" :stroke-width="4" />
-                        </button>
-                        <span class="px-2 text-xs font-black">{{ item.quantity }}</span>
-                        <button 
-                          @click="store.addItem(item.product)"
-                          class="px-2 py-1 hover:bg-gray-100"
-                        >
-                          <Plus :size="12" :stroke-width="4" />
-                        </button>
-                      </div>
-                    </div>
+                    <button
+                      class="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-white/60 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                      @click="store.removeItem(item.product.id)"
+                    >
+                      <Trash2 class="h-3 w-3" /> Remove
+                    </button>
                   </div>
                 </div>
               </div>
             </div>
+            <div class="border-t border-white/10"></div>
           </div>
         </div>
 
-        <!-- Footer -->
-        <div class="border-t-4 border-black bg-white p-4 sm:p-6">
-          <div class="mb-4 flex items-center justify-between text-xl font-black uppercase italic tracking-tighter">
+        <div class="border-t border-white/10 px-5 py-5">
+          <div class="flex items-center justify-between text-sm uppercase tracking-[0.35em] text-white/70">
             <span>Total Estimate</span>
-            <span>${{ store.grandTotal.toFixed(2) }}</span>
+            <span class="font-['Cormorant_Garamond'] text-2xl font-semibold italic text-white">${{ store.grandTotal.toFixed(2) }}</span>
           </div>
-          <button class="w-full border-4 border-black bg-black py-4 text-center text-sm font-black uppercase tracking-wider text-[#39FF14] shadow-[4px_4px_0_#39FF14] transition hover:-translate-y-1 hover:shadow-[6px_6px_0_#39FF14]">
-            Checkout Strategy
+          <button class="mt-4 w-full rounded-full border border-white/20 bg-white px-4 py-3 text-[10px] uppercase tracking-[0.35em] text-black transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black">
+            Finalize & Route
           </button>
         </div>
       </div>
