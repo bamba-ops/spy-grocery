@@ -1,15 +1,10 @@
 import { defineStore } from 'pinia'
-
-type StoreItem = {
-  id: string
-  name: string | null
-  slug: string | null
-  image_url: string | null
-}
+import { useStores } from '~/composables/useStores'
+import type { Store } from '~/types'
 
 export const useStoresStore = defineStore('stores', {
   state: () => ({
-    stores: [] as StoreItem[],
+    stores: [] as Store[],
     selectedStoreIds: [] as string[],
     loaded: false
   }),
@@ -17,6 +12,10 @@ export const useStoresStore = defineStore('stores', {
   getters: {
     selectedStores: (state) => {
       return state.stores.filter(s => state.selectedStoreIds.includes(s.id))
+    },
+
+    getAllStoresIds: (state) => {
+      return state.stores.map(s => s.id)
     },
 
     storesWithSelection: (state) => {
@@ -32,18 +31,11 @@ export const useStoresStore = defineStore('stores', {
       if (this.loaded) return
 
       try {
-        const response = await $fetch('/api/stores')
-        if (response?.stores) {
-          this.stores = response.stores.map((store: StoreItem) => ({
-            id: store.id,
-            name: store.name,
-            slug: store.slug,
-            image_url: store.image_url
-          }))
-          // Select all stores by default
-          this.selectedStoreIds = this.stores.map((s: StoreItem) => s.id)
-          this.loaded = true
-        }
+        const { fetchStores } = useStores()
+        this.stores = await fetchStores()
+        // Select all stores by default
+        this.selectedStoreIds = this.stores.map((s: Store) => s.id)
+        this.loaded = true
       } catch (error) {
         console.error('Failed to load stores:', error)
       }

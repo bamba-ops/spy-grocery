@@ -10,7 +10,7 @@ const items = [
   <section class="bg-black text-white">
     <div class="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
       <div class="mb-8 flex items-center justify-between">
-        <h2 class="font-['Cormorant_Garamond'] text-2xl font-semibold italic">Try it now</h2>
+        <h2 class="font-display text-2xl font-semibold italic">Try it now</h2>
         <span class="text-[10px] uppercase tracking-[0.35em] text-white/60">Selected essentials</span>
       </div>
 

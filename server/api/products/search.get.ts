@@ -12,6 +12,7 @@ export default defineEventHandler(async (event) => {
   const limit = parseInt(query.limit?.toString() || '50')
   const offset = parseInt(query.offset?.toString() || '0')
   const promosOnly = query.promos?.toString() === 'true' || false
+  const dedupe = query.dedupe?.toString() !== 'false'
 
   const storeIds = storeFilter ? storeFilter.split(',').filter(Boolean) : []
   let promoTotal: number | null = null
@@ -185,7 +186,7 @@ export default defineEventHandler(async (event) => {
         price: price?.price || null,
         price_un: price?.price_un || null,
         price_unit: price?.unit || null,
-        is_promo: price?.is_promo ?? null
+        is_promo: promosOnly ? true : (price?.is_promo ?? null)
       }
     })
     .filter((p): p is Product => p !== null)
@@ -194,6 +195,51 @@ export default defineEventHandler(async (event) => {
 
   if (promosOnly) {
     result = result.filter(item => item.is_promo)
+  }
+
+  // Temporary guardrail while DB dedupe is in progress:
+  // Hide duplicate product rows (same store + same identifying fields).
+  // Note: because pagination happens at the DB level, this can result in fewer
+  // than `limit` items returned for a page if many duplicates exist.
+  if (dedupe) {
+    const keyFor = (p: Product) => {
+      return JSON.stringify([
+        p.store.id,
+        p.name,
+        p.brand,
+        p.unit,
+        p.image_url,
+        p.link
+      ])
+    }
+
+    const chooseBetter = (a: Product, b: Product) => {
+      const aPromo = Boolean(a.is_promo)
+      const bPromo = Boolean(b.is_promo)
+      if (aPromo !== bPromo) return bPromo ? b : a
+
+      const aPrice = a.price
+      const bPrice = b.price
+      if (aPrice === null && bPrice !== null) return b
+      if (aPrice !== null && bPrice === null) return a
+      if (aPrice !== null && bPrice !== null && aPrice !== bPrice) {
+        return bPrice < aPrice ? b : a
+      }
+
+      return b.id < a.id ? b : a
+    }
+
+    const map = new Map<string, Product>()
+    for (const item of result) {
+      const key = keyFor(item)
+      const existing = map.get(key)
+      if (!existing) {
+        map.set(key, item)
+      } else {
+        map.set(key, chooseBetter(existing, item))
+      }
+    }
+    result = Array.from(map.values())
   }
 
   // Sort by price if needed
@@ -209,6 +255,8 @@ export default defineEventHandler(async (event) => {
       const priceB = b.price || 0
       return priceB - priceA
     })
+  } else if (sortBy === 'name') {
+    result.sort((a, b) => a.name.localeCompare(b.name))
   }
 
   const totalCount = promoTotal ?? (count || 0)

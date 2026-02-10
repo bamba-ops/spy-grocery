@@ -6,11 +6,22 @@ export interface CartItem {
     quantity: number
 }
 
+const STORAGE_KEY = 'spygrocery:shopping-list'
+const SAVED_LISTS_KEY = 'spygrocery:saved-lists'
+
+export interface SavedList {
+    name: string
+    items: CartItem[]
+    savedAt: string
+}
+
 export const useShoppingListStore = defineStore('shoppingList', {
     state: () => ({
         items: [] as CartItem[],
         isOpen: false,
-        justAdded: false
+        justAdded: false,
+        justSaved: false,
+        lastSavedName: null as string | null
     }),
 
     getters: {
@@ -56,6 +67,77 @@ export const useShoppingListStore = defineStore('shoppingList', {
     },
 
     actions: {
+        saveList() {
+            if (!process.client) return
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify({ items: this.items }))
+                this.justSaved = true
+                setTimeout(() => {
+                    this.justSaved = false
+                }, 1200)
+            } catch {
+                // noop
+            }
+        },
+
+        saveListAs(name: string) {
+            if (!process.client) return false
+
+            const trimmed = name.trim()
+            if (!trimmed) return false
+
+            try {
+                const raw = localStorage.getItem(SAVED_LISTS_KEY)
+                const parsed = raw ? JSON.parse(raw) : {}
+                const lists: Record<string, SavedList> = (parsed && typeof parsed === 'object') ? parsed : {}
+
+                const savedAt = new Date().toISOString()
+                lists[trimmed] = {
+                    name: trimmed,
+                    items: this.items,
+                    savedAt
+                }
+
+                localStorage.setItem(SAVED_LISTS_KEY, JSON.stringify(lists))
+
+                this.lastSavedName = trimmed
+                this.justSaved = true
+                setTimeout(() => {
+                    this.justSaved = false
+                }, 1200)
+
+                return true
+            } catch {
+                return false
+            }
+        },
+
+        getSavedLists(): SavedList[] {
+            if (!process.client) return []
+            try {
+                const raw = localStorage.getItem(SAVED_LISTS_KEY)
+                const parsed = raw ? JSON.parse(raw) : {}
+                if (!parsed || typeof parsed !== 'object') return []
+                return Object.values(parsed as Record<string, SavedList>)
+            } catch {
+                return []
+            }
+        },
+
+        loadSavedList(name: string) {
+            if (!process.client) return false
+            try {
+                const raw = localStorage.getItem(SAVED_LISTS_KEY)
+                const parsed = raw ? JSON.parse(raw) : {}
+                if (!parsed || typeof parsed !== 'object') return false
+                const list = (parsed as Record<string, SavedList>)[name]
+                if (!list || !Array.isArray(list.items)) return false
+                this.items = list.items
+                return true
+            } catch {
+                return false
+            }
+        },
         addItem(product: Product) {
             const existingItem = this.items.find(item => item.product.id === product.id)
             if (existingItem) {

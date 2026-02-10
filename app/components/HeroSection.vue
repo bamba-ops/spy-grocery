@@ -9,7 +9,7 @@ const searchPlaceholder = 'Search items (e.g., Eggs, Coffee...)'
 
     <div class="mx-auto max-w-6xl px-4 pb-16 pt-12 sm:px-6 sm:pb-20 sm:pt-16">
       <div class="max-w-3xl">
-        <h1 class="font-['Cormorant_Garamond'] text-[clamp(2.6rem,6vw,4.8rem)] font-semibold italic leading-[0.95] tracking-tight text-white">
+        <h1 class="font-display text-[clamp(2.6rem,6vw,4.8rem)] font-semibold italic leading-[0.95] tracking-tight text-white">
           Locate the lowest prices.
           <br />
           In real-time.

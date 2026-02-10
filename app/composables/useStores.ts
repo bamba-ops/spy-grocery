@@ -1,11 +1,19 @@
+import type { Store } from '~/types'
+
 export const useStores = () => {
-  const fetch = () => {
-    return useFetch('/api/stores', {
-      key: 'stores'
-    })
+  const fetchStores = async () => {
+    const response = await $fetch('/api/stores')
+    const stores = (response?.stores || []).map((store: Store) => ({
+      id: store.id,
+      name: store.name,
+      slug: store.slug,
+      image_url: store.image_url
+    }))
+
+    return stores
   }
 
   return {
-    fetch
+    fetchStores
   }
 }

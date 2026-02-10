@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import type { Product } from '~/types'
+import { useProducts } from '~/composables/useProducts'
 
 export const useSearchStore = defineStore('search', {
   state: () => ({
@@ -27,20 +28,15 @@ export const useSearchStore = defineStore('search', {
       this.error = null
 
       try {
-        const params = new URLSearchParams({
+        const { search } = useProducts()
+        const response = await search({
           q: this.query,
           stores: this.selectedStores,
           sort: this.sortBy,
-          limit: String(this.limit),
-          offset: String(this.offset)
+          limit: this.limit,
+          offset: this.offset,
+          promos: this.showPromosOnly ? 'true' : 'false'
         })
-
-        if (this.showPromosOnly) {
-          params.append('promos', 'true')
-        }
-
-        const response = await $fetch(`/api/products/search?${params}`)
-
         this.results = response?.products || []
         this.total = response?.total || 0
       } catch (e: any) {

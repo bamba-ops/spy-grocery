@@ -3,6 +3,31 @@ import { Minus, Plus, Trash2 } from 'lucide-vue-next'
 import { useShoppingListStore } from '~/stores/shoppingList'
 
 const store = useShoppingListStore()
+
+const isSaveModalOpen = ref(false)
+
+const getDefaultListName = () => {
+  const today = new Date().toISOString().slice(0, 10)
+  return store.lastSavedName ?? `List ${today}`
+}
+
+const saveNameSeed = ref(getDefaultListName())
+
+const openSave = () => {
+  saveNameSeed.value = getDefaultListName()
+  isSaveModalOpen.value = true
+}
+
+const closeSave = () => {
+  isSaveModalOpen.value = false
+}
+
+const handleSave = (name: string) => {
+  const ok = store.saveListAs(name)
+  if (ok) {
+    isSaveModalOpen.value = false
+  }
+}
 </script>
 
 <template>
@@ -41,8 +66,16 @@ const store = useShoppingListStore()
             :key="item.product.id"
             class="flex gap-4 rounded-2xl border border-white/10 bg-white/5 p-3"
           >
-            <div class="flex h-16 w-16 items-center justify-center rounded-xl border border-white/10 bg-white/10 text-white/60">
-              ◻
+            <div class="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white/10 text-white/60">
+              <img
+                v-if="item.product.image_url"
+                :src="item.product.image_url"
+                :alt="item.product.name"
+                class="h-full w-full object-contain grayscale brightness-90 contrast-110"
+                loading="lazy"
+              />
+              <div v-else class="text-2xl">◻</div>
+              <div class="pointer-events-none absolute inset-0 bg-black/35"></div>
             </div>
             <div class="flex-1">
               <p class="text-sm font-semibold italic">{{ item.product.name }}</p>
@@ -82,11 +115,26 @@ const store = useShoppingListStore()
     <div class="border-t border-white/10 px-5 py-5">
       <div class="flex items-center justify-between text-sm uppercase tracking-[0.35em] text-white/70">
         <span>Total Estimate</span>
-        <span class="font-['Cormorant_Garamond'] text-2xl font-semibold italic text-white">${{ store.grandTotal.toFixed(2) }}</span>
+        <span class="font-display text-2xl font-semibold italic text-white">${{ store.grandTotal.toFixed(2) }}</span>
       </div>
-      <button class="mt-4 w-full rounded-full border border-white/20 bg-white px-4 py-3 text-[10px] uppercase tracking-[0.35em] text-black transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black">
-        Finalize & Route
+      <button
+        :class="[
+          'mt-4 w-full rounded-full border border-white/20 px-4 py-3 text-[10px] uppercase tracking-[0.35em] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black',
+          store.justSaved
+            ? 'bg-white text-black shadow-[0_0_26px_rgba(255,255,255,0.35)] animate-pulse'
+            : 'bg-white text-black hover:bg-white/90'
+        ]"
+        @click="openSave()"
+      >
+        {{ store.justSaved ? 'Saved' : 'Save list' }}
       </button>
     </div>
+
+    <SaveListModal
+      :open="isSaveModalOpen"
+      :initial-name="saveNameSeed"
+      @close="closeSave"
+      @save="handleSave"
+    />
   </div>
 </template>

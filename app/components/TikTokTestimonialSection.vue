@@ -42,7 +42,7 @@ onMounted(() => {
     <div class="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
       <div class="max-w-3xl">
         <p class="text-[10px] uppercase tracking-[0.4em] text-white/60">Testimonial</p>
-        <h2 class="mt-4 font-['Cormorant_Garamond'] text-4xl font-semibold italic leading-tight sm:text-5xl">
+        <h2 class="mt-4 font-display text-4xl font-semibold italic leading-tight sm:text-5xl">
           Loved on TikTok.
         </h2>
         <p class="mt-4 max-w-xl text-sm text-white/80 sm:text-base">

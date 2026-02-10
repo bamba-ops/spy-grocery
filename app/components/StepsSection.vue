@@ -22,7 +22,7 @@ const steps = [
   <section id="process" class="bg-white text-black">
     <div class="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
       <div class="grid gap-10 md:grid-cols-[1.2fr_1fr]">
-        <h2 class="font-['Cormorant_Garamond'] text-4xl font-semibold italic leading-tight sm:text-5xl">
+        <h2 class="font-display text-4xl font-semibold italic leading-tight sm:text-5xl">
           Simplicity
           <br />
           by design.

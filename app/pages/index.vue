@@ -13,14 +13,14 @@ useHead({
     },
     {
       rel: 'stylesheet',
-      href: 'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=Manrope:wght@400;500;600&display=swap'
+      href: 'https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,600;0,700;1,600&family=Manrope:wght@400;500;600&display=swap'
     }
   ]
 })
 </script>
 
 <template>
-  <div class="bg-black font-['Manrope'] text-white">
+  <div class="bg-black text-white">
     <AppHeader />
     <HeroSection />
     <TryItNowSection />

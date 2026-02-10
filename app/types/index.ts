@@ -32,11 +32,20 @@ export interface StoreWithSelection extends DbStore {
   selected?: boolean
 }
 
+export interface Store {
+  id: string
+  name: string | null
+  slug: string | null
+  image_url: string | null
+}
+
 // Search params
 export interface SearchParams {
   q?: string
   stores?: string
   sort?: 'price-low' | 'price-high' | 'name'
+  promos?: 'true' | 'false'
+  dedupe?: 'true' | 'false'
   limit?: number
   offset?: number
 }
