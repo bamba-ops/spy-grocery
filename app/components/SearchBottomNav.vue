@@ -1,8 +1,13 @@
 <script setup lang="ts">
-import { Home, Search, ShoppingBag } from 'lucide-vue-next'
+import { Home, Search, ShoppingBag, List } from 'lucide-vue-next'
 import { useShoppingListStore } from '~/stores/shoppingList'
 
 const store = useShoppingListStore()
+
+const route = useRoute()
+const isHome = computed(() => route.path === '/')
+const isSearch = computed(() => route.path.startsWith('/search'))
+const isLists = computed(() => route.path.startsWith('/lists'))
 </script>
 
 <template>
@@ -13,7 +18,10 @@ const store = useShoppingListStore()
     >
       <NuxtLink
         to="/"
-        class="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/20 text-white/80 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+        :class="[
+          'inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/20 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black',
+          isHome ? 'bg-white text-black' : 'text-white/80'
+        ]"
         aria-label="Home"
       >
         <Home class="h-5 w-5" />
@@ -21,10 +29,24 @@ const store = useShoppingListStore()
 
       <NuxtLink
         to="/search"
-        class="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-white text-black transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+        :class="[
+          'inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/20 transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black',
+          isSearch ? 'bg-white text-black' : 'text-white/80 bg-transparent hover:bg-white/10'
+        ]"
         aria-label="Search"
       >
         <Search class="h-5 w-5" />
+      </NuxtLink>
+
+      <NuxtLink
+        to="/lists"
+        :class="[
+          'inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/20 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black',
+          isLists ? 'bg-white text-black' : 'text-white/80'
+        ]"
+        aria-label="Lists"
+      >
+        <List class="h-5 w-5" />
       </NuxtLink>
 
       <button

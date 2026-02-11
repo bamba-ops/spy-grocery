@@ -137,7 +137,7 @@ const handleNext = () => {
                 <img
                   :src="getImageDisplay(product.image_url, product.name).value"
                   :alt="product.name"
-                  class="h-full w-full object-contain grayscale brightness-90 contrast-110"
+                  class="h-full w-full object-contain brightness-90 contrast-110"
                   loading="lazy"
                 />
               </template>

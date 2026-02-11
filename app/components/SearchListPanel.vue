@@ -3,6 +3,14 @@ import { Minus, Plus, Trash2 } from 'lucide-vue-next'
 import { useShoppingListStore } from '~/stores/shoppingList'
 
 const store = useShoppingListStore()
+const router = useRouter()
+
+const handleClear = () => {
+  if (!process.client) return
+  const ok = window.confirm('Clear the current list?')
+  if (!ok) return
+  store.clearList()
+}
 
 const isSaveModalOpen = ref(false)
 
@@ -14,19 +22,22 @@ const getDefaultListName = () => {
 const saveNameSeed = ref(getDefaultListName())
 
 const openSave = () => {
+  store.clearSaveError()
   saveNameSeed.value = getDefaultListName()
   isSaveModalOpen.value = true
 }
 
 const closeSave = () => {
+  store.clearSaveError()
   isSaveModalOpen.value = false
 }
 
-const handleSave = (name: string) => {
+const handleSave = async (name: string) => {
   const ok = store.saveListAs(name)
-  if (ok) {
-    isSaveModalOpen.value = false
-  }
+  if (!ok) return
+
+  isSaveModalOpen.value = false
+  await router.push('/lists')
 }
 </script>
 
@@ -117,22 +128,31 @@ const handleSave = (name: string) => {
         <span>Total Estimate</span>
         <span class="font-display text-2xl font-semibold italic text-white">${{ store.grandTotal.toFixed(2) }}</span>
       </div>
-      <button
-        :class="[
-          'mt-4 w-full rounded-full border border-white/20 px-4 py-3 text-[10px] uppercase tracking-[0.35em] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black',
-          store.justSaved
-            ? 'bg-white text-black shadow-[0_0_26px_rgba(255,255,255,0.35)] animate-pulse'
-            : 'bg-white text-black hover:bg-white/90'
-        ]"
-        @click="openSave()"
-      >
-        {{ store.justSaved ? 'Saved' : 'Save list' }}
-      </button>
+      <div class="mt-4 grid grid-cols-2 gap-3">
+        <button
+          class="w-full rounded-full border border-white/20 bg-transparent px-4 py-3 text-[10px] uppercase tracking-[0.35em] text-white/80 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+          @click="handleClear"
+        >
+          Clear
+        </button>
+        <button
+          :class="[
+            'w-full rounded-full border border-white/20 px-4 py-3 text-[10px] uppercase tracking-[0.35em] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black',
+            store.justSaved
+              ? 'bg-white text-black shadow-[0_0_26px_rgba(255,255,255,0.35)] animate-pulse'
+              : 'bg-white text-black hover:bg-white/90'
+          ]"
+          @click="openSave()"
+        >
+          {{ store.justSaved ? 'Saved' : 'Save list' }}
+        </button>
+      </div>
     </div>
 
     <SaveListModal
       :open="isSaveModalOpen"
       :initial-name="saveNameSeed"
+      :error-text="store.lastSaveError"
       @close="closeSave"
       @save="handleSave"
     />

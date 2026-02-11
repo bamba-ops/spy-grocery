@@ -2,6 +2,13 @@
 const props = defineProps<{
   open: boolean
   initialName?: string
+  eyebrow?: string
+  title?: string
+  label?: string
+  placeholder?: string
+  confirmText?: string
+  cancelText?: string
+  errorText?: string | null
 }>()
 
 const emit = defineEmits<{
@@ -12,6 +19,12 @@ const emit = defineEmits<{
 const name = ref(props.initialName ?? '')
 const error = ref<string | null>(null)
 const inputRef = ref<HTMLInputElement | null>(null)
+
+const displayError = computed(() => error.value ?? props.errorText ?? null)
+
+watch(name, () => {
+  if (error.value) error.value = null
+})
 
 watch(
   () => props.open,
@@ -54,20 +67,20 @@ const onSave = () => {
 
       <div class="relative mx-auto flex min-h-full max-w-lg items-center justify-center px-4">
         <div class="w-full rounded-2xl border border-white/10 bg-black p-5 shadow-[0_30px_80px_rgba(0,0,0,0.55)]">
-          <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Save shopping list</p>
-          <h3 class="mt-2 font-display text-2xl font-semibold italic">Name your list</h3>
+          <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">{{ props.eyebrow ?? 'Save shopping list' }}</p>
+          <h3 class="mt-2 font-display text-2xl font-semibold italic">{{ props.title ?? 'Name your list' }}</h3>
 
           <div class="mt-5">
-            <label class="block text-[10px] uppercase tracking-[0.35em] text-white/60">List name</label>
+            <label class="block text-[10px] uppercase tracking-[0.35em] text-white/60">{{ props.label ?? 'List name' }}</label>
             <input
               ref="inputRef"
               v-model="name"
               type="text"
-              placeholder="e.g. Weekend groceries"
+              :placeholder="props.placeholder ?? 'e.g. Weekend groceries'"
               class="mt-2 w-full rounded-full border border-white/15 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
               @keydown.enter.prevent="onSave"
             />
-            <p v-if="error" class="mt-2 text-xs text-white/70">{{ error }}</p>
+            <p v-if="displayError" class="mt-2 text-xs text-white/70">{{ displayError }}</p>
           </div>
 
           <div class="mt-6 flex items-center justify-end gap-3">
@@ -75,13 +88,13 @@ const onSave = () => {
               class="inline-flex h-11 items-center justify-center rounded-full border border-white/20 px-5 text-[10px] uppercase tracking-[0.35em] text-white/80 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
               @click="onClose"
             >
-              Cancel
+              {{ props.cancelText ?? 'Cancel' }}
             </button>
             <button
               class="inline-flex h-11 items-center justify-center rounded-full bg-white px-5 text-[10px] uppercase tracking-[0.35em] text-black transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
               @click="onSave"
             >
-              Save
+              {{ props.confirmText ?? 'Save' }}
             </button>
           </div>
         </div>

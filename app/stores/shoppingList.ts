@@ -21,7 +21,8 @@ export const useShoppingListStore = defineStore('shoppingList', {
         isOpen: false,
         justAdded: false,
         justSaved: false,
-        lastSavedName: null as string | null
+        lastSavedName: null as string | null,
+        lastSaveError: null as string | null
     }),
 
     getters: {
@@ -67,6 +68,9 @@ export const useShoppingListStore = defineStore('shoppingList', {
     },
 
     actions: {
+        clearSaveError() {
+            this.lastSaveError = null
+        },
         saveList() {
             if (!process.client) return
             try {
@@ -91,6 +95,13 @@ export const useShoppingListStore = defineStore('shoppingList', {
                 const parsed = raw ? JSON.parse(raw) : {}
                 const lists: Record<string, SavedList> = (parsed && typeof parsed === 'object') ? parsed : {}
 
+                const normalized = trimmed.toLowerCase()
+                const nameTaken = Object.keys(lists).some((k) => k.trim().toLowerCase() === normalized)
+                if (nameTaken) {
+                    this.lastSaveError = 'A list with that name already exists. Choose another.'
+                    return false
+                }
+
                 const savedAt = new Date().toISOString()
                 lists[trimmed] = {
                     name: trimmed,
@@ -101,6 +112,51 @@ export const useShoppingListStore = defineStore('shoppingList', {
                 localStorage.setItem(SAVED_LISTS_KEY, JSON.stringify(lists))
 
                 this.lastSavedName = trimmed
+                this.lastSaveError = null
+                this.justSaved = true
+                setTimeout(() => {
+                    this.justSaved = false
+                }, 1200)
+
+                // Reset current list after saving so users can start a new one.
+                this.items = []
+
+                return true
+            } catch {
+                this.lastSaveError = 'Could not save the list. Please try again.'
+                return false
+            }
+        },
+
+        createEmptyList(name: string) {
+            if (!process.client) return false
+
+            const trimmed = name.trim()
+            if (!trimmed) return false
+
+            try {
+                const raw = localStorage.getItem(SAVED_LISTS_KEY)
+                const parsed = raw ? JSON.parse(raw) : {}
+                const lists: Record<string, SavedList> = (parsed && typeof parsed === 'object') ? parsed : {}
+
+                const normalized = trimmed.toLowerCase()
+                const nameTaken = Object.keys(lists).some((k) => k.trim().toLowerCase() === normalized)
+                if (nameTaken) {
+                    this.lastSaveError = 'A list with that name already exists. Choose another.'
+                    return false
+                }
+
+                const savedAt = new Date().toISOString()
+                lists[trimmed] = {
+                    name: trimmed,
+                    items: [],
+                    savedAt
+                }
+
+                localStorage.setItem(SAVED_LISTS_KEY, JSON.stringify(lists))
+
+                this.lastSavedName = trimmed
+                this.lastSaveError = null
                 this.justSaved = true
                 setTimeout(() => {
                     this.justSaved = false
@@ -108,6 +164,7 @@ export const useShoppingListStore = defineStore('shoppingList', {
 
                 return true
             } catch {
+                this.lastSaveError = 'Could not create the list. Please try again.'
                 return false
             }
         },
@@ -118,7 +175,33 @@ export const useShoppingListStore = defineStore('shoppingList', {
                 const raw = localStorage.getItem(SAVED_LISTS_KEY)
                 const parsed = raw ? JSON.parse(raw) : {}
                 if (!parsed || typeof parsed !== 'object') return []
-                return Object.values(parsed as Record<string, SavedList>)
+
+                let values = Object.values(parsed as Record<string, SavedList>)
+
+                // Backward compat: import the legacy single saved list (if present)
+                // into the named lists registry.
+                if (values.length === 0) {
+                    const legacyRaw = localStorage.getItem(STORAGE_KEY)
+                    const legacyParsed = legacyRaw ? JSON.parse(legacyRaw) : null
+                    const legacyItems = legacyParsed?.items
+
+                    if (Array.isArray(legacyItems) && legacyItems.length > 0) {
+                        const today = new Date().toISOString().slice(0, 10)
+                        const importedName = `Imported ${today}`
+                        const savedAt = new Date().toISOString()
+
+                        ;(parsed as Record<string, SavedList>)[importedName] = {
+                            name: importedName,
+                            items: legacyItems,
+                            savedAt
+                        }
+
+                        localStorage.setItem(SAVED_LISTS_KEY, JSON.stringify(parsed))
+                        values = Object.values(parsed as Record<string, SavedList>)
+                    }
+                }
+
+                return values
             } catch {
                 return []
             }
@@ -133,6 +216,30 @@ export const useShoppingListStore = defineStore('shoppingList', {
                 const list = (parsed as Record<string, SavedList>)[name]
                 if (!list || !Array.isArray(list.items)) return false
                 this.items = list.items
+                return true
+            } catch {
+                return false
+            }
+        },
+
+        deleteSavedList(name: string) {
+            if (!process.client) return false
+
+            const trimmed = name.trim()
+            if (!trimmed) return false
+
+            try {
+                const raw = localStorage.getItem(SAVED_LISTS_KEY)
+                const parsed = raw ? JSON.parse(raw) : {}
+                if (!parsed || typeof parsed !== 'object') return false
+
+                const lists = parsed as Record<string, SavedList>
+                const normalized = trimmed.toLowerCase()
+                const key = Object.keys(lists).find((k) => k.trim().toLowerCase() === normalized)
+                if (!key) return false
+
+                delete lists[key]
+                localStorage.setItem(SAVED_LISTS_KEY, JSON.stringify(lists))
                 return true
             } catch {
                 return false
@@ -172,6 +279,10 @@ export const useShoppingListStore = defineStore('shoppingList', {
 
         toggleDrawer() {
             this.isOpen = !this.isOpen
+        },
+
+        openDrawer() {
+            this.isOpen = true
         },
 
         closeDrawer() {

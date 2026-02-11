@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { useShoppingListStore } from '~/stores/shoppingList'
-
-const store = useShoppingListStore()
+definePageMeta({
+  layout: 'bottom-nav'
+})
 
 useHead({
   title: 'Search Products — SpyGrocery',
@@ -34,9 +34,5 @@ useHead({
         <SearchListPanel />
       </aside>
     </main>
-
-    <ShoppingListDrawer />
-
-    <SearchBottomNav />
   </div>
 </template>
