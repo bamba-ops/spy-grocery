@@ -2,7 +2,6 @@ import { serverSupabaseClient } from '#supabase/server'
 import { searchProducts } from '../../services/products/searchProducts'
 
 export default defineEventHandler(async (event) => {
-  console.log('event', event)
   const supabase = await serverSupabaseClient(event)
   const query = getQuery(event)
 

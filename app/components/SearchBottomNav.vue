@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { Home, Search, ShoppingBag, List } from 'lucide-vue-next'
-import { useShoppingListStore } from '~/stores/shoppingList'
+import { useListsStore } from '~/stores/lists'
 
-const store = useShoppingListStore()
+const store = useListsStore()
 
 const route = useRoute()
 const isHome = computed(() => route.path === '/')

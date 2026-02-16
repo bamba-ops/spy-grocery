@@ -147,15 +147,15 @@ Pense en couches: UI -> State -> Use-cases -> Data.
     - `stores/[storeSlug]/products/[slug].vue` mock detail
 - `app/components/` (sections landing, search, lists, shared)
   - `app/stores/` (Pinia)
+    - `lists.ts` (liste courante + listes sauvegardees)
     - `search.ts`
     - `stores.ts`
-    - `shoppingList.ts`
   - `app/composables/`
     - `api/useProducts.ts`
     - `api/useStores.ts`
     - `feature/useSearch.ts`
     - `feature/useLists.ts`
-    - `local/savedListsStorage.ts`
+    - `local/useListsStorage.ts`
 
 - `shared/`
   - `shared/types/`

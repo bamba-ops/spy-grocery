@@ -3,6 +3,7 @@ const {
   controls,
   filteredLists,
   error,
+  refreshLists,
   handleOpenList,
   handleDeleteList
 } = useLists()
@@ -21,6 +22,11 @@ useHead({
       href: 'https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,600;0,700;1,600&family=Manrope:wght@400;500;600&display=swap'
     }
   ]
+})
+
+onMounted(() => {
+  // Page-level fetch: load saved lists when entering /lists.
+  refreshLists()
 })
 
 </script>

@@ -1,5 +1,4 @@
 import { useListsStore } from '~/stores/lists'
-import { useShoppingListStore } from '~/stores/shoppingList'
 
 type ListsSort = 'recent' | 'name' | 'total'
 
@@ -8,9 +7,14 @@ interface ListsPageControls {
   query: string
 }
 
-export const useLists = () => {
+interface UseListsOptions {
+  // Optional hook for UI-specific side effects after a successful save
+  // (example: close the right drawer before redirecting).
+  afterSave?: () => void | Promise<void>
+}
+
+export const useLists = (options: UseListsOptions = {}) => {
   const listsStore = useListsStore()
-  const shoppingListStore = useShoppingListStore()
 
   // UI controls for the Lists page:
   // - sort drives ordering strategy
@@ -58,8 +62,8 @@ export const useLists = () => {
   const handleOpenList = (name: string) => {
     const list = listsStore.findSavedList(name)
     if (!list || !Array.isArray(list.items)) return
-    shoppingListStore.setItems(list.items)
-    shoppingListStore.openDrawer()
+    listsStore.setItems(list.items)
+    listsStore.openDrawer()
   }
 
   // Delete flow is client-only (uses window.confirm).
@@ -70,10 +74,56 @@ export const useLists = () => {
     await listsStore.deleteSavedList(name)
   }
 
-  // Initial fetch when page/composable is mounted.
-  onMounted(() => {
-    refreshLists()
-  })
+  // Local UI state for the save modal.
+  const isSaveModalOpen = ref(false)
+
+  // Seed list name with last used value or today's fallback.
+  const getDefaultListName = () => {
+    const today = new Date().toISOString().slice(0, 10)
+    return listsStore.lastSavedName ?? `List ${today}`
+  }
+
+  const saveNameSeed = ref(getDefaultListName())
+
+  // Open modal and reset validation state each time.
+  const openSave = () => {
+    listsStore.clearSaveError()
+    saveNameSeed.value = getDefaultListName()
+    isSaveModalOpen.value = true
+  }
+
+  // Close modal and clear save errors to avoid stale feedback.
+  const closeSave = () => {
+    listsStore.clearSaveError()
+    isSaveModalOpen.value = false
+  }
+
+  // Save flow used by search panel + drawer:
+  // 1) persist named list, 2) clear current cart, 3) refresh saved lists,
+  // 4) run optional UI callback, 5) go to /lists.
+  const handleSave = async (name: string) => {
+    const ok = listsStore.saveListFromItems(name, listsStore.items)
+    if (!ok) return false
+
+    isSaveModalOpen.value = false
+    listsStore.clearList()
+    await listsStore.fetchSavedLists()
+
+    if (options.afterSave) {
+      await options.afterSave()
+    }
+
+    await navigateTo('/lists')
+    return true
+  }
+
+  // Clear current cart with explicit user confirmation.
+  const handleClear = () => {
+    if (!process.client) return
+    const ok = window.confirm('Clear the current list?')
+    if (!ok) return
+    listsStore.clearList()
+  }
 
   return {
     controls,
@@ -82,6 +132,12 @@ export const useLists = () => {
     error: computed(() => listsStore.error),
     refreshLists,
     handleOpenList,
-    handleDeleteList
+    handleDeleteList,
+    isSaveModalOpen,
+    saveNameSeed,
+    openSave,
+    closeSave,
+    handleSave,
+    handleClear
   }
 }

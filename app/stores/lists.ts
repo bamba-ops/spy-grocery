@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia'
+import type { Product } from '#shared/types'
 import type { CartItem, SavedList } from '#shared/types/lists'
 
+const ADD_FEEDBACK_MS = 300
 const SAVE_FEEDBACK_MS = 1200
 
 const ERROR_MESSAGES = {
@@ -18,6 +20,11 @@ const mapWriteResultToError = (result: SavedListWriteResult, fallback: string) =
 
 export const useListsStore = defineStore('lists', {
   state: () => ({
+    // Current working compare list (cart-like state).
+    items: [] as CartItem[],
+    isOpen: false,
+    justAdded: false,
+
     // Saved lists dataset displayed on /lists page.
     savedLists: [] as SavedList[],
     // Async state for fetching/deleting saved lists.
@@ -29,7 +36,100 @@ export const useListsStore = defineStore('lists', {
     lastSaveError: null as string | null
   }),
 
+  getters: {
+    // Group current list items by store name for panel/drawer rendering.
+    groupedItems: (state) => {
+      const groups: Record<string, CartItem[]> = {}
+      state.items.forEach((item) => {
+        const store = item.product.store.name
+        if (!groups[store]) {
+          groups[store] = []
+        }
+        groups[store].push(item)
+      })
+      return groups
+    },
+
+    // Subtotals per store for the current working list.
+    storeTotals: (state) => {
+      const totals: Record<string, number> = {}
+      state.items.forEach((item) => {
+        const store = item.product.store.name
+        if (!totals[store]) {
+          totals[store] = 0
+        }
+        const price = item.product.price || 0
+        totals[store] += price * item.quantity
+      })
+      return totals
+    },
+
+    // Grand total for the current list.
+    grandTotal: (state) => {
+      return state.items.reduce((total, item) => {
+        const price = item.product.price || 0
+        return total + price * item.quantity
+      }, 0)
+    },
+
+    // Quantity sum for badge/counters.
+    itemCount: (state) => {
+      return state.items.reduce((total, item) => total + item.quantity, 0)
+    }
+  },
+
   actions: {
+    addItem(product: Product) {
+      const existingItem = this.items.find((item) => item.product.id === product.id)
+      if (existingItem) {
+        existingItem.quantity++
+      } else {
+        this.items.push({ product, quantity: 1 })
+      }
+
+      this.justAdded = true
+      setTimeout(() => {
+        this.justAdded = false
+      }, ADD_FEEDBACK_MS)
+    },
+
+    removeItem(productId: string) {
+      const index = this.items.findIndex((item) => item.product.id === productId)
+      if (index !== -1) {
+        this.items.splice(index, 1)
+      }
+    },
+
+    updateQuantity(productId: string, quantity: number) {
+      const item = this.items.find((item) => item.product.id === productId)
+      if (!item) return
+
+      item.quantity = quantity
+      if (item.quantity <= 0) {
+        this.removeItem(productId)
+      }
+    },
+
+    toggleDrawer() {
+      this.isOpen = !this.isOpen
+    },
+
+    openDrawer() {
+      this.isOpen = true
+    },
+
+    closeDrawer() {
+      this.isOpen = false
+    },
+
+    clearList() {
+      this.items = []
+    },
+
+    setItems(items: CartItem[]) {
+      this.items = items
+    },
+
     // Triggers the temporary "Saved" visual state.
     triggerSavedFeedback() {
       this.justSaved = true

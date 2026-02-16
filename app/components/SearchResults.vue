@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { useShoppingListStore } from '~/stores/shoppingList'
+import type { Product } from '#shared/types'
+import { useListsStore } from '~/stores/lists'
 import { useSearchStore } from '~/stores/search'
 
-const shoppingListStore = useShoppingListStore()
+const listsStore = useListsStore()
 const searchStore = useSearchStore()
 const { getImageDisplay } = useProducts()
 
@@ -23,8 +24,8 @@ const formatPrice = (price: number | null) => {
   return price.toFixed(2)
 }
 
-const handleAdd = (product: { id: string }) => {
-  shoppingListStore.addItem(product as any)
+const handleAdd = (product: Product) => {
+  listsStore.addItem(product)
   lastAddedId.value = product.id
   setTimeout(() => {
     if (lastAddedId.value === product.id) {

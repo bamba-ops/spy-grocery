@@ -1,64 +1,26 @@
 <script setup lang="ts">
 import { Minus, Plus, Trash2 } from 'lucide-vue-next'
-import { useShoppingListStore } from '~/stores/shoppingList'
 import { useListsStore } from '~/stores/lists'
 
-const store = useShoppingListStore()
 const listsStore = useListsStore()
-const router = useRouter()
-
-const handleClear = () => {
-  if (!process.client) return
-  const ok = window.confirm('Clear the current list?')
-  if (!ok) return
-  store.clearList()
-}
-
-const isSaveModalOpen = ref(false)
-
-const getDefaultListName = () => {
-  const today = new Date().toISOString().slice(0, 10)
-  return listsStore.lastSavedName ?? `List ${today}`
-}
-
-const saveNameSeed = ref(getDefaultListName())
-
-const openSave = () => {
-  listsStore.clearSaveError()
-  saveNameSeed.value = getDefaultListName()
-  isSaveModalOpen.value = true
-}
-
-const closeSave = () => {
-  listsStore.clearSaveError()
-  isSaveModalOpen.value = false
-}
-
-const handleSave = async (name: string) => {
-  const ok = listsStore.saveListFromItems(name, store.items)
-  if (!ok) return
-
-  isSaveModalOpen.value = false
-  store.clearList()
-  await listsStore.fetchSavedLists()
-  await router.push('/lists')
-}
+// Reuse lists feature handlers for save/clear behavior.
+const { isSaveModalOpen, saveNameSeed, openSave, closeSave, handleSave, handleClear } = useLists()
 </script>
 
 <template>
   <div class="rounded-2xl border border-white/10 bg-black/60">
     <div class="flex items-center justify-between border-b border-white/10 px-5 py-4">
       <h3 class="text-xs uppercase tracking-[0.35em] text-white/70">Shopping List</h3>
-      <span class="text-xs uppercase tracking-[0.35em] text-white/70">{{ store.itemCount }} items</span>
+      <span class="text-xs uppercase tracking-[0.35em] text-white/70">{{ listsStore.itemCount }} items</span>
     </div>
 
     <div class="max-h-[640px] overflow-y-auto px-5 py-4">
-      <div v-if="store.items.length === 0" class="py-12 text-center text-xs uppercase tracking-[0.35em] text-white/40">
+      <div v-if="listsStore.items.length === 0" class="py-12 text-center text-xs uppercase tracking-[0.35em] text-white/40">
         No items yet
       </div>
 
       <div v-else class="space-y-6">
-        <div v-for="(items, storeName) in store.groupedItems" :key="storeName" class="space-y-3">
+        <div v-for="(items, storeName) in listsStore.groupedItems" :key="storeName" class="space-y-3">
           <div class="flex items-center justify-between text-[10px] uppercase tracking-[0.35em] text-white/60">
             <div class="flex items-center gap-2">
               <div class="flex h-7 w-7 items-center justify-center rounded-full border border-white/15 bg-white/10 text-[10px] text-white/60">
@@ -73,7 +35,7 @@ const handleSave = async (name: string) => {
               </div>
               <span>{{ storeName }}</span>
             </div>
-            <span>${{ store.storeTotals[storeName]?.toFixed(2) }}</span>
+            <span>${{ listsStore.storeTotals[storeName]?.toFixed(2) }}</span>
           </div>
 
           <div
@@ -86,7 +48,7 @@ const handleSave = async (name: string) => {
                 v-if="item.product.image_url"
                 :src="item.product.image_url"
                 :alt="item.product.name"
-                class="h-full w-full object-contain grayscale brightness-90 contrast-110"
+                class="h-full w-full object-contain"
                 loading="lazy"
               />
               <div v-else class="text-2xl">◻</div>
@@ -101,21 +63,21 @@ const handleSave = async (name: string) => {
                 <div class="flex items-center rounded-full border border-white/20">
                   <button
                     class="px-2 py-1 text-white/70 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-                    @click="store.updateQuantity(item.product.id, item.quantity - 1)"
+                    @click="listsStore.updateQuantity(item.product.id, item.quantity - 1)"
                   >
                     <Minus class="h-3 w-3" />
                   </button>
                   <span class="px-2 text-xs uppercase tracking-[0.3em] text-white/80">{{ item.quantity }}</span>
                   <button
                     class="px-2 py-1 text-white/70 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-                    @click="store.addItem(item.product)"
+                    @click="listsStore.addItem(item.product)"
                   >
                     <Plus class="h-3 w-3" />
                   </button>
                 </div>
                 <button
                   class="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-white/60 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-                  @click="store.removeItem(item.product.id)"
+                  @click="listsStore.removeItem(item.product.id)"
                 >
                   <Trash2 class="h-3 w-3" /> Remove
                 </button>
@@ -130,7 +92,7 @@ const handleSave = async (name: string) => {
     <div class="border-t border-white/10 px-5 py-5">
       <div class="flex items-center justify-between text-sm uppercase tracking-[0.35em] text-white/70">
         <span>Total Estimate</span>
-        <span class="font-display text-2xl font-semibold italic text-white">${{ store.grandTotal.toFixed(2) }}</span>
+        <span class="font-display text-2xl font-semibold italic text-white">${{ listsStore.grandTotal.toFixed(2) }}</span>
       </div>
       <div class="mt-4 grid grid-cols-2 gap-3">
         <button

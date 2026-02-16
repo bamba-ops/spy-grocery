@@ -11,9 +11,9 @@ Scope: frontend Nuxt + API Nitro + state Pinia + localStorage.
   - `app/pages/search.vue`
   - `app/pages/lists.vue`
 - State global:
+  - `app/stores/lists.ts`
   - `app/stores/search.ts`
   - `app/stores/stores.ts`
-  - `app/stores/shoppingList.ts`
 - Data fetch front:
   - `app/composables/api/useProducts.ts`
   - `app/composables/api/useStores.ts`
@@ -111,13 +111,10 @@ Scope: frontend Nuxt + API Nitro + state Pinia + localStorage.
   - clear
 
 ### State
-- `app/stores/shoppingList.ts`
-  - liste courante `items`
-  - drawer state `isOpen`
-  - save named list: `saveListAs(name)` (localStorage)
-  - read: `getSavedLists()`
-  - load: `loadSavedList(name)`
-  - delete: `deleteSavedList(name)`
+- `app/stores/lists.ts`
+  - liste courante `items` + drawer `isOpen`
+  - listes sauvegardees `savedLists`
+  - save/load/delete via module localStorage dedie
   - clear: `clearList()`
 
 ### Data persistence
@@ -126,8 +123,8 @@ Scope: frontend Nuxt + API Nitro + state Pinia + localStorage.
   - `spygrocery:shopping-list` (legacy import fallback)
 
 ### Point sensible actuel
-- Le store combine logique UI (flags d'animation) + persistence + operations CRUD.
-  (acceptable court terme, mais pourra etre scinde en module persistence plus tard)
+- Le store unifie combine etat liste courante + listes sauvegardees.
+  (coherent pour simplifier maintenant, mais a surveiller si la taille grossit)
 
 ---
 
