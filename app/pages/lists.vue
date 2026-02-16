@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import type { SavedList } from '~/stores/shoppingList'
-import { useShoppingListStore } from '~/stores/shoppingList'
-import type { ListsSort } from '~/components/ListsToolbar.vue'
-
-const shoppingListStore = useShoppingListStore()
+const {
+  controls,
+  filteredLists,
+  error,
+  handleOpenList,
+  handleDeleteList
+} = useLists()
 
 definePageMeta({
   layout: 'bottom-nav'
@@ -21,59 +23,6 @@ useHead({
   ]
 })
 
-const controls = ref<{ sort: ListsSort; query: string }>({ sort: 'recent', query: '' })
-
-const refreshLists = () => {
-  if (!process.client) return
-  savedLists.value = shoppingListStore.getSavedLists()
-}
-
-
-const handleOpenList = (name: string) => {
-  const ok = shoppingListStore.loadSavedList(name)
-  if (ok) {
-    shoppingListStore.openDrawer()
-  }
-}
-
-const handleDeleteList = (name: string) => {
-  if (!process.client) return
-  const ok = window.confirm(`Delete "${name}"?`)
-  if (!ok) return
-  const deleted = shoppingListStore.deleteSavedList(name)
-  if (deleted) {
-    refreshLists()
-  }
-}
-
-const savedLists = ref<SavedList[]>([])
-
-onMounted(() => {
-  refreshLists()
-})
-
-const listScore = (list: SavedList) => {
-  const total = list.items.reduce((acc, it) => acc + (it.product.price ?? 0) * it.quantity, 0)
-  const items = list.items.reduce((acc, it) => acc + (it.quantity || 0), 0)
-  return { total, items }
-}
-
-const filteredLists = computed(() => {
-  const q = controls.value.query.trim().toLowerCase()
-  const base = q
-    ? savedLists.value.filter(l => l.name.toLowerCase().includes(q))
-    : savedLists.value.slice()
-
-  const sort = controls.value.sort
-  base.sort((a, b) => {
-    if (sort === 'name') return a.name.localeCompare(b.name)
-    if (sort === 'total') return listScore(b).total - listScore(a).total
-    // recent
-    return new Date(b.savedAt).getTime() - new Date(a.savedAt).getTime()
-  })
-
-  return base
-})
 </script>
 
 <template>
@@ -87,6 +36,10 @@ const filteredLists = computed(() => {
         </div>
 
         <ListsToolbar v-model="controls" />
+
+        <div v-if="error" class="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/80">
+          {{ error }}
+        </div>
 
         <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
           <SavedListCard v-for="list in filteredLists" :key="list.name" :list="list" @open="handleOpenList" @delete="handleDeleteList" />

@@ -1,4 +1,4 @@
-import type { Store } from '~/types'
+import type { Store } from '#shared/types'
 
 export const useStores = () => {
   const fetchStores = async () => {

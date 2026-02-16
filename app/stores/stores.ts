@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
-import { useStores } from '~/composables/useStores'
-import type { Store } from '~/types'
+import type { Store } from '#shared/types'
 
 export const useStoresStore = defineStore('stores', {
   state: () => ({

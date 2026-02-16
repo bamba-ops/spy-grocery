@@ -49,9 +49,9 @@ Single-test notes (because agents need this)
 - `app/components/`: landing + search components
 - `app/stores/`: Pinia stores (search, stores list, shopping list)
 - `app/composables/`: `$fetch` wrappers + UI utilities
-- `app/types/`:
-  - `app/types/database.types.ts` generated Supabase types
-  - `app/types/index.ts` domain + API types (import from here in app code)
+- `shared/types/`:
+  - `shared/types/database.types.ts` generated Supabase types
+  - `shared/types/index.ts` domain + API types (import from here in app + server code)
 - `server/api/`: Nitro API routes (file-based routing)
 - `public/`: hero background media
 
@@ -94,7 +94,7 @@ Naming
 - Variables/functions: `camelCase`, constants: `SCREAMING_SNAKE_CASE`.
 
 Imports
-- Prefer type-only imports: `import type { Product } from '~/types'`.
+- Prefer type-only imports: `import type { Product } from '#shared/types'`.
 - Import order guideline:
   1) Vue/Nuxt imports
   2) third-party libs
@@ -102,7 +102,7 @@ Imports
   4) relative imports
 
 Types
-- Prefer domain types from `app/types/index.ts`.
+- Prefer domain types from `shared/types/index.ts`.
 - Avoid `any`; if unavoidable, narrow it quickly (`unknown` + type guard) and keep scope small.
 
 Error handling

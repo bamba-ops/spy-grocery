@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Trash2 } from 'lucide-vue-next'
-import type { SavedList } from '~/stores/shoppingList'
+import type { SavedList } from '#shared/types/lists'
 
 const props = defineProps<{
   list: SavedList

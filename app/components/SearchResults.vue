@@ -1,8 +1,6 @@
 <script setup lang="ts">
-import { useDebounceFn } from '@vueuse/core'
 import { useShoppingListStore } from '~/stores/shoppingList'
 import { useSearchStore } from '~/stores/search'
-import { useProducts } from '~/composables/useProducts'
 
 const shoppingListStore = useShoppingListStore()
 const searchStore = useSearchStore()
@@ -19,20 +17,6 @@ const canNext = computed(() => page.value < totalPages.value)
 
 const activeQuery = computed(() => searchStore.query || 'Organic Avocado')
 const lastAddedId = ref<string | null>(null)
-
-const debouncedSearch = useDebounceFn(() => {
-  searchStore.search()
-}, 400)
-
-watch(() => searchStore.query, () => {
-  debouncedSearch()
-})
-
-onMounted(() => {
-  if (searchStore.results.length === 0) {
-    searchStore.search()
-  }
-})
 
 const formatPrice = (price: number | null) => {
   if (price === null) return 'N/A'

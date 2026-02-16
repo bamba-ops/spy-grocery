@@ -4,38 +4,15 @@ import { useStoresStore } from '~/stores/stores'
 
 const searchStore = useSearchStore()
 const storesStore = useStoresStore()
-const searchInput = ref(searchStore.query)
 
-onMounted(async () => {
-  await storesStore.loadStores()
-  searchStore.setSelectedStores(storesStore.getAllStoresIds.join(','))
-  if (searchStore.results.length === 0 && !searchStore.loading) {
-    searchStore.search()
-  }
-})
-
-const clearAll = () => {
-  searchStore.showPromosOnly = false
-  storesStore.selectAll()
-  searchStore.setSelectedStores(storesStore.getAllStoresIds.join(','))
-  searchStore.search()
-}
-
-watch(() => searchStore.sortBy, () => {
-  searchStore.search()
-})
-
-watch(() => searchStore.selectedStores, () => {
-  searchStore.search()
-})
-
-watch(() => storesStore.selectedStoreIds, (newIds) => {
-  searchStore.setSelectedStores(newIds.join(','))
-}, { deep: true })
-
-watch(searchInput, (value) => {
-  searchStore.setQuery(value)
-})
+const {
+  searchInput,
+  updateSearchInput,
+  updateSort,
+  updateStoreFilter,
+  updatePromosOnly,
+  clearAllFilters
+} = useSearch()
 </script>
 
 <template>
@@ -44,15 +21,17 @@ watch(searchInput, (value) => {
       <div class="flex h-10 items-center gap-2 rounded-full border border-white/15 px-3 text-white/70">
         <span class="text-[10px] uppercase tracking-[0.3em]">⌕</span>
         <input
-          v-model="searchInput"
+          :value="searchInput"
           type="text"
           placeholder="Search"
           class="h-full w-full bg-transparent text-[10px] uppercase tracking-[0.3em] text-white placeholder:text-white/40 focus:outline-none"
+          @input="updateSearchInput(($event.target as HTMLInputElement).value)"
         />
       </div>
       <select
-        v-model="searchStore.sortBy"
+        :value="searchStore.sortBy"
         class="h-10 rounded-full border border-white/15 bg-black px-3 text-[10px] uppercase tracking-[0.3em] text-white/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+        @change="updateSort(($event.target as HTMLSelectElement).value as 'price-low' | 'price-high' | 'name')"
       >
         <option value="price-low">Price: Lowest</option>
         <option value="price-high">Price: Highest</option>
@@ -60,8 +39,9 @@ watch(searchInput, (value) => {
       </select>
 
       <select
-        v-model="searchStore.selectedStores"
+        :value="searchStore.selectedStores"
         class="h-10 rounded-full border border-white/15 bg-black px-3 text-[10px] uppercase tracking-[0.3em] text-white/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+        @change="updateStoreFilter(($event.target as HTMLSelectElement).value)"
       >
         <option :value="storesStore.getAllStoresIds.join(',')">Store: All</option>
         <option v-for="store in storesStore.stores" :key="store.id" :value="store.id">
@@ -71,10 +51,10 @@ watch(searchInput, (value) => {
 
       <label class="inline-flex h-10 items-center gap-2 rounded-full border border-white/15 px-3 text-[10px] uppercase tracking-[0.3em] text-white/70">
         <input
-          v-model="searchStore.showPromosOnly"
+          :checked="searchStore.showPromosOnly"
           type="checkbox"
           class="h-3 w-3 border border-white/30 bg-black accent-white"
-          @change="searchStore.search()"
+          @change="updatePromosOnly(($event.target as HTMLInputElement).checked)"
         />
         Promos only
       </label>
@@ -83,7 +63,7 @@ watch(searchInput, (value) => {
     <div class="mt-3 flex flex-wrap items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-white/60">
       <button
         class="ml-2 text-white/70 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-        @click="clearAll"
+        @click="clearAllFilters"
       >
         Clear all
       </button>

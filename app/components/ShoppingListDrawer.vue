@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { X, Trash2, Plus, Minus } from 'lucide-vue-next'
 import { useShoppingListStore } from '~/stores/shoppingList'
+import { useListsStore } from '~/stores/lists'
 
 const store = useShoppingListStore()
+const listsStore = useListsStore()
 const router = useRouter()
 
 const handleClear = () => {
@@ -16,27 +18,29 @@ const isSaveModalOpen = ref(false)
 
 const getDefaultListName = () => {
   const today = new Date().toISOString().slice(0, 10)
-  return store.lastSavedName ?? `List ${today}`
+  return listsStore.lastSavedName ?? `List ${today}`
 }
 
 const saveNameSeed = ref(getDefaultListName())
 
 const openSave = () => {
-  store.clearSaveError()
+  listsStore.clearSaveError()
   saveNameSeed.value = getDefaultListName()
   isSaveModalOpen.value = true
 }
 
 const closeSave = () => {
-  store.clearSaveError()
+  listsStore.clearSaveError()
   isSaveModalOpen.value = false
 }
 
 const handleSave = async (name: string) => {
-  const ok = store.saveListAs(name)
+  const ok = listsStore.saveListFromItems(name, store.items)
   if (!ok) return
 
   isSaveModalOpen.value = false
+  store.clearList()
+  await listsStore.fetchSavedLists()
   store.closeDrawer()
   await router.push('/lists')
 }
@@ -172,13 +176,13 @@ const handleSave = async (name: string) => {
             <button
               :class="[
                 'w-full rounded-full border border-white/20 px-4 py-3 text-[10px] uppercase tracking-[0.35em] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black',
-                store.justSaved
+                listsStore.justSaved
                   ? 'bg-white text-black shadow-[0_0_26px_rgba(255,255,255,0.35)] animate-pulse'
                   : 'bg-white text-black hover:bg-white/90'
               ]"
               @click="openSave()"
             >
-              {{ store.justSaved ? 'Saved' : 'Save list' }}
+              {{ listsStore.justSaved ? 'Saved' : 'Save list' }}
             </button>
           </div>
         </div>
@@ -188,7 +192,7 @@ const handleSave = async (name: string) => {
     <SaveListModal
       :open="isSaveModalOpen"
       :initial-name="saveNameSeed"
-      :error-text="store.lastSaveError"
+      :error-text="listsStore.lastSaveError"
       @close="closeSave"
       @save="handleSave"
     />

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+const { initSearchPage } = useSearch()
+
 definePageMeta({
   layout: 'bottom-nav'
 })
@@ -20,6 +22,10 @@ useHead({
       href: 'https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,600;0,700;1,600&family=Manrope:wght@400;500;600&display=swap'
     }
   ]
+})
+
+onMounted(() => {
+  initSearchPage()
 })
 </script>
 

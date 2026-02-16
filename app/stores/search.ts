@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
-import type { Product } from '~/types'
-import { useProducts } from '~/composables/useProducts'
+import type { Product } from '#shared/types'
 
 export const useSearchStore = defineStore('search', {
   state: () => ({
@@ -52,6 +51,11 @@ export const useSearchStore = defineStore('search', {
       this.selectedStores = storeIds
     },
 
+    setStoreFilter(storeIds: string) {
+      this.selectedStores = storeIds
+      this.page = 1
+    },
+
     setQuery(q: string) {
       this.query = q
       this.page = 1
@@ -61,6 +65,11 @@ export const useSearchStore = defineStore('search', {
       this.sortBy = sort
       this.page = 1
       this.search()
+    },
+
+    setPromosOnly(enabled: boolean) {
+      this.showPromosOnly = enabled
+      this.page = 1
     },
 
     nextPage() {
