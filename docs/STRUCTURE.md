@@ -1,4 +1,3 @@
-
 # SpyGrocery (Nuxt 4) - Structure du projet
 
 Objectif: rendre le repo lisible, stable, et eviter que la logique se retrouve partout.
@@ -10,8 +9,8 @@ Voir aussi: `docs/PROJECT_MAP.md` (cartographie actuelle des flux Search / Lists
 
 - Les composants Vue = UI uniquement (pas de requetes DB, pas de logique metier).
 - Les pages = composition de sections + wiring minimal (pas de logique metier).
-- Pinia = etat global + actions, resilientes aux erreurs.
-- Composables = logique reutilisable (fetch wrappers, helpers UI).
+- Pinia = couche feature front (etat + actions metier front).
+- Composables = data access layer / domain front (fetch API interne + APIs externes + adapters).
 - `server/api` = controleurs HTTP (parse/valide, appelle services, retourne).
 - `server/services` = logique metier (use-cases).
 - `server/repositories` = acces donnees (Supabase/SQL), appels isoles.
@@ -26,8 +25,8 @@ Nom court de l'architecture:
 
 Flux cible:
 - UI (`app/pages`, `app/components`)
-- Front orchestration (`app/composables`)
-- State global (`app/stores`)
+- Feature state + actions (`app/stores`)
+- Domain/Data access front (`app/composables`)
 - API interne (`server/api`)
 - Metier (`server/services`)
 - Data access (`server/repositories`)
@@ -35,7 +34,7 @@ Flux cible:
 
 Regle anti-bazar:
 - Une couche ne saute pas les couches inferieures.
-- Ex: component -> store/composable -> api -> service -> repository -> supabase.
+- Ex: component/page -> store(feature) -> composable(domain/api) -> server/api -> service -> repository -> supabase.
 
 ### Ce qui est interdit par couche
 
@@ -43,12 +42,13 @@ UI (`app/pages`, `app/components`):
 - interdit: requetes Supabase directes, logique metier lourde, manip localStorage brute.
 
 Composables (`app/composables`):
-- interdit: devenir un "god composable" qui melange data globale + navigation + CRUD + watchers implicites.
+- interdit: devenir un "god composable" qui gere l'etat global feature, la navigation, et le rendu UI.
+- autorise: acces donnees, wrappers de fetch, mapping DTO -> types domaine, adaptation des erreurs/reponses.
 - taille guide: si > 150-200 lignes, split en composables plus petits.
 
 Stores (`app/stores`):
 - interdit: logique purement visuelle de composant (layout, style concerns).
-- autorise: etat partage, actions metier cote front, erreurs/loading globaux.
+- autorise: etat feature partage + actions metier front (source de verite pour la feature).
 
 API (`server/api`):
 - interdit: 200+ lignes de logique metier + requetes SQL melangees.
@@ -62,23 +62,27 @@ Repositories (`server/repositories`):
 - interdit: logique metier produit.
 - autorise: acces DB/SDK, requetes et mapping data source.
 
-### Separation critique: etat de donnee vs etat d'UI
+### Separation critique: feature state vs data access
 
-Etat de donnee (global/shareable) -> store Pinia:
-- ex: listes sauvegardees, panier courant, filtres globaux.
+Etat feature (global/shareable) -> store Pinia:
+- ex: liste active, listes sauvegardees, drawer open/close, filtres globaux.
 
-Etat d'UI (local page/composant) -> composable/page local:
-- ex: search input local, tab active locale, open/close local non partage.
+Acces donnees/domaine (API/DB/externe) -> composables:
+- ex: `useProducts()` pour `/api/products/search`, `useStores()` pour `/api/stores`, futurs domains externes.
+
+Etat d'UI local (non partage) -> page/composant:
+- ex: input local, tab active locale, etat visuel transitoire.
 
 Regle pratique:
-- si 2+ pages/composants en ont besoin, mettre en store.
-- sinon, garder local (composable/page).
+- si c'est du state feature partage (2+ composants/pages), mettre en store.
+- si c'est de l'acces donnees, mettre en composable domain.
+- si c'est purement visuel et local, garder dans le composant/page.
 
 ### Regle anti-magie (watchers)
 
 - Eviter les watchers en cascade qui declenchent des fetchs implicites.
 - Preferer des actions explicites (`search()`) + debounce local controle.
-- Si watchers necessaires, les centraliser dans un seul composable de feature et documenter le flux.
+- Si watchers necessaires pour orchestration locale, les centraliser dans un seul endroit (page/composant) et documenter le flux.
 
 ## Contexte produit
 
@@ -108,17 +112,17 @@ Pense en couches: UI -> State -> Use-cases -> Data.
 - `app/pages/*`: routing + layout + composition.
 - `app/components/*`: composants (presentational et petits composants d'interaction).
 
-2) State
+2) Feature state
 - `app/stores/*` (Pinia):
   - etat serializable
   - actions async avec `loading/error`
   - pas de DOM/Window sans `process.client`
-  - data globale partagee, pas d'effets UI diffus
+  - source de verite de chaque feature front
 
-3) Logique reutilisable (front)
-- `app/composables/*`: wrappers $fetch, helpers UI, adapters simples.
-  Exemple: `useProducts().search(params)`.
-  - orchestration de feature cote front (sans devenir un store bis)
+3) Data access / Domain (front)
+- `app/composables/*`: wrappers `$fetch`, appels API internes, appels APIs externes, mapping de reponse.
+  Exemples: `useProducts().search(params)`, `useStores().list()`.
+  - pas de state feature global ici (ce state reste dans les stores).
 
 4) Backend (Nitro)
 - `server/api/*`: controleurs
@@ -153,8 +157,6 @@ Pense en couches: UI -> State -> Use-cases -> Data.
   - `app/composables/`
     - `api/useProducts.ts`
     - `api/useStores.ts`
-    - `feature/useSearch.ts`
-    - `feature/useLists.ts`
     - `local/useListsStorage.ts`
 
 - `shared/`
@@ -223,12 +225,12 @@ But: ranger sans casser.
 
 Plan court recommande:
 1) Lists feature:
-- store dedie pour data globale listes (si besoin)
-- composable page pour query/sort/handlers UI
+- store `lists.ts` = source de verite front
+- composables domain = acces persistence/API (pas d'etat feature global)
 
 2) Search feature:
 - composants UI-only
-- orchestration explicite dans composable (search + debounce), limiter watchers implicites
+- store `search.ts` pour state feature + composable domain pour fetch products
 
 3) Docs:
 - maintenir ce contrat a jour avant gros changements

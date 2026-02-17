@@ -1,12 +1,14 @@
 import type { Product } from '#shared/types'
 
-export interface CartItem {
+export interface ListProduct {
   product: Product
   quantity: number
 }
 
-export interface SavedList {
+export interface ListsProduct {
+  id: string
   name: string
-  items: CartItem[]
-  savedAt: string
+  items: ListProduct[]
+  createdAt: Date
+  updatedAt: Date
 }

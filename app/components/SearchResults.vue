@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import type { Product } from '#shared/types'
-import { useListsStore } from '~/stores/lists'
 import { useSearchStore } from '~/stores/search'
+import { useListsStore } from '~/stores/lists'
 
-const listsStore = useListsStore()
 const searchStore = useSearchStore()
-const { getImageDisplay } = useProducts()
+const lists = useListsStore()
+const useProduct = useProducts()
 
 const products = computed(() => searchStore.results)
 const isLoading = computed(() => searchStore.loading)
@@ -17,27 +17,15 @@ const canPrev = computed(() => page.value > 1)
 const canNext = computed(() => page.value < totalPages.value)
 
 const activeQuery = computed(() => searchStore.query || 'Organic Avocado')
-const lastAddedId = ref<string | null>(null)
 
 const formatPrice = (price: number | null) => {
   if (price === null) return 'N/A'
   return price.toFixed(2)
 }
 
-const handleAdd = (product: Product) => {
-  listsStore.addItem(product)
-  lastAddedId.value = product.id
-  setTimeout(() => {
-    if (lastAddedId.value === product.id) {
-      lastAddedId.value = null
-    }
-  }, 250)
-}
-
 const scrollToTop = () => {
-  if (process.client) {
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
+  if (!process.client) return
+  window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 const handlePrev = () => {
@@ -118,9 +106,9 @@ const handleNext = () => {
               Promo
             </div>
             <div class="relative aspect-square overflow-hidden rounded-t-2xl border-b border-white/10 bg-black">
-              <template v-if="getImageDisplay(product.image_url, product.name).type === 'url'">
+              <template v-if="useProduct.getImageDisplay(product.image_url, product.name).type === 'url'">
                 <img
-                  :src="getImageDisplay(product.image_url, product.name).value"
+                  :src="useProduct.getImageDisplay(product.image_url, product.name).value"
                   :alt="product.name"
                   class="h-full w-full object-contain brightness-90 contrast-110"
                   loading="lazy"
@@ -128,7 +116,7 @@ const handleNext = () => {
               </template>
               <template v-else>
                 <div class="flex h-full w-full items-center justify-center text-5xl text-white/60">
-                  {{ getImageDisplay(product.image_url, product.name).value }}
+                  {{ useProduct.getImageDisplay(product.image_url, product.name).value }}
                 </div>
               </template>
               <div class="pointer-events-none absolute inset-0 z-0 bg-black/40"></div>
@@ -152,9 +140,9 @@ const handleNext = () => {
               <button
                 :class="[
                   'inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 text-white/80 transition duration-200 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black',
-                  lastAddedId === product.id ? 'scale-110 ring-2 ring-white/40' : 'scale-100'
+                  lists.lastAddedProductId === product.id ? 'scale-110 ring-2 ring-white/40' : 'scale-100'
                 ]"
-                @click="handleAdd(product)"
+                @click="lists.addProductToList(product)"
                 aria-label="Add to list"
               >
                 +

@@ -2,7 +2,7 @@
 import { Home, Search, ShoppingBag, List } from 'lucide-vue-next'
 import { useListsStore } from '~/stores/lists'
 
-const store = useListsStore()
+const lists = useListsStore()
 
 const route = useRoute()
 const isHome = computed(() => route.path === '/')
@@ -51,15 +51,15 @@ const isLists = computed(() => route.path.startsWith('/lists'))
 
       <button
         class="relative inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/20 text-white/80 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-        @click="store.toggleDrawer()"
+        @click="lists.toggleDrawer()"
         aria-label="Compare list"
       >
         <ShoppingBag class="h-5 w-5" />
         <span
-          v-if="store.itemCount > 0"
+          v-if="lists.itemCount > 0"
           class="absolute -right-2 -top-2 inline-flex h-5 w-5 items-center justify-center rounded-full border border-white/20 bg-white text-[10px] font-semibold text-black"
         >
-          {{ store.itemCount }}
+          {{ lists.itemCount }}
         </span>
       </button>
     </nav>

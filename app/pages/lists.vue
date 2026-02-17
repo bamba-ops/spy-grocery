@@ -1,12 +1,53 @@
 <script setup lang="ts">
-const {
-  controls,
-  filteredLists,
-  error,
-  refreshLists,
-  handleOpenList,
-  handleDeleteList
-} = useLists()
+import type { ListProduct } from '#shared/types/lists'
+import { useListsStore } from '~/stores/lists'
+
+const listsStore = useListsStore()
+
+const controls = ref({
+  sort: 'recent' as 'recent' | 'name' | 'total',
+  query: ''
+})
+
+const listScore = (items: ListProduct[]) => {
+  return items.reduce((acc, item) => acc + (item.product.price ?? 0) * item.quantity, 0)
+}
+
+const filteredLists = computed(() => {
+  const q = controls.value.query.trim().toLowerCase()
+  const base = q
+    ? listsStore.multipleListsOfProducts.filter((list) => list.name.toLowerCase().includes(q))
+    : listsStore.multipleListsOfProducts.slice()
+
+  const sort = controls.value.sort
+  base.sort((a, b) => {
+    if (sort === 'name') return a.name.localeCompare(b.name)
+    if (sort === 'total') return listScore(b.items) - listScore(a.items)
+    return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+  })
+
+  return base
+})
+
+const error = computed(() => listsStore.error)
+
+const refreshLists = async () => {
+  await listsStore.fetchSavedLists()
+}
+
+const handleOpenList = (name: string) => {
+  const list = listsStore.findSavedList(name)
+  if (!list || !Array.isArray((list as any).items)) return
+  listsStore.setItems((list as any).items)
+  listsStore.openDrawer()
+}
+
+const handleDeleteList = async (name: string) => {
+  if (!process.client) return
+  const ok = window.confirm(`Delete "${name}"?`)
+  if (!ok) return
+  await listsStore.deleteSavedList(name)
+}
 
 definePageMeta({
   layout: 'bottom-nav'

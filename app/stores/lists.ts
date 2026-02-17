@@ -1,9 +1,6 @@
 import { defineStore } from 'pinia'
 import type { Product } from '#shared/types'
-import type { CartItem, SavedList } from '#shared/types/lists'
-
-const ADD_FEEDBACK_MS = 300
-const SAVE_FEEDBACK_MS = 1200
+import type { ListProduct, ListsProduct } from '#shared/types/lists'
 
 const ERROR_MESSAGES = {
   duplicateName: 'A list with that name already exists. Choose another.',
@@ -14,99 +11,112 @@ const ERROR_MESSAGES = {
 // Converts a low-level storage write result into a user-facing message.
 // Duplicate-name gets a specific message; everything else uses the provided fallback.
 const mapWriteResultToError = (result: SavedListWriteResult, fallback: string) => {
-  if (result.ok) return null
-  return result.reason === 'duplicate_name' ? ERROR_MESSAGES.duplicateName : fallback
+  void result
+  // TODO(exercise): map low-level storage errors to UI-friendly messages.
+  return fallback
 }
 
 export const useListsStore = defineStore('lists', {
   state: () => ({
-    // Current working compare list (cart-like state).
-    items: [] as CartItem[],
+    // Like a cart, but for lists.
+    productList: [] as ListProduct[],
     isOpen: false,
-    justAdded: false,
-
+    isClearConfirmModalOpen: false,
+    isSaveModalOpen: false,
+    saveNameSeed: '',
+    lastAddedProductId: null as string | null,
     // Saved lists dataset displayed on /lists page.
-    savedLists: [] as SavedList[],
+    multipleListsOfProducts: [] as ListsProduct[],
     // Async state for fetching/deleting saved lists.
     loading: false,
     error: null as string | null,
     // Save flow feedback state used by SaveListModal and Save button UI.
     justSaved: false,
     lastSavedName: null as string | null,
-    lastSaveError: null as string | null
+    lastSaveError: null as string | null,
+    ADD_FEEDBACK_MS: 300,
+    SAVE_FEEDBACK_MS: 1200
   }),
 
   getters: {
     // Group current list items by store name for panel/drawer rendering.
     groupedItems: (state) => {
-      const groups: Record<string, CartItem[]> = {}
-      state.items.forEach((item) => {
-        const store = item.product.store.name
-        if (!groups[store]) {
-          groups[store] = []
+      return state.productList.reduce((groups, item) => {
+        const storeName = item.product.store.name
+        if (!groups[storeName]) {
+          groups[storeName] = []
         }
-        groups[store].push(item)
-      })
-      return groups
+        groups[storeName].push(item)
+        return groups
+      }, {} as Record<string, ListProduct[]>)
     },
 
     // Subtotals per store for the current working list.
     storeTotals: (state) => {
-      const totals: Record<string, number> = {}
-      state.items.forEach((item) => {
-        const store = item.product.store.name
-        if (!totals[store]) {
-          totals[store] = 0
-        }
-        const price = item.product.price || 0
-        totals[store] += price * item.quantity
-      })
-      return totals
+      return state.productList.reduce((totals, item) => {
+        const storeName = item.product.store.name
+        totals[storeName] = (totals[storeName] ?? 0) + (item.product.price ?? 0) * item.quantity
+        return totals
+      }, {} as Record<string, number>)
     },
 
     // Grand total for the current list.
     grandTotal: (state) => {
-      return state.items.reduce((total, item) => {
-        const price = item.product.price || 0
-        return total + price * item.quantity
-      }, 0)
+      return state.productList.reduce((total, item) => total + (item.product.price ?? 0) * item.quantity, 0)
     },
 
     // Quantity sum for badge/counters.
     itemCount: (state) => {
-      return state.items.reduce((total, item) => total + item.quantity, 0)
+      return state.productList.reduce((total, item) => total + item.quantity, 0)
     }
   },
 
   actions: {
-    addItem(product: Product) {
-      const existingItem = this.items.find((item) => item.product.id === product.id)
-      if (existingItem) {
-        existingItem.quantity++
-      } else {
-        this.items.push({ product, quantity: 1 })
-      }
+    addProductToList(product: Product) {
+      this.addProduct(product)
+      this.lastAddedProductId = product.id
 
-      this.justAdded = true
       setTimeout(() => {
-        this.justAdded = false
-      }, ADD_FEEDBACK_MS)
+        if (this.lastAddedProductId === product.id) {
+          this.lastAddedProductId = null
+        }
+      }, this.ADD_FEEDBACK_MS)
     },
 
-    removeItem(productId: string) {
-      const index = this.items.findIndex((item) => item.product.id === productId)
-      if (index !== -1) {
-        this.items.splice(index, 1)
+    updateProductQuantity(productId: string, quantity: number) {
+      const item = this.productList.find((entry) => entry.product.id === productId)
+      if (!item) return
+      item.quantity = quantity
+      if (item.quantity <= 0) {
+        this.removeProductFromList(productId)
       }
+    },
+
+    addProduct(product: Product) {
+      const existingProduct = this.productList.find((item) => item.product.id === product.id)
+      if (existingProduct) {
+        existingProduct.quantity += 1
+      } else {
+        this.productList.push({ product, quantity: 1 })
+      }
+    },
+
+    isExistProduct(product: Product) {
+      return this.productList.some((item) => item.product.id === product.id)
+    },
+
+    removeProductFromList(productId: string) {
+      void productId
+      // TODO(exercise): remove one product row by id.
+      this.productList = this.productList.filter((item) => item.product.id !== productId)
     },
 
     updateQuantity(productId: string, quantity: number) {
-      const item = this.items.find((item) => item.product.id === productId)
+      const item = this.productList.find((entry) => entry.product.id === productId)
       if (!item) return
-
       item.quantity = quantity
       if (item.quantity <= 0) {
-        this.removeItem(productId)
+        this.removeProductFromList(productId)
       }
     },
 
@@ -122,86 +132,88 @@ export const useListsStore = defineStore('lists', {
       this.isOpen = false
     },
 
-    clearList() {
-      this.items = []
+    openClearConfirmModal() {
+      this.isClearConfirmModalOpen = true
     },
 
-    setItems(items: CartItem[]) {
-      this.items = items
+    closeClearConfirmModal() {
+      this.isClearConfirmModalOpen = false
+    },
+
+    openSave() {
+      const today = new Date().toISOString().slice(0, 10)
+      this.saveNameSeed = this.lastSavedName ?? `List ${today}`
+      this.isSaveModalOpen = true
+    },
+
+    closeSave() {
+      this.isSaveModalOpen = false
+      this.clearSaveError()
+    },
+
+    handleClear() {
+      this.clearCurrentList()
+      this.closeClearConfirmModal()
+    },
+
+    async handleSave(name: string) {
+      const ok = this.saveListFromItems(name, this.productList)
+      if (!ok) return false
+
+      this.closeSave()
+      return true
+    },
+
+    clearCurrentList() {
+      this.productList = []
+    },
+
+    setItems(items: ListProduct[]) {
+      this.productList = items
     },
 
     // Triggers the temporary "Saved" visual state.
     triggerSavedFeedback() {
-      this.justSaved = true
-      setTimeout(() => {
-        this.justSaved = false
-      }, SAVE_FEEDBACK_MS)
+      void this.SAVE_FEEDBACK_MS
+      // TODO(exercise): temporary "saved" feedback state.
     },
 
     // Clears the last save error before opening/closing save modal.
     clearSaveError() {
-      this.lastSaveError = null
+      // TODO(exercise): clear latest save error.
     },
 
     // Loads all saved lists from storage into store state.
     // This is the single entry point for refreshing the /lists data view.
     async fetchSavedLists() {
-      this.loading = true
-      this.error = null
-
-      try {
-        this.savedLists = getSavedLists() as SavedList[]
-      } catch {
-        this.error = 'Could not load saved lists.'
-      } finally {
-        this.loading = false
-      }
+      // TODO(exercise): load saved lists from storage and set loading/error states.
     },
 
     // Saves the current shopping-list items under a user-provided name.
     // Returns false for invalid/duplicate/storage errors and sets lastSaveError.
-    saveListFromItems(name: string, items: CartItem[]) {
-      const trimmed = name.trim()
-      if (!trimmed) return false
-
-      const result = saveNamedList(trimmed, items as unknown[])
-      if (!result.ok) {
-        this.lastSaveError = mapWriteResultToError(result, ERROR_MESSAGES.saveFailed)
-        return false
-      }
-
-      this.lastSavedName = trimmed
-      this.lastSaveError = null
-      this.triggerSavedFeedback()
-      return true
+    saveListFromItems(name: string, items: ListProduct[]) {
+      void name
+      void items
+      void mapWriteResultToError
+      void ERROR_MESSAGES
+      // TODO(exercise): validate name, persist list, set feedback/error fields.
+      return false
     },
 
     // Reads one saved list by name from storage.
     // Used when the user clicks a card to load it into the current shopping list.
     findSavedList(name: string) {
-      const list = loadSavedListByName(name)
-      if (!list || !Array.isArray(list.items)) return null
-      return list as SavedList
+      void name
+      // TODO(exercise): load one saved list from storage by name.
+      return null as ListProduct | null
     },
 
     // Deletes one saved list by name, then refreshes store state.
     // Keeps /lists UI in sync after deletion.
     async deleteSavedList(name: string) {
-      this.error = null
-
-      try {
-        const ok = deleteSavedListByName(name)
-        if (!ok) {
-          this.error = ERROR_MESSAGES.deleteFailed
-          return false
-        }
-
-        await this.fetchSavedLists()
-        return true
-      } catch {
-        this.error = ERROR_MESSAGES.deleteFailed
-        return false
-      }
+      void name
+      // TODO(exercise): delete one saved list + refresh state.
+      return false
     }
   }
 })

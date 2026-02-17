@@ -2,22 +2,8 @@
 import { X, Trash2, Plus, Minus } from 'lucide-vue-next'
 import { useListsStore } from '~/stores/lists'
 
-const listsStore = useListsStore()
+const lists = useListsStore()
 
-// Same feature handlers as panel, with one drawer-specific side effect:
-// close drawer right after a successful save.
-const {
-  isSaveModalOpen,
-  saveNameSeed,
-  openSave,
-  closeSave,
-  handleSave,
-  handleClear
-} = useLists({
-  afterSave: () => {
-    listsStore.closeDrawer()
-  }
-})
 </script>
 
 <template>
@@ -32,9 +18,9 @@ const {
       leave-to-class="opacity-0"
     >
       <div 
-        v-if="listsStore.isOpen" 
+        v-if="lists.isOpen" 
         class="fixed inset-0 bg-black/50 backdrop-blur-sm" 
-        @click="listsStore.closeDrawer()"
+        @click="lists.closeDrawer()"
       ></div>
     </Transition>
 
@@ -48,7 +34,7 @@ const {
       leave-to-class="translate-x-full"
     >
       <div 
-        v-if="listsStore.isOpen" 
+        v-if="lists.isOpen" 
         class="fixed inset-y-0 right-0 flex w-full max-w-md flex-col border-l border-white/10 bg-black text-white shadow-[-10px_0_30px_rgba(0,0,0,0.5)]"
       >
         <div class="flex items-center justify-between border-b border-white/10 px-5 py-4">
@@ -57,7 +43,7 @@ const {
             <p class="mt-2 font-display text-2xl font-semibold italic">Compare list</p>
           </div>
           <button
-            @click="listsStore.closeDrawer()"
+            @click="lists.closeDrawer()"
             class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 text-white/70 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
           >
             <X class="h-4 w-4" />
@@ -65,12 +51,12 @@ const {
         </div>
 
         <div class="flex-1 overflow-y-auto px-5 py-4">
-          <div v-if="listsStore.items.length === 0" class="py-12 text-center text-xs uppercase tracking-[0.35em] text-white/40">
+          <div v-if="lists.productList.length === 0" class="py-12 text-center text-xs uppercase tracking-[0.35em] text-white/40">
             No items yet
           </div>
 
           <div v-else class="space-y-6">
-            <div v-for="(items, storeName) in listsStore.groupedItems" :key="storeName" class="space-y-3">
+            <div v-for="(items, storeName) in lists.groupedItems" :key="storeName" class="space-y-3">
               <div class="flex items-center justify-between text-[10px] uppercase tracking-[0.35em] text-white/60">
                 <div class="flex items-center gap-2">
                   <div class="flex h-7 w-7 items-center justify-center rounded-full border border-white/15 bg-white/10 text-[10px] text-white/60">
@@ -85,7 +71,7 @@ const {
                   </div>
                   <span>{{ storeName }}</span>
                 </div>
-                <span>${{ listsStore.storeTotals[storeName]?.toFixed(2) }}</span>
+                <span>${{ lists.storeTotals[storeName]?.toFixed(2) }}</span>
               </div>
 
               <div v-for="item in items" :key="item.product.id" class="flex gap-4 rounded-2xl border border-white/10 bg-white/5 p-3">
@@ -109,21 +95,21 @@ const {
                     <div class="flex items-center rounded-full border border-white/20">
                       <button
                         class="px-2 py-1 text-white/70 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-                        @click="listsStore.updateQuantity(item.product.id, item.quantity - 1)"
+                        @click="lists.updateProductQuantity(item.product.id, item.quantity - 1)"
                       >
                         <Minus class="h-3 w-3" />
                       </button>
                       <span class="px-2 text-xs uppercase tracking-[0.3em] text-white/80">{{ item.quantity }}</span>
                       <button
                         class="px-2 py-1 text-white/70 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-                        @click="listsStore.addItem(item.product)"
+                        @click="lists.addProductToList(item.product)"
                       >
                         <Plus class="h-3 w-3" />
                       </button>
                     </div>
                     <button
                       class="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-white/60 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-                      @click="listsStore.removeItem(item.product.id)"
+                      @click="lists.removeProductFromList(item.product.id)"
                     >
                       <Trash2 class="h-3 w-3" /> Remove
                     </button>
@@ -138,37 +124,51 @@ const {
         <div class="border-t border-white/10 px-5 py-5">
           <div class="flex items-center justify-between text-sm uppercase tracking-[0.35em] text-white/70">
             <span>Total Estimate</span>
-            <span class="font-display text-2xl font-semibold italic text-white">${{ listsStore.grandTotal.toFixed(2) }}</span>
+            <span class="font-display text-2xl font-semibold italic text-white">${{ lists.grandTotal.toFixed(2) }}</span>
           </div>
           <div class="mt-4 grid grid-cols-2 gap-3">
             <button
-              class="w-full rounded-full border border-white/20 bg-transparent px-4 py-3 text-[10px] uppercase tracking-[0.35em] text-white/80 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-              @click="handleClear"
+              class="cursor-pointer w-full rounded-full border border-white/20 bg-transparent px-4 py-3 text-[10px] uppercase tracking-[0.35em] text-white/80 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+              @click="lists.openClearConfirmModal()"
+              :disabled="lists.grandTotal === 0"
             >
               Clear
             </button>
             <button
               :class="[
                 'w-full rounded-full border border-white/20 px-4 py-3 text-[10px] uppercase tracking-[0.35em] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black',
-                listsStore.justSaved
+                lists.justSaved
                   ? 'bg-white text-black shadow-[0_0_26px_rgba(255,255,255,0.35)] animate-pulse'
                   : 'bg-white text-black hover:bg-white/90'
               ]"
-              @click="openSave()"
+              @click="lists.openSave()"
+              :disabled="lists.grandTotal === 0"
             >
-              {{ listsStore.justSaved ? 'Saved' : 'Save list' }}
+              {{ lists.justSaved ? 'Saved' : 'Save list' }}
             </button>
           </div>
         </div>
       </div>
     </Transition>
+    
+    <ConfirmActionModal
+      :open="lists.isClearConfirmModalOpen"
+      title="Clear list"
+      message="Are you sure you want to clear the current list?"
+      eyebrow="Clear list"
+      confirm-text="Clear"
+      cancel-text="Cancel"
+      destructive
+      @close="lists.closeClearConfirmModal"
+      @confirm="lists.handleClear"
+    />
 
     <SaveListModal
-      :open="isSaveModalOpen"
-      :initial-name="saveNameSeed"
-      :error-text="listsStore.lastSaveError"
-      @close="closeSave"
-      @save="handleSave"
+      :open="lists.isSaveModalOpen"
+      :initial-name="lists.saveNameSeed"
+      :error-text="lists.lastSaveError"
+      @close="lists.closeSave"
+      @save="lists.handleSave"
     />
   </div>
 </template>
