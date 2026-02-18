@@ -1,15 +1,19 @@
 <script setup lang="ts">
 import { Trash2 } from 'lucide-vue-next'
-import type { SavedList } from '#shared/types/lists'
+import type { ListsProduct } from '#shared/types/lists'
+import { useListsStore } from '~/stores/lists';
+
+const listsStore = useListsStore()
 
 const props = defineProps<{
-  list: SavedList
+  list: ListsProduct
 }>()
 
 const emit = defineEmits<{
   (e: 'open', name: string): void
   (e: 'delete', name: string): void
 }>()
+
 
 const onOpen = () => {
   emit('open', props.list.name)
@@ -34,7 +38,7 @@ const totalValue = computed(() => {
 })
 
 const lastEditedLabel = computed(() => {
-  const d = new Date(props.list.savedAt)
+  const d = new Date(props.list.updatedAt)
   if (Number.isNaN(d.getTime())) return 'LAST EDITED'
   const month = d.toLocaleString('en-US', { month: 'short' }).toUpperCase()
   const day = String(d.getDate()).padStart(2, '0')
@@ -46,7 +50,6 @@ const avatarUrls = computed(() => {
     .map(i => i.product.image_url)
     .filter((u): u is string => Boolean(u && u.trim() !== ''))
 
-  // keep unique, preserve order
   const seen = new Set<string>()
   const unique: string[] = []
   for (const u of urls) {
@@ -60,6 +63,7 @@ const avatarUrls = computed(() => {
 
 const visibleAvatars = computed(() => avatarUrls.value.slice(0, 2))
 const overflowCount = computed(() => Math.max(0, avatarUrls.value.length - visibleAvatars.value.length))
+const deleteMessage = computed(() => `This will permanently delete "${props.list.name}".`)
 </script>
 
 <template>
@@ -74,9 +78,9 @@ const overflowCount = computed(() => Math.max(0, avatarUrls.value.length - visib
 
     <button
       type="button"
-      class="absolute right-5 top-5 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/40 text-white/60 opacity-0 transition hover:text-white focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black group-hover:opacity-100"
+      class="absolute right-5 top-5 z-20 inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-black/40 text-white/60 opacity-0 transition hover:text-white focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black group-hover:opacity-100"
       aria-label="Delete list"
-      @click.stop="emit('delete', props.list.name)"
+      @click.stop="listsStore.isDeleteConfirmOpen = true"
     >
       <Trash2 class="h-4 w-4" />
     </button>
@@ -121,4 +125,16 @@ const overflowCount = computed(() => Math.max(0, avatarUrls.value.length - visib
       </div>
     </div>
   </div>
+
+  <ConfirmActionModal
+    :open="listsStore.isDeleteConfirmOpen"
+    eyebrow="Delete list"
+    title="Delete this list?"
+    :message="deleteMessage"
+    confirm-text="Delete"
+    cancel-text="Cancel"
+    :destructive="true"
+    @close="listsStore.isDeleteConfirmOpen = false"
+    @confirm="emit('delete', props.list.name); listsStore.isDeleteConfirmOpen = false"
+  />
 </template>

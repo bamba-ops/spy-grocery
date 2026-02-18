@@ -123,6 +123,8 @@ Pense en couches: UI -> State -> Use-cases -> Data.
 - `app/composables/*`: wrappers `$fetch`, appels API internes, appels APIs externes, mapping de reponse.
   Exemples: `useProducts().search(params)`, `useStores().list()`.
   - pas de state feature global ici (ce state reste dans les stores).
+  - format attendu: chaque fichier expose un composable `useXxx()` qui retourne ses methodes.
+    Exemple: `useListsStorage()` retourne `get...`, `set...`, `delete...`.
 
 4) Backend (Nitro)
 - `server/api/*`: controleurs
@@ -180,6 +182,10 @@ Frontend (Vue)
 - Indentation 2 espaces, single quotes, eviter `any`.
 - Import order: Vue/Nuxt -> libs -> `~/` -> relatifs; type-only imports.
 - Guard browser-only: `process.client` (localStorage, window).
+- Naming fonctions (regle equipe):
+  - lecture/acces de donnees -> prefixe `get` (ex: `getProducts`, `getStoreTotals`)
+  - ecriture/mutation -> prefixe `set` (ex: `setProducts`, `setSelectedStore`)
+  - suppression -> prefixe `delete` (ex: `deleteListStorageItemByName`)
 
 Backend (Nitro)
 

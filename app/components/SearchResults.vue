@@ -142,7 +142,7 @@ const handleNext = () => {
                   'inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 text-white/80 transition duration-200 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black',
                   lists.lastAddedProductId === product.id ? 'scale-110 ring-2 ring-white/40' : 'scale-100'
                 ]"
-                @click="lists.addProductToList(product)"
+                @click="lists.setProductInCurrentList(product)"
                 aria-label="Add to list"
               >
                 +

@@ -12,3 +12,14 @@ export interface ListsProduct {
   createdAt: Date
   updatedAt: Date
 }
+
+export interface ListStorage {
+  name: string
+  items: unknown[]
+  savedAt: string
+}
+
+export type ErrorListStorage = 'unavailable' | 'invalid_name' | 'duplicate_name' | 'storage'
+export type ResultListStorage =
+  | { ok: true }
+  | { ok: false; error: ErrorListStorage }

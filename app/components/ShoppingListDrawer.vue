@@ -18,9 +18,9 @@ const lists = useListsStore()
       leave-to-class="opacity-0"
     >
       <div 
-        v-if="lists.isOpen" 
+        v-if="lists.isShoppingListDrawerOpen" 
         class="fixed inset-0 bg-black/50 backdrop-blur-sm" 
-        @click="lists.closeDrawer()"
+        @click="lists.setShoppingListDrawerClosed()"
       ></div>
     </Transition>
 
@@ -34,7 +34,7 @@ const lists = useListsStore()
       leave-to-class="translate-x-full"
     >
       <div 
-        v-if="lists.isOpen" 
+        v-if="lists.isShoppingListDrawerOpen" 
         class="fixed inset-y-0 right-0 flex w-full max-w-md flex-col border-l border-white/10 bg-black text-white shadow-[-10px_0_30px_rgba(0,0,0,0.5)]"
       >
         <div class="flex items-center justify-between border-b border-white/10 px-5 py-4">
@@ -43,7 +43,7 @@ const lists = useListsStore()
             <p class="mt-2 font-display text-2xl font-semibold italic">Compare list</p>
           </div>
           <button
-            @click="lists.closeDrawer()"
+            @click="lists.setShoppingListDrawerClosed()"
             class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 text-white/70 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
           >
             <X class="h-4 w-4" />
@@ -95,21 +95,21 @@ const lists = useListsStore()
                     <div class="flex items-center rounded-full border border-white/20">
                       <button
                         class="px-2 py-1 text-white/70 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-                        @click="lists.updateProductQuantity(item.product.id, item.quantity - 1)"
+                        @click="lists.setProductQuantityInCurrentList(item.product.id, item.quantity - 1)"
                       >
                         <Minus class="h-3 w-3" />
                       </button>
                       <span class="px-2 text-xs uppercase tracking-[0.3em] text-white/80">{{ item.quantity }}</span>
                       <button
                         class="px-2 py-1 text-white/70 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-                        @click="lists.addProductToList(item.product)"
+                        @click="lists.setProductInCurrentList(item.product)"
                       >
                         <Plus class="h-3 w-3" />
                       </button>
                     </div>
                     <button
                       class="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-white/60 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-                      @click="lists.removeProductFromList(item.product.id)"
+                      @click="lists.deleteProductFromCurrentList(item.product.id)"
                     >
                       <Trash2 class="h-3 w-3" /> Remove
                     </button>
@@ -129,7 +129,7 @@ const lists = useListsStore()
           <div class="mt-4 grid grid-cols-2 gap-3">
             <button
               class="cursor-pointer w-full rounded-full border border-white/20 bg-transparent px-4 py-3 text-[10px] uppercase tracking-[0.35em] text-white/80 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-              @click="lists.openClearConfirmModal()"
+              @click="lists.setClearConfirmModalOpen()"
               :disabled="lists.grandTotal === 0"
             >
               Clear
@@ -141,7 +141,7 @@ const lists = useListsStore()
                   ? 'bg-white text-black shadow-[0_0_26px_rgba(255,255,255,0.35)] animate-pulse'
                   : 'bg-white text-black hover:bg-white/90'
               ]"
-              @click="lists.openSave()"
+              @click="lists.setSaveListModalOpen()"
               :disabled="lists.grandTotal === 0"
             >
               {{ lists.justSaved ? 'Saved' : 'Save list' }}
@@ -159,16 +159,16 @@ const lists = useListsStore()
       confirm-text="Clear"
       cancel-text="Cancel"
       destructive
-      @close="lists.closeClearConfirmModal"
-      @confirm="lists.handleClear"
+      @close="lists.setClearConfirmModalClosed"
+      @confirm="lists.setClearCurrentList"
     />
 
     <SaveListModal
       :open="lists.isSaveModalOpen"
-      :initial-name="lists.saveNameSeed"
+      :initial-name="lists.setNameSeed"
       :error-text="lists.lastSaveError"
-      @close="lists.closeSave"
-      @save="lists.handleSave"
+      @close="lists.setSaveListModalClosed"
+      @save="lists.setSaveCurrentList"
     />
   </div>
 </template>

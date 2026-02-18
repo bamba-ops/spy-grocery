@@ -1,53 +1,7 @@
 <script setup lang="ts">
-import type { ListProduct } from '#shared/types/lists'
 import { useListsStore } from '~/stores/lists'
 
 const listsStore = useListsStore()
-
-const controls = ref({
-  sort: 'recent' as 'recent' | 'name' | 'total',
-  query: ''
-})
-
-const listScore = (items: ListProduct[]) => {
-  return items.reduce((acc, item) => acc + (item.product.price ?? 0) * item.quantity, 0)
-}
-
-const filteredLists = computed(() => {
-  const q = controls.value.query.trim().toLowerCase()
-  const base = q
-    ? listsStore.multipleListsOfProducts.filter((list) => list.name.toLowerCase().includes(q))
-    : listsStore.multipleListsOfProducts.slice()
-
-  const sort = controls.value.sort
-  base.sort((a, b) => {
-    if (sort === 'name') return a.name.localeCompare(b.name)
-    if (sort === 'total') return listScore(b.items) - listScore(a.items)
-    return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-  })
-
-  return base
-})
-
-const error = computed(() => listsStore.error)
-
-const refreshLists = async () => {
-  await listsStore.fetchSavedLists()
-}
-
-const handleOpenList = (name: string) => {
-  const list = listsStore.findSavedList(name)
-  if (!list || !Array.isArray((list as any).items)) return
-  listsStore.setItems((list as any).items)
-  listsStore.openDrawer()
-}
-
-const handleDeleteList = async (name: string) => {
-  if (!process.client) return
-  const ok = window.confirm(`Delete "${name}"?`)
-  if (!ok) return
-  await listsStore.deleteSavedList(name)
-}
 
 definePageMeta({
   layout: 'bottom-nav'
@@ -66,8 +20,7 @@ useHead({
 })
 
 onMounted(() => {
-  // Page-level fetch: load saved lists when entering /lists.
-  refreshLists()
+  listsStore.setLoadListsPage()
 })
 
 </script>
@@ -82,14 +35,20 @@ onMounted(() => {
           <h1 class="font-display text-6xl font-semibold italic tracking-tight sm:text-7xl">My Lists</h1>
         </div>
 
-        <ListsToolbar v-model="controls" />
+        <ListsToolbar :model-value="listsStore.listsControls" @update:modelValue="listsStore.setListsControls" />
 
-        <div v-if="error" class="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/80">
-          {{ error }}
+        <div v-if="listsStore.error" class="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/80">
+          {{ listsStore.error }}
         </div>
 
         <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-          <SavedListCard v-for="list in filteredLists" :key="list.name" :list="list" @open="handleOpenList" @delete="handleDeleteList" />
+          <SavedListCard
+            v-for="list in listsStore.filteredLists"
+            :key="list.name"
+            :list="list"
+            @open="listsStore.setCurrentListFromStorageByName"
+            @delete="listsStore.deleteListsStorageByName"
+          />
           <CreateListCard to="/search" />
         </div>
       </div>

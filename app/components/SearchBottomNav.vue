@@ -51,7 +51,7 @@ const isLists = computed(() => route.path.startsWith('/lists'))
 
       <button
         class="relative inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/20 text-white/80 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-        @click="lists.toggleDrawer()"
+        @click="lists.setToggleShoppingListDrawer()"
         aria-label="Compare list"
       >
         <ShoppingBag class="h-5 w-5" />
