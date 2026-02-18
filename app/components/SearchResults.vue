@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Plus } from 'lucide-vue-next'
 import type { Product } from '#shared/types'
 import { useSearchStore } from '~/stores/search'
 import { useListsStore } from '~/stores/lists'
@@ -95,7 +96,7 @@ const handleNext = () => {
       </div>
  -->
 
-      <div class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <div class="mt-6 grid gap-4 sm:mt-8 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
         <div
           v-for="product in products"
           :key="product.id"
@@ -105,7 +106,7 @@ const handleNext = () => {
             <div v-if="product.is_promo" class="absolute left-4 top-4 z-10 rounded-full border border-white/20 bg-black/80 px-3 py-1 text-[10px] uppercase tracking-[0.3em] text-white/80">
               Promo
             </div>
-            <div class="relative aspect-square overflow-hidden rounded-t-2xl border-b border-white/10 bg-black">
+            <div class="relative aspect-[16/9] overflow-hidden rounded-t-2xl border-b border-white/10 bg-black sm:aspect-square">
               <template v-if="useProduct.getImageDisplay(product.image_url, product.name).type === 'url'">
                 <img
                   :src="useProduct.getImageDisplay(product.image_url, product.name).value"
@@ -122,19 +123,19 @@ const handleNext = () => {
               <div class="pointer-events-none absolute inset-0 z-0 bg-black/40"></div>
             </div>
           </div>
-          <div class="flex flex-1 flex-col p-5">
+          <div class="flex flex-1 flex-col p-3 sm:p-5">
             
-            <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">{{ product.store.name }}</p>
-            <h3 class="mt-2 font-display text-2xl font-semibold italic">
+            <p class="text-[9px] uppercase tracking-[0.28em] text-white/60 sm:text-[10px] sm:tracking-[0.35em]">{{ product.store.name }}</p>
+            <h3 class="mt-1 font-display text-lg font-semibold italic leading-tight sm:mt-2 sm:text-2xl">
               {{ product.name }}
             </h3>
 
-            <div class="mt-3 flex flex-wrap items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-white/70">
+            <div class="mt-2 flex flex-wrap items-center gap-2 text-[9px] uppercase tracking-[0.24em] text-white/70 sm:mt-3 sm:text-[10px] sm:tracking-[0.3em]">
               <span class="rounded-full border border-white/15 px-2 py-1">Each</span>
               <span class="rounded-full border border-white/15 px-2 py-1">${{ formatPrice(product.price) }}/unit</span>
             </div>
-            <div class="mt-6 flex items-center justify-between">
-              <span class="font-display text-3xl font-semibold italic">
+            <div class="mt-4 flex items-center justify-between sm:mt-6">
+              <span class="font-display text-xl font-semibold italic sm:text-3xl">
                 ${{ formatPrice(product.price) }}
               </span>
               <button
@@ -145,7 +146,7 @@ const handleNext = () => {
                 @click="lists.setProductInCurrentList(product)"
                 aria-label="Add to list"
               >
-                +
+                <Plus class="h-7 w-7" />
               </button>
             </div>
           </div>

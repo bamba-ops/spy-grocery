@@ -50,26 +50,27 @@ export const useListsStorage = () => {
     return items.find((item) => item.name === trimmedName) ?? null
   }
 
+  const isNameListExist = (name: string): boolean => {
+    const trimmedName = name.trim()
+    if (!trimmedName) return false
+
+    const items = getParsedStorage()
+    return items.some((item) => item.name === trimmedName)
+  }
+
   const setListStorageItem = (name: string, items: unknown[]): ResultListStorage => {
     if (!process.client) {
       return { ok: false, error: 'unavailable' }
     }
 
-    const trimmedName = name.trim()
-    if (!trimmedName) {
-      return { ok: false, error: 'invalid_name' }
-    }
-
-    const existingItems = getParsedStorage()
-    const alreadyExists = existingItems.some((item) => item.name === trimmedName)
-    if (alreadyExists) {
+    if (isNameListExist(name)) {
       return { ok: false, error: 'duplicate_name' }
     }
 
     const nextItems = [
-      ...existingItems,
+      ...getParsedStorage(),
       {
-        name: trimmedName,
+        name,
         items,
         savedAt: new Date().toISOString()
       }
@@ -95,6 +96,7 @@ export const useListsStorage = () => {
   }
 
   return {
+    isNameListExist,
     getListsStorageItems,
     getListStorageItemByName,
     setListStorageItem,

@@ -133,10 +133,35 @@ export const useListsStore = defineStore('lists', {
     },
 
     setSaveListModalOpen() {
-      const today = new Date().toISOString().slice(0, 10)
-      this.setNameSeed = this.setNameList || `List ${today}`
+      this.setUniqueSetNameSeed()
       this.lastSaveError = null
       this.isSaveModalOpen = true
+    },
+
+    setUniqueSetNameSeed() {
+      const adjectives = getAdjectives()
+      const startIndex = Math.floor(Math.random() * adjectives.length)
+      const datePart = new Date().toISOString().slice(0, 10)
+
+      for (let offset = 0; offset < adjectives.length; offset += 1) {
+        const adjective = adjectives[(startIndex + offset) % adjectives.length]
+        const candidate = `Liste ${adjective} ${datePart}`
+        if (!this.listsStorage.isNameListExist(candidate)) {
+          this.setNameSeed = candidate
+          return
+        }
+      }
+
+      const fallbackAdjective = adjectives[startIndex]
+      let suffix = 2
+      let candidate = `Liste ${fallbackAdjective} ${datePart} (${suffix})`
+
+      while (this.listsStorage.isNameListExist(candidate)) {
+        suffix += 1
+        candidate = `Liste ${fallbackAdjective} ${datePart} (${suffix})`
+      }
+
+      this.setNameSeed = candidate
     },
 
     setSaveListModalClosed() {
