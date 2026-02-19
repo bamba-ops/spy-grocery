@@ -89,10 +89,10 @@ export const useListsStore = defineStore('lists', {
         existingProduct.quantity += 1
       } else {
         this.productList.push({ product, quantity: 1 })
+        this.setProductAddedToast(product)
       }
 
       this.lastAddedProductId = product.id
-      this.setProductAddedToast(product)
 
       setTimeout(() => {
         if (this.lastAddedProductId === product.id) {
@@ -106,6 +106,30 @@ export const useListsStore = defineStore('lists', {
 
       toast.success(product.name, {
         description: `${product.store.name} - added to your list.`
+      })
+    },
+
+    setListSavedToast(name: string) {
+      if (!process.client) return
+
+      toast.success(name, {
+        description: 'List saved successfully.'
+      })
+    },
+
+    setListClearedToast() {
+      if (!process.client) return
+
+      toast.success('List cleared', {
+        description: 'Your current list is now empty.'
+      })
+    },
+
+    setListDeletedToast(name: string) {
+      if (!process.client) return
+
+      toast.success(name, {
+        description: 'List deleted successfully.'
       })
     },
 
@@ -182,6 +206,7 @@ export const useListsStore = defineStore('lists', {
     setClearCurrentList() {
       this.setCurrentListItems([])
       this.setClearConfirmModalClosed()
+      this.setListClearedToast()
     },
 
     setSavedFeedback() {
@@ -206,6 +231,7 @@ export const useListsStore = defineStore('lists', {
       this.setCurrentListItems([])
       this.setSavedFeedback()
       this.setSaveListModalClosed()
+      this.setListSavedToast(trimmed)
       return true
     },
 
@@ -260,6 +286,7 @@ export const useListsStore = defineStore('lists', {
       }
 
       await this.getListsStorage()
+      this.setListDeletedToast(name)
       return true
     },
 
