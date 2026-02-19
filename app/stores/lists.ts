@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { toast } from 'vue-sonner'
 import type { Product } from '#shared/types'
 import type { ListProduct, ListsProduct } from '#shared/types/lists'
 import { useListsStorage } from '~/composables/useListsStorage'
@@ -91,12 +92,21 @@ export const useListsStore = defineStore('lists', {
       }
 
       this.lastAddedProductId = product.id
+      this.setProductAddedToast(product)
 
       setTimeout(() => {
         if (this.lastAddedProductId === product.id) {
           this.lastAddedProductId = null
         }
       }, this.ADD_FEEDBACK_MS)
+    },
+
+    setProductAddedToast(product: Product) {
+      if (!process.client) return
+
+      toast.success(product.name, {
+        description: `${product.store.name} - added to your list.`
+      })
     },
 
     setProductQuantityInCurrentList(productId: string, quantity: number) {
