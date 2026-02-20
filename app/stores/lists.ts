@@ -10,6 +10,14 @@ type ListsControls = {
   query: string
 }
 
+const getListItemsSnapshot = (items: ListProduct[]) => {
+  const compact = items
+    .map((item) => ({ id: item.product.id, quantity: item.quantity }))
+    .sort((a, b) => a.id.localeCompare(b.id))
+
+  return JSON.stringify(compact)
+}
+
 export const useListsStore = defineStore('lists', {
   state: () => ({
     productList: [] as ListProduct[],
@@ -28,6 +36,8 @@ export const useListsStore = defineStore('lists', {
     error: null as string | null,
     justSaved: false,
     setNameList: '' as string,
+    currentListSourceName: null as string | null,
+    currentListSourceSnapshot: '' as string,
     lastSaveError: null as string | null,
     ADD_FEEDBACK_MS: 300,
     SAVE_FEEDBACK_MS: 1200,
@@ -62,6 +72,10 @@ export const useListsStore = defineStore('lists', {
       return state.productList.reduce((total, item) => total + item.quantity, 0)
     },
 
+    getIsCurrentListEmpty: (state) => {
+      return state.productList.length === 0
+    },
+
     filteredLists: (state) => {
       const query = state.listsControls.query.trim().toLowerCase()
       const base = query
@@ -79,6 +93,14 @@ export const useListsStore = defineStore('lists', {
       })
 
       return base
+    },
+
+    getSaveActionLabel: (state) => {
+      return state.currentListSourceName ? 'Update list' : 'Save list'
+    },
+
+    getCanSubmitList: (state) => {
+      return state.productList.length > 0
     }
   },
 
@@ -133,6 +155,14 @@ export const useListsStore = defineStore('lists', {
       })
     },
 
+    setListUpdatedToast(name: string) {
+      if (!process.client) return
+
+      toast.success(name, {
+        description: 'List updated successfully.'
+      })
+    },
+
     setProductQuantityInCurrentList(productId: string, quantity: number) {
       const item = this.productList.find((entry) => entry.product.id === productId)
       if (!item) return
@@ -167,9 +197,21 @@ export const useListsStore = defineStore('lists', {
     },
 
     setSaveListModalOpen() {
-      this.setUniqueSetNameSeed()
+      this.setNameSeed = this.currentListSourceName ?? ''
+      if (!this.setNameSeed) {
+        this.setUniqueSetNameSeed()
+      }
       this.lastSaveError = null
       this.isSaveModalOpen = true
+    },
+
+    setSaveOrUpdateCurrentList() {
+      if (this.currentListSourceName) {
+        return this.setUpdatedCurrentList()
+      }
+
+      this.setSaveListModalOpen()
+      return true
     },
 
     setUniqueSetNameSeed() {
@@ -225,13 +267,33 @@ export const useListsStore = defineStore('lists', {
 
       this.setNameList = trimmed
       this.lastSaveError = null
-      const ok = this.setListsStorage()
+
+      const isCurrentListName = this.currentListSourceName === trimmed
+      const ok = isCurrentListName
+        ? this.setUpdatedListsStorage(trimmed)
+        : this.setListsStorage(trimmed)
+
       if (!ok) return false
 
       this.setCurrentListItems([])
+      this.currentListSourceName = null
+      this.currentListSourceSnapshot = ''
       this.setSavedFeedback()
       this.setSaveListModalClosed()
       this.setListSavedToast(trimmed)
+      return true
+    },
+
+    setUpdatedCurrentList() {
+      if (!this.currentListSourceName) return false
+      if (!this.getCanSubmitList) return false
+
+      const ok = this.setUpdatedListsStorage(this.currentListSourceName)
+      if (!ok) return false
+
+      this.currentListSourceSnapshot = getListItemsSnapshot(this.productList)
+      this.setSavedFeedback()
+      this.setListUpdatedToast(this.currentListSourceName)
       return true
     },
 
@@ -263,9 +325,9 @@ export const useListsStore = defineStore('lists', {
       }
     },
 
-    setListsStorage() {
+    setListsStorage(name: string) {
       const items = this.productList.map((item) => ({ product: item.product, quantity: item.quantity }))
-      const result = this.listsStorage.setListStorageItem(this.setNameList, items as unknown[])
+      const result = this.listsStorage.setListStorageItem(name, items as unknown[])
 
       if (!result.ok) {
         this.lastSaveError = result.error === 'duplicate_name'
@@ -278,11 +340,28 @@ export const useListsStore = defineStore('lists', {
       return true
     },
 
+    setUpdatedListsStorage(name: string) {
+      const items = this.productList.map((item) => ({ product: item.product, quantity: item.quantity }))
+      const result = this.listsStorage.setUpdatedListStorageItemByName(name, items as unknown[])
+      if (!result.ok) {
+        this.lastSaveError = 'Could not save the list.'
+        return false
+      }
+
+      this.getListsStorage()
+      return true
+    },
+
     async deleteListsStorageByName(name: string) {
       const ok = this.listsStorage.deleteListStorageItemByName(name)
       if (!ok) {
         this.error = 'Could not delete this list.'
         return false
+      }
+
+      if (this.currentListSourceName === name) {
+        this.currentListSourceName = null
+        this.currentListSourceSnapshot = ''
       }
 
       await this.getListsStorage()
@@ -308,6 +387,8 @@ export const useListsStore = defineStore('lists', {
       if (!list || !Array.isArray(list.items)) return false
 
       this.setCurrentListItems(list.items)
+      this.currentListSourceName = list.name
+      this.currentListSourceSnapshot = getListItemsSnapshot(list.items)
       this.setShoppingListDrawerOpen()
       return true
     },

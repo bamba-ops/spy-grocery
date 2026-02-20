@@ -84,6 +84,37 @@ export const useListsStorage = () => {
     return { ok: true }
   }
 
+  const setUpdatedListStorageItemByName = (name: string, items: unknown[]): ResultListStorage => {
+    if (!process.client) {
+      return { ok: false, error: 'unavailable' }
+    }
+
+    const trimmedName = name.trim()
+    if (!trimmedName) {
+      return { ok: false, error: 'invalid_name' }
+    }
+
+    const existingItems = getParsedStorage()
+    const index = existingItems.findIndex((item) => item.name === trimmedName)
+    if (index < 0) {
+      return { ok: false, error: 'storage' }
+    }
+
+    const nextItems = [...existingItems]
+    nextItems[index] = {
+      name: trimmedName,
+      items,
+      savedAt: new Date().toISOString()
+    }
+
+    const ok = setParsedStorage(nextItems)
+    if (!ok) {
+      return { ok: false, error: 'storage' }
+    }
+
+    return { ok: true }
+  }
+
   const deleteListStorageItemByName = (name: string) => {
     const trimmedName = name.trim()
     if (!trimmedName) return false
@@ -100,6 +131,7 @@ export const useListsStorage = () => {
     getListsStorageItems,
     getListStorageItemByName,
     setListStorageItem,
+    setUpdatedListStorageItemByName,
     deleteListStorageItemByName
   }
 }

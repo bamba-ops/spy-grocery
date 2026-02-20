@@ -2,6 +2,6 @@
   <div>
     <slot />
     <ShoppingListDrawer />
-    <SearchBottomNav />
+    <BottomNav />
   </div>
 </template>

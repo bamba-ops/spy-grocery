@@ -94,23 +94,23 @@ const lists = useListsStore()
       </div>
       <div class="mt-4 grid grid-cols-2 gap-3">
         <button
-          class="cursor-pointer w-full rounded-full border border-white/20 bg-transparent px-4 py-3 text-[10px] uppercase tracking-[0.35em] text-white/80 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+          class="w-full rounded-full border border-white/20 bg-transparent px-4 py-3 text-[10px] uppercase tracking-[0.35em] text-white/80 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-white/80"
           @click="lists.setClearConfirmModalOpen()"
-          :disabled="lists.grandTotal === 0"
+          :disabled="lists.getIsCurrentListEmpty"
         >
           Clear
         </button>
         <button
           :class="[
-            'cursor-pointer w-full rounded-full border border-white/20 px-4 py-3 text-[10px] uppercase tracking-[0.35em] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black',
+            'w-full rounded-full border border-white/20 px-4 py-3 text-[10px] uppercase tracking-[0.35em] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:cursor-not-allowed disabled:opacity-40',
             lists.justSaved
               ? 'bg-white text-black shadow-[0_0_26px_rgba(255,255,255,0.35)] animate-pulse'
               : 'bg-white text-black hover:bg-white/90'
           ]"
-          @click="lists.setSaveListModalOpen()"
-          :disabled="lists.grandTotal === 0"
+          @click="lists.setSaveOrUpdateCurrentList()"
+          :disabled="!lists.getCanSubmitList"
         >
-          {{ lists.justSaved ? 'Saved' : 'Save list' }}
+          {{ lists.justSaved ? 'Saved' : lists.getSaveActionLabel }}
         </button>
       </div>
     </div>
@@ -129,6 +129,7 @@ const lists = useListsStore()
     <SaveListModal
       :open="lists.isSaveModalOpen"
       :initial-name="lists.setNameSeed"
+      :confirm-text="lists.currentListSourceName ? 'Update' : 'Save'"
       :error-text="lists.lastSaveError"
       @close="lists.setSaveListModalClosed"
       @save="lists.setSaveCurrentList"

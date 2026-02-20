@@ -1,5 +1,7 @@
 <script setup lang="ts">
-const { initSearchPage } = useSearch()
+import { useSearchStore } from '~/stores/search'
+
+const searchStore = useSearchStore()
 
 definePageMeta({
   layout: 'bottom-nav'
@@ -25,7 +27,7 @@ useHead({
 })
 
 onMounted(() => {
-  initSearchPage()
+  searchStore.setSearchPageInitialized()
 })
 </script>
 
