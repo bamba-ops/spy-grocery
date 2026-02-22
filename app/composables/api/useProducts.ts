@@ -1,4 +1,4 @@
-import type { SearchParams } from '#shared/types'
+import type { SearchParams } from '#shared/types/search'
 
 const fallbackEmojis: string[] = ['🥛', '🍞', '🥚', '🍎', '🥗', '🧀', '🥩', '🍕', '🥤', '🍌']
 

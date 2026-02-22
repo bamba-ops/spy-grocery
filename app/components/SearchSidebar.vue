@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Search } from 'lucide-vue-next'
 import { useSearchStore } from '~/stores/search'
 
 const searchStore = useSearchStore()
@@ -8,7 +9,7 @@ const searchStore = useSearchStore()
   <div class="rounded-2xl border border-white/10 bg-black/70 px-4 py-4">
     <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       <div class="flex h-10 items-center gap-2 rounded-full border border-white/15 px-3 text-white/70">
-        <span class="text-[10px] uppercase tracking-[0.3em]">⌕</span>
+        <Search class="h-4 w-4 shrink-0 text-white/70" />
         <input
           :value="searchStore.searchInput"
           type="text"

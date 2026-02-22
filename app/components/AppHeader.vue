@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Menu, X } from 'lucide-vue-next'
+import { LogIn, Menu, X } from 'lucide-vue-next'
 
 const isOpen = ref(false)
 
@@ -19,13 +19,13 @@ const closeMenu = () => {
 </script>
 
 <template>
-  <header class="border-b border-white/10 bg-black text-white">
+  <header class="sticky top-0 z-40 border-b border-white/10 bg-black/90 text-white backdrop-blur">
     <div class="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
       <div class="flex items-center gap-3">
-        <span class="text-xs font-semibold uppercase tracking-[0.35em] text-white sm:text-sm">Spygrocery</span>
+        <span class="font-display text-2xl font-semibold italic tracking-tight text-white">SpyGrocery</span>
       </div>
 
-      <nav class="hidden items-center gap-8 text-[11px] uppercase tracking-[0.35em] text-white/70 md:flex">
+      <nav class="hidden items-center gap-8 font-sans text-sm font-medium text-white/75 md:flex">
         <a
           v-for="item in navItems"
           :key="item.label"
@@ -37,9 +37,13 @@ const closeMenu = () => {
       </nav>
 
       <div class="flex items-center gap-3">
-        <button class="hidden rounded-full border border-white/20 bg-white px-4 py-2 text-[10px] uppercase tracking-[0.35em] text-black transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:inline-flex">
-          Compare Local Prices
-        </button>
+        <NuxtLink
+          to="/login"
+          class="hidden items-center gap-2 rounded-full border border-white/20 bg-white px-4 py-2 font-sans text-xs font-semibold text-black transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:inline-flex"
+        >
+          <LogIn class="h-4 w-4" />
+          Log in
+        </NuxtLink>
 
         <button
           class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 text-white/80 transition hover:border-white/60 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black md:hidden"
@@ -56,7 +60,7 @@ const closeMenu = () => {
     </div>
 
     <div v-if="isOpen" id="mobile-menu" class="border-t border-white/10 bg-black px-4 pb-6 md:hidden">
-      <div class="flex flex-col gap-4 py-4 text-[10px] uppercase tracking-[0.35em] text-white/70">
+      <div class="flex flex-col gap-4 py-4 font-sans text-sm font-medium text-white/75">
         <a
           v-for="item in navItems"
           :key="item.label"
@@ -67,11 +71,14 @@ const closeMenu = () => {
           {{ item.label }}
         </a>
 
-        <button
-          class="mt-2 w-full rounded-full border border-white/20 bg-white px-4 py-3 text-[10px] uppercase tracking-[0.35em] text-black transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+        <NuxtLink
+          to="/login"
+          class="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-full border border-white/20 bg-white px-4 py-3 font-sans text-xs font-semibold text-black transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+          @click="closeMenu"
         >
-          Compare Local Prices
-        </button>
+          <LogIn class="h-4 w-4" />
+          Log in
+        </NuxtLink>
       </div>
     </div>
   </header>

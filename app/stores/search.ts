@@ -1,14 +1,20 @@
 import { defineStore } from 'pinia'
 import type { Product, Store } from '#shared/types'
-
-type SearchSort = 'price-low' | 'price-high' | 'name'
+import type { ProductsQueryParams, SearchSort } from '#shared/types/search'
 
 let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null
+let heroSearchDebounceTimer: ReturnType<typeof setTimeout> | null = null
 
 export const useSearchStore = defineStore('search', {
   state: () => ({
     stores: [] as Store[],
     storesLoaded: false,
+    heroSearchInput: '',
+    heroSearchResults: [] as Product[],
+    heroSearchLoading: false,
+    heroSearchError: null as string | null,
+    HERO_SEARCH_LIMIT: 6,
+    HERO_SEARCH_DEBOUNCE_MS: 250,
     searchInput: '',
     query: '',
     results: [] as Product[],
@@ -26,6 +32,8 @@ export const useSearchStore = defineStore('search', {
 
   getters: {
     getProducts: (state) => state.results,
+    getHeroSearchResults: (state) => state.heroSearchResults,
+    getHeroHasResults: (state) => state.heroSearchResults.length > 0,
     getIsLoading: (state) => state.loading,
     getHasError: (state) => Boolean(state.error),
     getActiveQuery: (state) => state.query || 'Organic Avocado',
@@ -38,13 +46,66 @@ export const useSearchStore = defineStore('search', {
   },
 
   actions: {
+    async getProductsByParams(params: ProductsQueryParams) {
+      const { search } = useProducts()
+      return await search(params)
+    },
+
+    async getHeroSearchResultsByQuery() {
+      const query = this.heroSearchInput.trim()
+      if (!query) {
+        this.heroSearchResults = []
+        this.heroSearchError = null
+        this.heroSearchLoading = false
+        return
+      }
+
+      this.heroSearchLoading = true
+      this.heroSearchError = null
+
+      try {
+        const response = await this.getProductsByParams({
+          q: query,
+          limit: this.HERO_SEARCH_LIMIT,
+          offset: 0,
+          sort: 'price-low',
+          promos: 'false'
+        })
+
+        this.heroSearchResults = response?.products || []
+      } catch (error: unknown) {
+        this.heroSearchError = error instanceof Error ? error.message : 'Search failed'
+        this.heroSearchResults = []
+      } finally {
+        this.heroSearchLoading = false
+      }
+    },
+
+    setHeroSearchInput(value: string) {
+      this.heroSearchInput = value
+
+      if (heroSearchDebounceTimer) {
+        clearTimeout(heroSearchDebounceTimer)
+      }
+
+      heroSearchDebounceTimer = setTimeout(() => {
+        void this.getHeroSearchResultsByQuery()
+      }, this.HERO_SEARCH_DEBOUNCE_MS)
+    },
+
+    setHeroSearchCleared() {
+      this.heroSearchInput = ''
+      this.heroSearchResults = []
+      this.heroSearchError = null
+      this.heroSearchLoading = false
+    },
+
     async getSearchResults() {
       this.loading = true
       this.error = null
 
       try {
-        const { search } = useProducts()
-        const response = await search({
+        const response = await this.getProductsByParams({
           q: this.query,
           stores: this.selectedStores,
           sort: this.sortBy,
@@ -52,7 +113,7 @@ export const useSearchStore = defineStore('search', {
           offset: this.offset,
           promos: this.showPromosOnly ? 'true' : 'false'
         })
-        this.results = response?.products|| []
+        this.results = response?.products || []
         this.total = response?.total || 0
       } catch (error: unknown) {
         this.error = error instanceof Error ? error.message : 'Search failed'

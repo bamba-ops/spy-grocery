@@ -38,23 +38,3 @@ export interface Store {
   slug: string | null
   image_url: string | null
 }
-
-// Search params
-export interface SearchParams {
-  q?: string
-  stores?: string
-  sort?: 'price-low' | 'price-high' | 'name'
-  promos?: 'true' | 'false'
-  dedupe?: 'true' | 'false'
-  limit?: number
-  offset?: number
-}
-
-// Search response
-export interface SearchResponse {
-  products: Product[]
-  total: number
-  page: number
-  limit: number
-  totalPages: number
-}
