@@ -214,3 +214,15 @@ Applied migration files include:
 2. Review public RLS for `products/prices` to ensure intended anonymous behavior.
 3. Keep `latest_price` logic as the canonical "current price" source.
 4. Keep slug uniqueness store-scoped (`(store_id, slug)`).
+
+## Agent Workflow Note (MCP Supabase)
+
+- For any request that needs database inspection or verification, use the Supabase MCP tools first.
+- Preferred MCP tools for DB checks:
+  - `supabase_list_projects`
+  - `supabase_list_tables`
+  - `supabase_execute_sql`
+  - `supabase_list_migrations`
+  - `supabase_get_advisors`
+- Do not guess DB state when MCP can confirm it.
+- Keep this document updated when new DB facts are discovered through MCP.

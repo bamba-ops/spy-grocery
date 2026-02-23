@@ -89,6 +89,40 @@ export const searchProductsRows = async (supabase: any, params: SearchProductsRo
   }
 }
 
+export const getProductsByIds = async (supabase: any, ids: string[]) => {
+  if (ids.length === 0) return []
+
+  const selectFields = `
+      id,
+      name,
+      brand,
+      slug,
+      unit,
+      image_url,
+      link,
+      store_id
+    `
+
+  const { data, error } = await supabase
+    .from('products')
+    .select(selectFields)
+    .in('id', ids)
+
+  if (error) {
+    throw createError({
+      statusCode: 500,
+      message: `Featured products lookup failed: ${error.message}`
+    })
+  }
+
+  const rows = data || []
+  const rowsById = new Map(rows.map((row) => [row.id, row]))
+
+  return ids
+    .map((id) => rowsById.get(id))
+    .filter((row): row is NonNullable<typeof row> => Boolean(row))
+}
+
 export const getStoresByIds = async (supabase: any, storeIds: string[]) => {
   if (storeIds.length === 0) return []
 

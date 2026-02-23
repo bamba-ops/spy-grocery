@@ -9,6 +9,9 @@ export const useSearchStore = defineStore('search', {
   state: () => ({
     stores: [] as Store[],
     storesLoaded: false,
+    featuredProducts: [] as Product[],
+    featuredLoading: false,
+    featuredError: null as string | null,
     heroSearchInput: '',
     heroSearchResults: [] as Product[],
     heroSearchLoading: false,
@@ -32,6 +35,8 @@ export const useSearchStore = defineStore('search', {
 
   getters: {
     getProducts: (state) => state.results,
+    getFeaturedProducts: (state) => state.featuredProducts,
+    getFeaturedHasResults: (state) => state.featuredProducts.length > 0,
     getHeroSearchResults: (state) => state.heroSearchResults,
     getHeroHasResults: (state) => state.heroSearchResults.length > 0,
     getIsLoading: (state) => state.loading,
@@ -49,6 +54,39 @@ export const useSearchStore = defineStore('search', {
     async getProductsByParams(params: ProductsQueryParams) {
       const { search } = useProducts()
       return await search(params)
+    },
+
+    async getFeaturedProductsByIds(ids: string[]) {
+      const normalizedIds = ids
+        .map((id) => id.trim())
+        .filter(Boolean)
+
+      if (normalizedIds.length === 0) {
+        this.featuredProducts = []
+        this.featuredError = null
+        this.featuredLoading = false
+        return
+      }
+
+      this.featuredLoading = true
+      this.featuredError = null
+
+      try {
+        const { getFeaturedProducts } = useProducts()
+        const response = await getFeaturedProducts(normalizedIds)
+        this.featuredProducts = response?.products || []
+      } catch (error: unknown) {
+        this.featuredError = error instanceof Error ? error.message : 'Featured products fetch failed'
+        this.featuredProducts = []
+      } finally {
+        this.featuredLoading = false
+      }
+    },
+
+    setFeaturedProductsCleared() {
+      this.featuredProducts = []
+      this.featuredError = null
+      this.featuredLoading = false
     },
 
     async getHeroSearchResultsByQuery() {
