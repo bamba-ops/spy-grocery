@@ -33,27 +33,29 @@ onMounted(() => {
         <div
           v-for="product in searchStore.getFeaturedProducts"
           :key="product.id"
-          class="group flex h-full flex-col rounded-2xl border border-white/10 bg-white/5 p-4 transition hover:bg-white/10"
+          class="group flex h-full flex-col rounded-2xl border border-white/10 bg-white/5 transition hover:bg-white/10"
         >
-          <div class="mb-6 flex h-40 items-center justify-center rounded-2xl border border-white/10 bg-gradient-to-br from-white/15 via-white/5 to-white/10 sm:h-48">
+          <div class="relative aspect-[16/9] overflow-hidden rounded-t-2xl border-b border-white/10 bg-black sm:aspect-square">
             <template v-if="searchStore.getProductImageDisplay(product.image_url, product.name).type === 'url'">
               <img
                 :src="searchStore.getProductImageDisplay(product.image_url, product.name).value"
                 :alt="product.name"
-                class="h-full w-full rounded-2xl object-contain p-4"
+                class="h-full w-full object-contain brightness-90 contrast-110"
                 loading="lazy"
               />
             </template>
             <template v-else>
-              <div class="text-6xl">
+              <div class="flex h-full w-full items-center justify-center text-5xl text-white/60">
                 {{ searchStore.getProductImageDisplay(product.image_url, product.name).value }}
               </div>
             </template>
+            <div class="pointer-events-none absolute inset-0 z-0 bg-black/40"></div>
           </div>
-          <div class="flex items-center justify-between">
+
+          <div class="flex flex-1 items-center justify-between p-3 sm:p-5">
             <div>
               <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">{{ FEATURED_LABEL_BY_ID[product.id] || 'Essentials' }}</p>
-              <h3 class="mt-2 text-lg font-semibold italic">{{ product.name }}</h3>
+              <h3 class="mt-2 font-display text-lg font-semibold italic leading-tight sm:text-2xl">{{ product.name }}</h3>
               <p class="mt-1 text-[10px] uppercase tracking-[0.3em] text-white/55">{{ product.store.name }}</p>
             </div>
             <span class="font-display text-xl font-semibold italic text-white">

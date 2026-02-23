@@ -1,11 +1,11 @@
 export const FEATURED_PRODUCT_IDS = [
-  '02f7865c-bc3b-4af1-9bd0-577bf8059cb0',
-  '1351f7ab-6980-4e03-8664-4d1e348eaab0',
-  '05a952e4-7dcb-4885-803d-5276ec83bf8f'
+  '12dffdcc-bed7-4766-9838-ebf656789357',
+  'f1454ebb-226c-4c1a-899d-193d9994ab41',
+  '0effd1bf-5f80-4043-b8e1-63970ad537c3'
 ]
 
 export const FEATURED_LABEL_BY_ID: Record<string, string> = {
-  '02f7865c-bc3b-4af1-9bd0-577bf8059cb0': 'Viandes fraiches',
-  '1351f7ab-6980-4e03-8664-4d1e348eaab0': 'Legumes frais',
-  '05a952e4-7dcb-4885-803d-5276ec83bf8f': 'Fruits frais'
+  '12dffdcc-bed7-4766-9838-ebf656789357': 'Viandes fraiches',
+  'f1454ebb-226c-4c1a-899d-193d9994ab41': 'Legumes frais',
+  '0effd1bf-5f80-4043-b8e1-63970ad537c3': 'Fruits frais'
 }
