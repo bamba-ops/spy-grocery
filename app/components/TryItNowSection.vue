@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { FEATURED_LABEL_BY_ID, FEATURED_PRODUCT_IDS } from '~/constants/featuredProducts'
 import { useSearchStore } from '~/stores/search'
 
 const searchStore = useSearchStore()
@@ -17,16 +16,12 @@ onMounted(() => {
         <span class="text-[10px] uppercase tracking-[0.35em] text-white/60">Selected essentials</span>
       </div>
 
-      <div v-if="searchStore.featuredLoading" class="grid gap-6 md:grid-cols-3">
+      <div v-if="searchStore.featuredLoading || searchStore.featuredError" class="grid gap-6 md:grid-cols-3">
         <div
           v-for="i in 3"
           :key="i"
           class="h-[266px] animate-pulse rounded-2xl border border-white/10 bg-white/5"
         ></div>
-      </div>
-
-      <div v-else-if="searchStore.featuredError" class="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/75">
-        Could not load featured products.
       </div>
 
       <div v-else-if="searchStore.getFeaturedHasResults" class="grid gap-6 md:grid-cols-3">
