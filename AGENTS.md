@@ -1,136 +1,153 @@
 # AGENTS.md
-# Repo guide for agentic coding (SpyGrocery / Nuxt 4)
+# SpyGrocery (Nuxt 4) - Agent Operating Guide
 
-This file is for autonomous coding agents. It aims to be concrete, repo-specific, and safe.
+This file is for autonomous coding agents working in this repository.
+It documents the practical rules, commands, and conventions used in this codebase.
 
 ## Quick Context
-- SpyGrocery is a grocery price-comparison web app (search once, compare across stores).
-- Active frontend is Nuxt 4 + Vue 3 (NOT the legacy app).
-- Visual direction: black/white editorial, big typographic hierarchy; Manrope body + Fraunces headlines.
-- Styling rule: Tailwind utility classes only (no custom CSS files).
-
-## Commands (Current)
-- Install: `npm install`
-- Dev server: `npm run dev`
-- Dev server (custom port): `npm run dev -- --port 3001`
-- Dev server (LAN access / phone testing): `npm run dev -- --host 0.0.0.0 --port 3000`
-- Build: `npm run build`
-- Preview build: `npm run preview`
-- Static generate: `npm run generate`
-
-## Lint / Test / Typecheck
-- Linting: not configured (no ESLint/Prettier in this repo today).
-- Unit tests: not configured (no Vitest/Jest in this repo today).
-- Typecheck (works with Nuxt TS projects; optional): `npx nuxi typecheck`
-
-Single-test notes (because agents need this)
-- There is no test runner configured yet.
-- If/when Vitest is added, typical patterns are:
-  - Run all tests: `npx vitest run`
-  - Run a single file: `npx vitest run path/to/file.test.ts`
-  - Run a single test by name: `npx vitest run -t "my test name"`
+- Product: SpyGrocery, a grocery price-comparison web app.
+- Frontend stack: Nuxt 4 + Vue 3 + Tailwind.
+- State: Pinia.
+- Backend: Nitro server routes in `server/api/*`.
+- Data: Supabase (`@nuxtjs/supabase`, server uses `serverSupabaseClient(event)`).
+- Visual direction: black/white editorial, strong typography, low-color UI.
 
 ## Cursor / Copilot Rules
-- No `.cursorrules`, `.cursor/rules/`, or `.github/copilot-instructions.md` found in this repo.
+- Checked and currently not present:
+  - `.cursor/rules/**`
+  - `.cursorrules`
+  - `.github/copilot-instructions.md`
+- If these files are added later, treat them as higher-priority repo rules.
 
-## Stack & Key Libraries
-- Nuxt 4, Vue 3, Nitro server routes
-- Tailwind: `@nuxtjs/tailwindcss`
-- State: Pinia via `app/plugins/pinia.ts`
-- Data: `@nuxtjs/supabase` (server-side uses `serverSupabaseClient`)
-- Icons: `lucide-vue-next`
+## Canonical Docs to Follow
+- `docs/STRUCTURE.md` for architecture/layering.
+- `docs/STYLING.md` for visual/UI rules.
+- `docs/SUPABASE_DB.md` for DB facts and Supabase workflow notes.
 
-## Project Layout
-- `app/pages/`:
-  - `app/pages/index.vue` landing
-  - `app/pages/search.vue` search experience
-  - `app/pages/login.vue` placeholder (no redirects)
-  - `app/pages/stores/[storeSlug]/products/[slug].vue` mock product detail
-- `app/components/`: landing + search components
-- `app/stores/`: Pinia stores (search, stores list, shopping list)
-- `app/composables/`: `$fetch` wrappers + UI utilities
-- `shared/types/`:
-  - `shared/types/database.types.ts` generated Supabase types
-  - `shared/types/index.ts` domain + API types (import from here in app + server code)
-- `server/api/`: Nitro API routes (file-based routing)
-- `public/`: hero background media
+## Build / Dev Commands
+- Install deps: `npm install`
+- Dev server: `npm run dev`
+- Dev server custom port: `npm run dev -- --port 3001`
+- Dev LAN testing: `npm run dev -- --host 0.0.0.0 --port 3000`
+- Production build: `npm run build`
+- Preview build: `npm run preview`
+- Static generation: `npm run generate`
 
-Legacy app
-- If `docs/frontend/` exists, treat it as legacy and do not edit for Nuxt work.
+## Lint / Typecheck / Test Commands
+- Lint: not configured in this repo today.
+- Typecheck (optional Nuxt TS check): `npx nuxi typecheck`
+- Unit tests: not configured in this repo today.
 
-## Runtime Configuration / Secrets
-- Supabase config lives in `nuxt.config.ts`:
-  - `supabase.url = process.env.SUPABASE_URL`
-  - `supabase.key = process.env.SUPABASE_PUBLISHABLE_KEY`
-  - `supabase.redirect = false`
-- Never commit `.env` or secret keys. Use publishable keys only in the app.
+Single-test guidance (important for agents):
+- There is no test runner configured right now, so no real single-test command exists.
+- If Vitest is added later, use:
+  - Run all tests: `npx vitest run`
+  - Run one file: `npx vitest run path/to/file.test.ts`
+  - Run one test name: `npx vitest run -t "test name"`
 
-## Data Model Notes (DB)
-- Tables: `products`, `prices`, `stores`
-- View: `public.latest_price` (latest per product/store)
-- Product routes are store-scoped: `/stores/[storeSlug]/products/[slug]`
-- No global canonical product mapping yet.
+## Project Layout (Working Mental Map)
+- `app/pages/*`: route-level composition.
+- `app/components/*`: UI components.
+- `app/stores/*`: Pinia feature state/actions.
+- `app/composables/*`: API wrappers + domain/data access helpers.
+- `app/layouts/*`: shared page layouts.
+- `server/api/*`: HTTP controllers (Nitro file-based routes).
+- `server/services/*`: business orchestration/use-cases.
+- `server/repositories/*`: DB access queries/mapping.
+- `shared/types/*`: shared domain + DB types.
+- `shared/utils/*`: reusable constants and helper functions.
 
-## Code Style & Conventions
+## Architecture Contract (Do Not Break)
+- Preferred flow:
+  - Component/Page -> Store -> Composable -> Server API -> Service -> Repository -> Supabase.
+- Avoid skipping layers (e.g., component calling DB logic directly).
+- Keep UI concerns out of services/repositories.
+- Keep HTTP concerns out of services.
 
-General formatting
-- Prefer 2-space indentation.
+## Code Style and Formatting
+- Use 2-space indentation.
 - Prefer single quotes in TS/JS.
-- Avoid non-ASCII in code unless the file already uses it or it is user-facing copy.
+- Keep code ASCII unless file/user-facing copy needs Unicode.
+- Keep components focused and small.
+- Avoid unnecessary comments; only explain non-obvious logic.
 
-Vue components
-- Use `<script setup lang="ts">`.
-- Prefer `const x = ref(...)`, `computed(...)`, `watch(...)` patterns.
-- Keep components modular; pages compose sections.
-- Don’t introduce custom CSS files; use Tailwind classes.
-- Fonts:
-  - Use `font-sans` for body/UI (Manrope).
-  - Use `font-display` for headlines (Fraunces).
+## Vue / Nuxt Conventions
+- Use `<script setup lang="ts">` in Vue SFCs.
+- Prefer explicit actions over watcher-heavy hidden flows.
+- Guard browser-only APIs with `process.client`.
+- Keep page files for composition and wiring, not business logic.
+- Tailwind utility classes only; do not add custom CSS files.
 
-Naming
-- Components: `PascalCase.vue` (e.g. `SearchResults.vue`).
-- Composables: `useX.ts` (e.g. `app/composables/useProducts.ts`).
-- Stores: `camelCase.ts` exporting `useXStore`.
-- Variables/functions: `camelCase`, constants: `SCREAMING_SNAKE_CASE`.
-
-Imports
-- Prefer type-only imports: `import type { Product } from '#shared/types'`.
+## Imports
+- Prefer type-only imports where possible.
 - Import order guideline:
-  1) Vue/Nuxt imports
+  1) Vue/Nuxt
   2) third-party libs
-  3) `~/` app imports (types/composables/stores)
+  3) `~/` imports
   4) relative imports
+- For shared helpers/constants, prefer `shared/utils/*` (Nuxt auto-import support).
 
-Types
-- Prefer domain types from `shared/types/index.ts`.
-- Avoid `any`; if unavoidable, narrow it quickly (`unknown` + type guard) and keep scope small.
+## Types
+- Prefer domain types from `shared/types/index.ts` and related shared type files.
+- Avoid `any`; use `unknown` + narrowing/type guards when needed.
+- Keep API response shapes explicit and narrow.
 
-Error handling
-- Server routes: throw with `createError({ statusCode, message })`.
-- Client: store actions should catch and set `error` state; keep UI resilient.
-- Always guard browser-only APIs with `process.client` (e.g. `localStorage`).
+## Naming Conventions
+- Components: `PascalCase.vue`
+- Stores: `camelCase.ts`, exporting `useXStore`
+- Composables: `useX.ts`
+- Variables/functions: `camelCase`
+- Constants: `SCREAMING_SNAKE_CASE`
+- Team convention for function prefixes:
+  - Read/access: `get...`
+  - Write/mutation: `set...`
+  - Delete/remove: `delete...`
 
-## API / Server Route Guidelines (Nitro)
-- Routes live in `server/api/` and use file-based naming:
-  - `server/api/stores/index.get.ts` -> `GET /api/stores`
-  - `server/api/products/search.get.ts` -> `GET /api/products/search`
-- Use `getQuery(event)` for query params; coerce + validate (strings, ints).
-- When querying Supabase:
-  - Prefer selecting only needed fields.
-  - Handle empty results consistently.
-  - Avoid unbounded selects for large tables.
+## Error Handling
+- Server/API: throw `createError({ statusCode, message })`.
+- Client/store actions: catch errors, set `error` state, keep UI resilient.
+- Avoid swallowing errors silently.
+- Validate/coerce query params in API handlers.
 
-## State Management (Pinia)
-- Cross-page/shared state belongs in `app/stores/*`.
-- Prefer stores calling composables (e.g. search store calls `useProducts().search()`) to avoid duplicated fetch logic.
-- Keep store state serializable.
+## Supabase and Data Access Rules
+- In server routes, use `serverSupabaseClient(event)`.
+- Select only needed fields; avoid unbounded selects.
+- Keep DB access in repositories.
+- Keep query/business orchestration in services.
+- If DB state is uncertain and MCP is available, verify instead of guessing.
 
-## UI/UX Notes (Search + List)
-- Search results and list panels are separate components.
-- Shopping list is grouped by store with totals.
-- Save operations are localStorage-backed; always guard with `process.client`.
+## Shared Utils Rule (Repo-Specific)
+- Put reusable constants and helper functions in `shared/utils/*`.
+- If a constant/helper is declared outside a feature's base exported function,
+  move it into `shared/utils`.
+- Prefer auto-imported shared utils in Nuxt when applicable.
+
+## UI/UX Notes
+- Keep editorial black/white direction consistent.
+- Typography: Manrope for body/UI, Fraunces for display/headlines.
+- Ensure visible hover/focus/disabled states.
+- Mobile-first layouts; verify desktop and mobile behavior.
 
 ## Common Gotchas
-- Tailwind config changes may require restarting `npm run dev`.
-- Supabase redirect issues: keep `supabase.redirect: false` unless you intentionally change auth flow.
-- If enabling mobile testing, run dev server with `--host 0.0.0.0` and access via your Mac’s LAN IP.
+- Tailwind config changes may require restarting dev server.
+- Supabase auth redirect behavior depends on `nuxt.config.ts` settings.
+- No formal lint/test safety net exists yet; run build/typecheck frequently.
+
+## Agent Workflow Checklist
+- Before coding: identify touched files and layer boundaries.
+- During coding: keep changes scoped to one intention.
+- After coding (minimum): run `npm run build`.
+- Optional safety: run `npx nuxi typecheck`.
+- Before commit: inspect `git diff` for scope and accidental files.
+
+## Git and Change Hygiene
+- Do not revert user-authored unrelated changes unless explicitly asked.
+- Avoid broad refactors when implementing a focused request.
+- Keep commits small and intention-revealing.
+- Never commit secrets (`.env`, private keys, credentials).
+
+## What to Avoid
+- No direct Supabase calls from components/pages.
+- No business logic embedded in Nitro controllers.
+- No new custom CSS files or ad-hoc visual themes.
+- No implicit side-effect chains driven by many watchers.

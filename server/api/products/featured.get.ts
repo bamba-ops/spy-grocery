@@ -1,19 +1,6 @@
 import { serverSupabaseClient } from '#supabase/server'
 import { getFeaturedProducts } from '../../services/products/getFeaturedProducts'
-
-const MAX_IDS_PER_REQUEST = 50
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
-
-const getIdsFromQuery = (rawIds: string | string[] | undefined) => {
-  if (!rawIds) return []
-
-  const asCsv = Array.isArray(rawIds) ? rawIds.join(',') : rawIds
-
-  return asCsv
-    .split(',')
-    .map((id) => id.trim())
-    .filter(Boolean)
-}
+import { MAX_IDS_PER_REQUEST, UUID_REGEX, getIdsFromQuery } from '../../utils/featuredQueryIds'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
