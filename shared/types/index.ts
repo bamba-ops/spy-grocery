@@ -1,40 +1,33 @@
 import type { Database } from './database.types'
 
-// Database table types
 export type DbProduct = Database['public']['Tables']['products']['Row']
-export type DbStore = Database['public']['Tables']['stores']['Row']
-export type DbPrice = Database['public']['Tables']['prices']['Row']
-export type DbLatestPrice = Database['public']['Views']['latest_price']['Row']
+export type DbProductPrice = Database['public']['Tables']['product_prices']['Row']
 
-// Simple UI types for products with store and price info
-export interface Product {
+export interface SearchProduct {
   id: string
-  name: string
-  brand: string | null
   slug: string
-  unit: string | null
+  title: string
+  brand: string | null
+  store: string
+  store_id: string | null
   image_url: string | null
-  link: string | null
-  store: {
-    id: string
-    name: string
-    slug: string
-    image_url: string | null
-  }
-  price: number | null
-  price_un: number | null
-  price_unit: string | null
-  is_promo: boolean | null
+  url: string | null
+  uom: string | null
+  price_num: number | null
+  was_price_num: number | null
+  price_text: string | null
+  pre_price_text: string | null
+  on_sale: boolean | null
+  scraped_at: string | null
 }
 
-// Store with selection state
-export interface StoreWithSelection extends DbStore {
-  selected?: boolean
-}
+// Temporary alias to ease migration in stores/components.
+export type Product = SearchProduct
 
-export interface Store {
+export interface StoreFacet {
   id: string
-  name: string | null
-  slug: string | null
-  image_url: string | null
+  store_id: string | null
+  name: string
+  slug: string
+  product_count: number
 }

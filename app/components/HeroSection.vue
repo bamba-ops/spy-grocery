@@ -51,20 +51,16 @@ const searchStore = useSearchStore()
                   class="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-xl px-3 py-2 text-left transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
                 >
                   <div class="min-w-0">
-                    <p class="truncate text-sm font-medium leading-tight text-white">{{ product.name }}</p>
-                    <p class="mt-1 text-[10px] uppercase tracking-[0.25em] text-white/60">{{ product.store.name }}</p>
+                    <p class="truncate text-sm font-medium leading-tight text-white">{{ product.title }}</p>
+                    <p class="mt-1 text-[10px] uppercase tracking-[0.25em] text-white/60">{{ product.store }}</p>
                   </div>
                   <p class="shrink-0 font-display text-lg font-semibold italic text-white">
-                    ${{ searchStore.getFormattedPrice(product.price) }}
+                    ${{ searchStore.getFormattedPrice(product.price_num) }}
                   </p>
                 </button>
               </div>
             </div>
           </div>
-
-         <!-- <button class="h-11 w-full rounded-full border border-white/20 bg-white px-6 text-[10px] font-semibold uppercase tracking-[0.35em] text-black transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:w-auto">
-            Compare Local Prices
-          </button> -->
         </div>
       </div>
     </div>

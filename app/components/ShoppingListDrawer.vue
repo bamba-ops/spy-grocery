@@ -3,12 +3,10 @@ import { X, Trash2, Plus, Minus } from 'lucide-vue-next'
 import { useListsStore } from '~/stores/lists'
 
 const lists = useListsStore()
-
 </script>
 
 <template>
   <div class="relative z-50">
-    <!-- Backdrop -->
     <Transition
       enter-active-class="transition-opacity duration-300 ease-out"
       enter-from-class="opacity-0"
@@ -17,14 +15,13 @@ const lists = useListsStore()
       leave-from-class="opacity-100"
       leave-to-class="opacity-0"
     >
-      <div 
-        v-if="lists.isShoppingListDrawerOpen" 
-        class="fixed inset-0 bg-black/50 backdrop-blur-sm" 
+      <div
+        v-if="lists.isShoppingListDrawerOpen"
+        class="fixed inset-0 bg-black/50 backdrop-blur-sm"
         @click="lists.setShoppingListDrawerClosed()"
       ></div>
     </Transition>
 
-    <!-- Drawer -->
     <Transition
       enter-active-class="transition transform duration-300 ease-out"
       enter-from-class="translate-x-full"
@@ -33,8 +30,8 @@ const lists = useListsStore()
       leave-from-class="translate-x-0"
       leave-to-class="translate-x-full"
     >
-      <div 
-        v-if="lists.isShoppingListDrawerOpen" 
+      <div
+        v-if="lists.isShoppingListDrawerOpen"
         class="fixed inset-y-0 right-0 flex w-full max-w-md flex-col border-l border-white/10 bg-black text-white shadow-[-10px_0_30px_rgba(0,0,0,0.5)]"
       >
         <div class="flex items-center justify-between border-b border-white/10 px-5 py-4">
@@ -59,16 +56,6 @@ const lists = useListsStore()
             <div v-for="(items, storeName) in lists.groupedItems" :key="storeName" class="space-y-3">
               <div class="flex items-center justify-between text-[10px] uppercase tracking-[0.35em] text-white/60">
                 <div class="flex items-center gap-2">
-                  <div class="flex h-7 w-7 items-center justify-center rounded-full border border-white/15 bg-white/10 text-[10px] text-white/60">
-                    <img
-                      v-if="items[0]?.product.store.image_url"
-                      :src="items[0]?.product.store.image_url"
-                      :alt="items[0]?.product.store.name"
-                      class="h-5 w-5 rounded-full object-contain"
-                      loading="lazy"
-                    />
-                    <span v-else>◎</span>
-                  </div>
                   <span>{{ storeName }}</span>
                 </div>
                 <span>${{ lists.storeTotals[storeName]?.toFixed(2) }}</span>
@@ -79,7 +66,7 @@ const lists = useListsStore()
                   <img
                     v-if="item.product.image_url"
                     :src="item.product.image_url"
-                    :alt="item.product.name"
+                    :alt="item.product.title"
                     class="h-full w-full object-contain"
                     loading="lazy"
                   />
@@ -87,9 +74,9 @@ const lists = useListsStore()
                   <div class="pointer-events-none absolute inset-0 bg-black/35"></div>
                 </div>
                 <div class="flex-1">
-                  <p class="text-sm font-semibold italic">{{ item.product.name }}</p>
+                  <p class="text-sm font-semibold italic">{{ item.product.title }}</p>
                   <p class="mt-1 text-[10px] uppercase tracking-[0.3em] text-white/60">
-                    ${{ item.product.price?.toFixed(2) ?? 'N/A' }}/EA
+                    ${{ item.product.price_num?.toFixed(2) ?? 'N/A' }}
                   </p>
                   <div class="mt-3 flex items-center gap-3">
                     <div class="flex items-center rounded-full border border-white/20">
@@ -150,7 +137,7 @@ const lists = useListsStore()
         </div>
       </div>
     </Transition>
-    
+
     <ConfirmActionModal
       :open="lists.isClearConfirmModalOpen"
       title="Clear list"

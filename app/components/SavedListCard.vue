@@ -32,7 +32,7 @@ const itemCount = computed(() => {
 
 const totalValue = computed(() => {
   return props.list.items.reduce((acc, it) => {
-    const price = it.product.price ?? 0
+    const price = it.product.price_num ?? 0
     return acc + price * it.quantity
   }, 0)
 })

@@ -1,24 +1,15 @@
-import type { SearchParams } from '#shared/types/search'
-import type { Product } from '#shared/types'
+import type { SearchParams, SearchResponse } from '#shared/types/search'
 
 const fallbackEmojis: string[] = ['🥛', '🍞', '🥚', '🍎', '🥗', '🧀', '🥩', '🍕', '🥤', '🍌']
 
 export const useProducts = () => {
-  const search = async (params: SearchParams) => {
+  const search = async (params: SearchParams): Promise<SearchResponse> => {
     return $fetch('/api/products/search', {
       query: params
     })
   }
 
-  const getFeaturedProducts = async (ids: string[]) => {
-    return $fetch<{ products: Product[] }>('/api/products/featured', {
-      query: {
-        ids
-      }
-    })
-  }
-
-  const getImageDisplay = (imageUrl: string | null, productName?: string) => {
+  const getImageDisplay = (imageUrl: string | null, productTitle?: string) => {
     if (imageUrl && imageUrl.trim() !== '') {
       return {
         type: 'url' as const,
@@ -27,8 +18,8 @@ export const useProducts = () => {
     }
 
     let emojiIndex = 0
-    if (productName) {
-      const hash = productName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
+    if (productTitle) {
+      const hash = productTitle.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
       emojiIndex = hash % fallbackEmojis.length
     } else {
       emojiIndex = Math.floor(Math.random() * fallbackEmojis.length)
@@ -42,7 +33,6 @@ export const useProducts = () => {
 
   return {
     search,
-    getFeaturedProducts,
     getImageDisplay
   }
 }

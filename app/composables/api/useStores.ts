@@ -1,16 +1,13 @@
-import type { Store } from '#shared/types'
+import type { StoreFacet } from '#shared/types'
+
+interface StoresResponse {
+  stores: StoreFacet[]
+}
 
 export const useStores = () => {
-  const fetchStores = async () => {
-    const response = await $fetch('/api/stores')
-    const stores = (response?.stores || []).map((store: Store) => ({
-      id: store.id,
-      name: store.name,
-      slug: store.slug,
-      image_url: store.image_url
-    }))
-
-    return stores
+  const fetchStores = async (): Promise<StoreFacet[]> => {
+    const response = await $fetch<StoresResponse>('/api/stores')
+    return response?.stores || []
   }
 
   return {

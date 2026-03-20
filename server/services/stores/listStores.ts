@@ -1,20 +1,43 @@
-import { fetchProductStoreIds, fetchStores } from '../../repositories/storesRepository'
+import { toSlug } from '#shared/utils/toSlug'
+import { fetchProductStoreRows } from '../../repositories/storesRepository'
+
+interface StoreFacet {
+  id: string
+  store_id: string | null
+  name: string
+  slug: string
+  product_count: number
+}
 
 export const listStores = async (supabase: any) => {
-  const [stores, productStoreRows] = await Promise.all([
-    fetchStores(supabase),
-    fetchProductStoreIds(supabase)
-  ])
+  const rows = await fetchProductStoreRows(supabase)
 
-  const countMap: Record<string, number> = {}
-  productStoreRows.forEach((row: { store_id: string | null }) => {
-    if (row.store_id) {
-      countMap[row.store_id] = (countMap[row.store_id] || 0) + 1
+  const map = new Map<string, StoreFacet>()
+
+  rows.forEach((row) => {
+    if (!row.store) return
+
+    const name = row.store.trim()
+    if (!name) return
+
+    const slug = toSlug(name)
+    const id = row.store_id || slug
+    const key = `${row.store_id || 'null'}:${name}`
+    const current = map.get(key)
+
+    if (!current) {
+      map.set(key, {
+        id,
+        store_id: row.store_id,
+        name,
+        slug,
+        product_count: 1
+      })
+      return
     }
+
+    current.product_count += 1
   })
 
-  return stores.map((store: { id: string }) => ({
-    ...store,
-    product_count: countMap[store.id] || 0
-  }))
+  return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name))
 }

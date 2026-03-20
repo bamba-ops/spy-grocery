@@ -1,27 +1,39 @@
 import { serverSupabaseClient } from '#supabase/server'
+import type { SearchSort } from '#shared/types/search'
 import { searchProducts } from '../../services/products/searchProducts'
+
+const ALLOWED_SORTS: SearchSort[] = ['price_asc', 'price_desc', 'title_asc', 'recent']
+
+const toPositiveInt = (value: string | undefined, fallback: number) => {
+  if (!value) return fallback
+  const parsed = Number.parseInt(value, 10)
+  if (Number.isNaN(parsed) || parsed < 0) return fallback
+  return parsed
+}
 
 export default defineEventHandler(async (event) => {
   const supabase = await serverSupabaseClient(event)
   const query = getQuery(event)
 
-  // Parse query params
-  const searchQuery = query.q?.toString() || ''
-  const storeFilter = query.stores?.toString() || ''
-  const sortBy = query.sort?.toString() || 'price-low'
-  const limit = parseInt(query.limit?.toString() || '50')
-  const offset = parseInt(query.offset?.toString() || '0')
-  const promosOnly = query.promos?.toString() === 'true' || false
-  const dedupe = query.dedupe?.toString() !== 'false'
+  const searchQuery = query.q?.toString().trim() || ''
+  const store = query.store?.toString().trim() || 'all'
+  const sortParam = query.sort?.toString().trim() || 'price_asc'
+  const limit = Math.min(toPositiveInt(query.limit?.toString(), 50), 100)
+  const offset = toPositiveInt(query.offset?.toString(), 0)
 
-  return await searchProducts({
+  if (!ALLOWED_SORTS.includes(sortParam as SearchSort)) {
+    throw createError({
+      statusCode: 400,
+      message: 'Invalid sort value'
+    })
+  }
+
+  return searchProducts({
     supabase,
     searchQuery,
-    storeFilter,
-    sortBy,
+    store,
+    sortBy: sortParam as SearchSort,
     limit,
-    offset,
-    promosOnly,
-    dedupe
+    offset
   })
 })

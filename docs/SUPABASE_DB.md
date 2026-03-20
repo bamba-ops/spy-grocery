@@ -1,228 +1,172 @@
 # Supabase DB Overview (SpyGrocery)
 
-This document explains the current database structure in Supabase for the SpyGrocery project.
-Data below was collected via Supabase MCP (project `rsaahxavonavatcsntcf`).
+This document reflects the current production-like Supabase state inspected via MCP on **March 20, 2026**.
 
 ## Quick Summary
 
-- Project: `spygrocery_v2` (ref: `rsaahxavonavatcsntcf`)
+- Project URL: `https://thtxpbkjwabegyikrdhu.supabase.co`
 - Main schema: `public`
-- Core tables:
+- Active tables used by web app:
   - `products`
-  - `prices`
-  - `stores`
-  - `client`
-- Core view:
-  - `latest_price`
+  - `product_prices`
+- No public views are currently present (`latest_price` no longer exists).
 
 Current row counts:
-- `products`: 184,288
-- `prices`: 193,029
-- `stores`: 6
-- `client`: 50
+- `products`: `5,362`
+- `product_prices`: `5,362`
 
-## Data Model (Mental Map)
+## Data Model
 
-Logical relationships (used by app):
-- `stores (1)` -> `products (many)` via `products.store_id`
-- `products (1)` -> `prices (many)` via `prices.product_id`
-- `stores (1)` -> `prices (many)` via `prices.store_id`
+Logical model:
+- `products` is the current searchable product snapshot table.
+- `product_prices` is historical price tracking per product observation.
 
-Important note:
-- These links exist logically and in app code, but there are currently no DB-level foreign key constraints on `products.store_id`, `prices.product_id`, or `prices.store_id`.
+Database-level relationship:
+- `product_prices.product_id -> products.id` (`ON DELETE CASCADE`)
+
+Key uniqueness:
+- `products.slug` is unique.
+- `product_prices` enforces one row per product per UTC day via expression unique index:
+  - `(product_id, ((observed_at AT TIME ZONE 'UTC')::date))`
 
 ## Tables
 
 ### `public.products`
+
 Purpose:
-- Product catalog rows scoped by store.
+- Canonical searchable product rows used by the frontend.
 
 Primary key:
 - `id uuid` (default `gen_random_uuid()`)
 
-Key columns:
-- `store_id uuid`
-- `name varchar`
-- `brand varchar`
+Key columns used by web:
+- `id uuid`
 - `slug text`
-- `unit varchar`
-- `image_url varchar`
-- `link text`
-- `created_at timestamptz` (default `now()`)
-- `created_date date` (default `CURRENT_DATE`)
+- `title text`
+- `brand text`
+- `store text`
+- `store_id text`
+- `image_url text`
+- `url text`
+- `uom text`
+- `price_num numeric`
+- `was_price_num numeric`
+- `price_text text`
+- `pre_price_text text`
+- `on_sale boolean`
+- `scraped_at timestamptz`
+
+Other notable columns:
+- `source`, `source_url`, `external_id`, `product_key`, `raw_payload`, `search_term`, `search_results_count`, `image_urls`, etc.
 
 Important indexes:
-- `products_store_id_idx` on `(store_id)`
-- `products_store_slug_idx` on `(store_id, slug)`
-- `products_store_slug_key` UNIQUE on `(store_id, slug)`
-- trigram/full-text search indexes:
-  - `products_name_trgm_idx`
-  - `products_name_brand_trgm_idx`
-  - `idx_products_brand_trgm`
-  - `products_name_tsv_idx`
+- `products_pkey` (PK on `id`)
+- `products_slug_key` (UNIQUE on `slug`)
+- `products_product_key_idx` (UNIQUE on `product_key`)
+- `products_store_idx` (`store`)
+- `products_scraped_at_idx` (`scraped_at desc`)
+- `products_external_id_idx` (`external_id`)
+- `products_created_at_price_idx` partial (`created_at desc` where `price_raw is not null`)
 
-### `public.prices`
+### `public.product_prices`
+
 Purpose:
-- Price snapshots over time per product/store.
+- Historical price facts for analytics and later historical UI.
 
 Primary key:
 - `id uuid` (default `gen_random_uuid()`)
 
 Key columns:
-- `product_id uuid`
-- `store_id uuid`
-- `price numeric` (check `price >= 0`)
-- `unit varchar`
-- `price_un numeric`
-- `quantity numeric`
-- `is_promo boolean`
-- `created_at timestamptz` (default `now()`)
-- `created_date date` (default `CURRENT_DATE`)
+- `product_id uuid` (FK -> `products.id`)
+- `store text`
+- `store_id text`
+- `observed_at timestamptz`
+- `price_num numeric`
+- `was_price_num numeric`
+- `price_text text`
+- `pre_price_text text`
+- `on_sale boolean`
+- `sale_*`, `discount_*`, `pricing_units`, `unit_price_full`
 
 Important indexes:
-- `prices_product_store_created_idx` on `(product_id, store_id, created_at desc)`
-- `unique_price_today` UNIQUE on `(store_id, product_id, created_date)`
+- `product_prices_pkey` (PK)
+- `product_prices_product_observed_idx` (`product_id`, `observed_at desc`)
+- `product_prices_observed_idx` (`observed_at desc`)
+- `product_prices_product_day_utc_expr_uidx` (UNIQUE daily UTC)
 
-Why `unique_price_today` matters:
-- It guarantees one price row per day per `(store, product)`.
-- Any dedupe/relink operation must respect this (delete collisions before relinking IDs).
+## Views and Functions
 
-### `public.stores`
-Purpose:
-- Store metadata and scraping/config fields.
+- `public` views: none.
+- `public` functions: none.
 
-Primary key:
-- `id uuid` (default `gen_random_uuid()`)
+## RLS / Security Status
 
-Unique:
-- `name` unique
+Supabase advisors currently report:
+- `RLS Disabled in Public` on:
+  - `public.products`
+  - `public.product_prices`
 
-Key columns:
-- `name varchar`
-- `slug text`
-- `image_url varchar`
-- `cookies text`
-- `api_url text`
-- `cookies_json jsonb`
-- `wait_for_selector text`
-- `created_at timestamptz` (default `now()`)
+Reference:
+- https://supabase.com/docs/guides/database/database-linter?lint=0013_rls_disabled_in_public
 
-Known stores:
-- iga
-- Maxi
-- Metro
-- provigo
-- superc
-- walmart
+Performance advisory currently reported:
+- `unused_index` on `products_created_at_price_idx`
 
-### `public.client`
-Purpose:
-- App client/user profile mapping.
-
-Primary key:
-- `id uuid` (default `gen_random_uuid()`)
-
-Unique:
-- `email`
-- `user_id` (default `auth.uid()`)
-
-Key columns:
-- `email text`
-- `user_id uuid`
-- `created_at timestamptz` (default `now()`)
-
-## Views
-
-### `public.latest_price`
-Definition logic:
-- `DISTINCT ON (product_id, store_id)`
-- ordered by `created_at DESC`
-- returns latest known price row for each `(product, store)` pair.
-
-Columns exposed:
-- `product_id`, `store_id`
-- `price`, `price_un`, `unit`, `quantity`, `is_promo`
-- `created_at`, `created_date`
-
-Used by app:
-- `/api/products/search` uses this view to attach current price/promo data to products.
-
-Other small views present:
-- `public.product_slugs`
-- `public.store_slugs`
-
-## Functions
-
-### `public.slugify(input text) -> text`
-Purpose:
-- lowercases/unaccents input and replaces non-alphanumerics with `-`.
-
-Used for:
-- generating store-scoped product slugs.
-
-## RLS (Row Level Security)
-
-RLS is enabled on all four main tables.
-
-Current notable policies:
-- `stores`:
-  - `anon` SELECT allowed (`true`)
-  - `authenticated` SELECT allowed (`true`)
-- `products` / `prices`:
-  - `authenticated` SELECT allowed (`true`)
-  - `public` policy exists with restriction to specific store IDs
-- `client`:
-  - authenticated INSERT allowed
-  - authenticated SELECT only own row (`auth.uid() = user_id`)
-
-Practical implication:
-- Authenticated users can read full product/price datasets.
-- Anonymous/public access on products/prices is currently restricted by policy.
+Reference:
+- https://supabase.com/docs/guides/database/database-linter?lint=0005_unused_index
 
 ## Migrations Present
 
-Applied migration files include:
-- `create_latest_price_view`
-- `add_price_product_store_created_idx`
-- `drop_unused_functions_and_view`
-- `drop_app_functions`
-- `add_products_store_slug_idx`
-- `backfill_product_slugs_store_scoped`
-- `create_slugify_function`
-- `backfill_missing_slugs_batch`
-- `dedupe_slugs_per_store`
-- `add_unique_store_slug`
-- `populate_stores`
+Applied migrations currently visible:
+- `20260307085506 create_products_table_from_normalized_product`
+- `20260307085609 products_id_to_uuid_primary_key`
+- `20260307101542 add_product_key_and_product_prices_history`
+- `20260308172700 remove_scope_key_use_product_id_only`
+- `20260308211843 enforce_one_product_price_per_day_toronto`
+- `20260308213848 replace_observed_day_column_with_expression_index`
+- `20260308220055 add_products_created_at_partial_index`
+- `20260310060741 dedupe_product_prices_utc_day_and_enforce_unique_v2`
+- `20260310061128 use_utc_only_for_product_prices_daily_uniqueness`
+- `20260319214807 add_pre_price_text_columns`
+- `20260319215208 add_price_text_columns`
 
-## Architecture Notes (for dev work)
+## Current Web API Contract (Aligned)
 
-- Search endpoint is now layered:
-  - controller: `server/api/products/search.get.ts`
-  - service: `server/services/products/searchProducts.ts`
-  - repos: `server/repositories/productsRepository.ts`
-- Stores endpoint is now layered:
-  - controller: `server/api/stores/index.get.ts`
-  - service: `server/services/stores/listStores.ts`
-  - repo: `server/repositories/storesRepository.ts`
+### `GET /api/products/search`
 
-## Known Gaps / Recommendations
+Query params:
+- `q?: string`
+- `store?: string` (`all` or one store id/slug)
+- `sort?: 'price_asc' | 'price_desc' | 'title_asc' | 'recent'`
+- `on_sale?: 'true' | 'false'`
+- `limit?: number` (default `50`)
+- `offset?: number` (default `0`)
 
-1. Consider adding foreign keys (if ingestion flow allows it):
-   - `products.store_id -> stores.id`
-   - `prices.product_id -> products.id`
-   - `prices.store_id -> stores.id`
-2. Review public RLS for `products/prices` to ensure intended anonymous behavior.
-3. Keep `latest_price` logic as the canonical "current price" source.
-4. Keep slug uniqueness store-scoped (`(store_id, slug)`).
+Response:
+- `items: SearchProduct[]`
+- `total: number`
+- `page: number`
+- `limit: number`
+- `totalPages: number`
 
-## Agent Workflow Note (MCP Supabase)
+`SearchProduct` fields:
+- `id`, `slug`, `title`, `brand`, `store`, `store_id`, `image_url`, `url`, `uom`
+- `price_num`, `was_price_num`, `price_text`, `pre_price_text`
+- `on_sale`, `scraped_at`
 
-- For any request that needs database inspection or verification, use the Supabase MCP tools first.
-- Preferred MCP tools for DB checks:
-  - `supabase_list_projects`
-  - `supabase_list_tables`
-  - `supabase_execute_sql`
-  - `supabase_list_migrations`
-  - `supabase_get_advisors`
-- Do not guess DB state when MCP can confirm it.
-- Keep this document updated when new DB facts are discovered through MCP.
+### `GET /api/stores`
+
+Source:
+- Derived from `products` rows (`store`, `store_id`) and aggregated by count.
+
+Response:
+- `stores: StoreFacet[]`
+- `StoreFacet = { id, store_id, name, slug, product_count }`
+- `id = store_id` when present, otherwise fallback to store slug.
+
+## Notes for Agents
+
+- Do not assume `stores`, `prices`, or `latest_price` exist.
+- For current price display, use `products.price_num`.
+- Keep `product_prices` for analytics/history workflows.
+- If schema is uncertain, re-check with Supabase MCP before coding.

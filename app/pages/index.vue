@@ -23,7 +23,6 @@ useHead({
   <div class="bg-black text-white">
     <AppHeader />
     <HeroSection />
-    <TryItNowSection />
     <StepsSection />
     <FeaturesGridSection />
     <TikTokTestimonialSection />

@@ -1,29 +1,25 @@
-import type { Product } from './index'
+import type { SearchProduct } from './index'
 
-export type SearchSort = 'price-low' | 'price-high' | 'name'
+export type SearchSort = 'price_asc' | 'price_desc' | 'title_asc' | 'recent'
 
 export interface ProductsQueryParams {
-  q: string
-  stores?: string
+  q?: string
+  store?: string
   sort?: SearchSort
-  promos?: 'true' | 'false'
-  dedupe?: 'true' | 'false'
   limit: number
   offset: number
 }
 
 export interface SearchParams {
   q?: string
-  stores?: string
+  store?: string
   sort?: SearchSort
-  promos?: 'true' | 'false'
-  dedupe?: 'true' | 'false'
   limit?: number
   offset?: number
 }
 
 export interface SearchResponse {
-  products: Product[]
+  items: SearchProduct[]
   total: number
   page: number
   limit: number

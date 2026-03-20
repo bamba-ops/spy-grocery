@@ -47,7 +47,7 @@ export const useListsStore = defineStore('lists', {
   getters: {
     groupedItems: (state) => {
       return state.productList.reduce((groups, item) => {
-        const storeName = item.product.store.name
+        const storeName = item.product.store
         if (!groups[storeName]) {
           groups[storeName] = []
         }
@@ -58,14 +58,14 @@ export const useListsStore = defineStore('lists', {
 
     storeTotals: (state) => {
       return state.productList.reduce((totals, item) => {
-        const storeName = item.product.store.name
-        totals[storeName] = (totals[storeName] ?? 0) + (item.product.price ?? 0) * item.quantity
+        const storeName = item.product.store
+        totals[storeName] = (totals[storeName] ?? 0) + (item.product.price_num ?? 0) * item.quantity
         return totals
       }, {} as Record<string, number>)
     },
 
     grandTotal: (state) => {
-      return state.productList.reduce((total, item) => total + (item.product.price ?? 0) * item.quantity, 0)
+      return state.productList.reduce((total, item) => total + (item.product.price_num ?? 0) * item.quantity, 0)
     },
 
     itemCount: (state) => {
@@ -83,7 +83,7 @@ export const useListsStore = defineStore('lists', {
         : state.multipleListsOfProducts.slice()
 
       const listScore = (items: ListProduct[]) => {
-        return items.reduce((acc, item) => acc + (item.product.price ?? 0) * item.quantity, 0)
+        return items.reduce((acc, item) => acc + (item.product.price_num ?? 0) * item.quantity, 0)
       }
 
       base.sort((a, b) => {
@@ -126,8 +126,8 @@ export const useListsStore = defineStore('lists', {
     setProductAddedToast(product: Product) {
       if (!process.client) return
 
-      toast.success(product.name, {
-        description: `${product.store.name} - added to your list.`
+      toast.success(product.title, {
+        description: `${product.store} - added to your list.`
       })
     },
 
