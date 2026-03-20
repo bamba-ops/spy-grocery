@@ -73,7 +73,10 @@ const getSafeProductUrl = (url: string | null) => {
           </div>
           <div class="flex flex-1 flex-col p-3 sm:p-5">
             <p class="text-[9px] uppercase tracking-[0.28em] text-white/60 sm:text-[10px] sm:tracking-[0.35em]">{{ product.store }}</p>
-            <h3 class="mt-1 font-display text-lg font-semibold italic leading-tight sm:mt-2 sm:text-2xl">
+            <h3
+              :title="product.title"
+              class="mt-1 h-[3.8rem] overflow-hidden font-display text-lg font-semibold italic leading-tight [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2] sm:mt-2 sm:h-[5.8rem] sm:text-2xl sm:[-webkit-line-clamp:3]"
+            >
               {{ product.title }}
             </h3>
 
@@ -81,20 +84,22 @@ const getSafeProductUrl = (url: string | null) => {
               <span v-if="product.uom" class="rounded-full border border-white/15 px-2 py-1">{{ product.uom }}</span>
               <span class="rounded-full border border-white/15 px-2 py-1">{{ product.price_text || '$/unit' }}</span>
             </div>
-            <div class="mt-4 flex items-center justify-between sm:mt-6">
-              <div class="flex flex-col items-start gap-2">
+            <div class="mt-auto flex items-end justify-between pt-4 sm:pt-6">
+              <div class="flex flex-col items-start">
                 <span class="font-display text-xl font-semibold italic sm:text-3xl">
                   ${{ searchStore.getFormattedPrice(product.price_num) }}
                 </span>
-                <a
-                  v-if="getSafeProductUrl(product.url)"
-                  :href="getSafeProductUrl(product.url)!"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="inline-flex rounded-full border border-white/20 px-3 py-1 text-[9px] uppercase tracking-[0.28em] text-white/80 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:text-[10px] sm:tracking-[0.32em]"
-                >
-                  View on store
-                </a>
+                <div class="mt-2 min-h-7">
+                  <a
+                    v-if="getSafeProductUrl(product.url)"
+                    :href="getSafeProductUrl(product.url)!"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="inline-flex rounded-full border border-white/20 px-3 py-1 text-[9px] uppercase tracking-[0.28em] text-white/80 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:text-[10px] sm:tracking-[0.32em]"
+                  >
+                    View on store
+                  </a>
+                </div>
               </div>
               <button
                 :class="[
