@@ -1,16 +1,21 @@
 # AGENTS.md
 # SpyGrocery (Nuxt 4) - Agent Operating Guide
 
-This file is for autonomous coding agents working in this repository.
-It documents the practical rules, commands, and conventions used in this codebase.
+This guide is for autonomous coding agents working in `web/`.
+It documents practical conventions, commands, and architecture constraints for the current implementation.
 
 ## Quick Context
 - Product: SpyGrocery, a grocery price-comparison web app.
 - Frontend stack: Nuxt 4 + Vue 3 + Tailwind.
-- State: Pinia.
-- Backend: Nitro server routes in `server/api/*`.
-- Data: Supabase (`@nuxtjs/supabase`, server uses `serverSupabaseClient(event)`).
-- Visual direction: black/white editorial, strong typography, low-color UI.
+- State layer: Pinia (`app/stores/*`).
+- Backend layer: Nitro routes (`server/api/*`) with service/repository split.
+- Data access: Supabase via `serverSupabaseClient(event)`.
+- Visual direction: editorial black/white, strong typography, low-color UI.
+
+Current runtime data model (important):
+- Search/read model uses `public.products`.
+- Historical prices live in `public.product_prices`.
+- Store list for UI is derived from `products` rows (`store`, `store_id`) in backend.
 
 ## Cursor / Copilot Rules
 - Checked and currently not present:
@@ -20,9 +25,13 @@ It documents the practical rules, commands, and conventions used in this codebas
 - If these files are added later, treat them as higher-priority repo rules.
 
 ## Canonical Docs to Follow
-- `docs/STRUCTURE.md` for architecture/layering.
+- `docs/STRUCTURE.md` for architecture/layering intent.
 - `docs/STYLING.md` for visual/UI rules.
 - `docs/SUPABASE_DB.md` for DB facts and Supabase workflow notes.
+- `docs/AUTH_INTEGRATION_PLAN.md` for planned auth work.
+
+Practical priority rule:
+- If `docs/STRUCTURE.md` diverges from current implementation, trust the current server/API code and `docs/SUPABASE_DB.md` as source of truth.
 
 ## Build / Dev Commands
 - Install deps: `npm install`
@@ -35,11 +44,14 @@ It documents the practical rules, commands, and conventions used in this codebas
 
 ## Lint / Typecheck / Test Commands
 - Lint: not configured in this repo today.
-- Typecheck (optional Nuxt TS check): `npx nuxi typecheck`
+- Typecheck (optional): `npx nuxi typecheck`
 - Unit tests: not configured in this repo today.
 
-Single-test guidance (important for agents):
-- There is no test runner configured right now, so no real single-test command exists.
+Typecheck caveat:
+- `npx nuxi typecheck` may require `vue-tsc` availability in the current environment/network.
+
+Single-test guidance:
+- There is no test runner configured right now.
 - If Vitest is added later, use:
   - Run all tests: `npx vitest run`
   - Run one file: `npx vitest run path/to/file.test.ts`
@@ -58,16 +70,50 @@ Single-test guidance (important for agents):
 - `shared/utils/*`: reusable constants and helper functions.
 
 ## Architecture Contract (Do Not Break)
-- Preferred flow:
-  - Component/Page -> Store -> Composable -> Server API -> Service -> Repository -> Supabase.
-- Avoid skipping layers (e.g., component calling DB logic directly).
+Preferred flow:
+- Component/Page -> Store -> Composable -> Server API -> Service -> Repository -> Supabase
+
+Current concrete API flows:
+- Product search:
+  - Component/Page -> `useSearchStore` -> `useProducts().search()` -> `GET /api/products/search` -> `searchProducts` service -> `searchProductsRows` repository -> Supabase `products`
+- Stores filter list:
+  - Component/Page -> `useSearchStore` -> `useStores().fetchStores()` -> `GET /api/stores` -> `listStores` service -> `fetchProductStoreRows` repository -> Supabase `products`
+
+Rules:
+- Avoid skipping layers (for example, component calling DB logic directly).
 - Keep UI concerns out of services/repositories.
 - Keep HTTP concerns out of services.
+
+## Current Internal API Surface (for Agents)
+
+### `GET /api/products/search`
+Query params:
+- `q?: string`
+- `store?: string` (`all` or one store id/slug)
+- `sort?: 'price_asc' | 'price_desc' | 'title_asc' | 'recent'`
+- `limit?: number` (default 50, max 100)
+- `offset?: number` (default 0)
+
+Response shape:
+- `items: SearchProduct[]`
+- `total: number`
+- `page: number`
+- `limit: number`
+- `totalPages: number`
+
+### `GET /api/stores`
+- Returns `stores: StoreFacet[]`
+- Stores are derived from `products`, aggregated by name/id.
+
+Type anchors:
+- `SearchProduct` (`shared/types/index.ts`)
+- `StoreFacet` (`shared/types/index.ts`)
+- `SearchResponse` (`shared/types/search.ts`)
 
 ## Code Style and Formatting
 - Use 2-space indentation.
 - Prefer single quotes in TS/JS.
-- Keep code ASCII unless file/user-facing copy needs Unicode.
+- Keep code ASCII unless user-facing copy needs Unicode.
 - Keep components focused and small.
 - Avoid unnecessary comments; only explain non-obvious logic.
 
@@ -75,7 +121,7 @@ Single-test guidance (important for agents):
 - Use `<script setup lang="ts">` in Vue SFCs.
 - Prefer explicit actions over watcher-heavy hidden flows.
 - Guard browser-only APIs with `process.client`.
-- Keep page files for composition and wiring, not business logic.
+- Keep page files for composition/wiring, not business logic.
 - Tailwind utility classes only; do not add custom CSS files.
 
 ## Imports
@@ -94,7 +140,7 @@ Single-test guidance (important for agents):
 
 ## Naming Conventions
 - Components: `PascalCase.vue`
-- Stores: `camelCase.ts`, exporting `useXStore`
+- Stores: `camelCase.ts`, export `useXStore`
 - Composables: `useX.ts`
 - Variables/functions: `camelCase`
 - Constants: `SCREAMING_SNAKE_CASE`
@@ -111,10 +157,17 @@ Single-test guidance (important for agents):
 
 ## Supabase and Data Access Rules
 - In server routes, use `serverSupabaseClient(event)`.
-- Select only needed fields; avoid unbounded selects.
 - Keep DB access in repositories.
 - Keep query/business orchestration in services.
-- If DB state is uncertain and MCP is available, verify instead of guessing.
+- Select only needed fields.
+
+Do not assume legacy entities:
+- No `latest_price` view in current web contract.
+- No direct dependency on a `stores` table for UI store filters.
+- Store list is currently derived from `products` rows.
+
+Repository note for large scans:
+- When deriving stores from `products`, keep pagination/ranging logic in repository to avoid missing stores due to query row limits.
 
 ## Shared Utils Rule (Repo-Specific)
 - Put reusable constants and helper functions in `shared/utils/*`.
@@ -130,7 +183,8 @@ Single-test guidance (important for agents):
 
 ## Common Gotchas
 - Tailwind config changes may require restarting dev server.
-- Supabase auth redirect behavior depends on `nuxt.config.ts` settings.
+- Store list is derived from `products`; backend paging is required to avoid missing stores.
+- Local list storage normalizes legacy payloads to current product shape.
 - No formal lint/test safety net exists yet; run build/typecheck frequently.
 
 ## Agent Workflow Checklist
@@ -151,3 +205,5 @@ Single-test guidance (important for agents):
 - No business logic embedded in Nitro controllers.
 - No new custom CSS files or ad-hoc visual themes.
 - No implicit side-effect chains driven by many watchers.
+- Do not reintroduce deprecated query patterns/flows (legacy promo-only contract, removed featured endpoint assumptions).
+- Do not bypass layered flow for quick DB access in components.
