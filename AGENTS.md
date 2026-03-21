@@ -16,6 +16,7 @@ Current runtime data model (important):
 - Search/read model uses `public.products`.
 - Historical prices live in `public.product_prices`.
 - Store list for UI is derived from `products` rows (`store`, `store_id`) in backend.
+- Current operational dataset in `products` is treated as specials-only.
 
 ## Cursor / Copilot Rules
 - Checked and currently not present:
@@ -83,6 +84,7 @@ Rules:
 - Avoid skipping layers (for example, component calling DB logic directly).
 - Keep UI concerns out of services/repositories.
 - Keep HTTP concerns out of services.
+- Backend code in `server/*` must never import from `app/*`.
 
 ## Current Internal API Surface (for Agents)
 
@@ -160,6 +162,7 @@ Type anchors:
 - Keep DB access in repositories.
 - Keep query/business orchestration in services.
 - Select only needed fields.
+- Chat V1 is products-only: do not use `product_prices` in chatbot tools/services.
 
 Do not assume legacy entities:
 - No `latest_price` view in current web contract.
@@ -203,6 +206,7 @@ Repository note for large scans:
 ## What to Avoid
 - No direct Supabase calls from components/pages.
 - No business logic embedded in Nitro controllers.
+- No imports from `app/*` inside `server/*` files.
 - No new custom CSS files or ad-hoc visual themes.
 - No implicit side-effect chains driven by many watchers.
 - Do not reintroduce deprecated query patterns/flows (legacy promo-only contract, removed featured endpoint assumptions).

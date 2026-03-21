@@ -49,6 +49,7 @@ It lets users search products once and compare prices across stores, then build 
 - Product cards include a store link (`View on store`) when `url` is available.
 - List management (`/lists`): save, update, delete lists in local storage.
 - Shopping drawer with grouped items by store and total estimate.
+- AI chat on `/search` focused on recipes and shopping-list building with product/store tools.
 
 ### Tech Stack
 - Nuxt 4 + Vue 3
@@ -56,6 +57,7 @@ It lets users search products once and compare prices across stores, then build 
 - Pinia (feature state)
 - Supabase (`@nuxtjs/supabase`)
 - Tailwind CSS
+- Vercel AI SDK (`ai`, `@ai-sdk/vue`)
 - `lucide-vue-next` icons
 - `vue-sonner` toasts
 
@@ -105,6 +107,7 @@ Create `web/.env` with:
 ```bash
 SUPABASE_URL=https://<your-project-ref>.supabase.co
 SUPABASE_PUBLISHABLE_KEY=<your-publishable-or-anon-key>
+NUXT_AI_GATEWAY_API_KEY=<your-vercel-ai-gateway-key>
 ```
 
 Nuxt Supabase module uses these in `nuxt.config.ts`.
@@ -147,6 +150,23 @@ Returns stores derived from `products` rows (not from a dedicated `stores` table
 }
 ```
 
+#### `POST /api/chat`
+Streaming chat endpoint used by the AI chat panel on `/search`.
+
+Request body (simplified):
+```ts
+{
+  messages: UIMessage[]
+  clientContext?: { sessionId?: string; page?: string }
+}
+```
+
+Behavior:
+- Uses tool calling (`search_products`, `get_stores`).
+- Executes read-only data access through server repositories.
+- Chat V1 reads from `products` only.
+- Returns a UI message stream response for AI SDK UI clients.
+
 ### Core Types (Reference)
 From `shared/types/index.ts` and `shared/types/search.ts`:
 
@@ -186,6 +206,7 @@ Current Supabase model used by the app:
 - `public.product_prices` (historical prices, analytics-ready)
 
 Stores in UI are derived from `products (store, store_id)` and aggregated in backend.
+Current operational product dataset is treated as specials-only.
 
 ### Local Storage Behavior (Lists)
 Main key:
@@ -229,6 +250,7 @@ Elle permet de rechercher des produits, comparer les prix entre magasins, puis c
 - Les cards produits affichent un lien (`View on store`) vers le site du magasin si `url` existe.
 - Gestion des listes (`/lists`): sauvegarde, mise à jour, suppression en local storage.
 - Drawer shopping list avec groupement par magasin et total estimé.
+- Chat IA sur `/search` orienté recettes et génération de liste de courses avec tools produits/magasins.
 
 ### Stack technique
 - Nuxt 4 + Vue 3
@@ -236,6 +258,7 @@ Elle permet de rechercher des produits, comparer les prix entre magasins, puis c
 - Pinia (state management)
 - Supabase (`@nuxtjs/supabase`)
 - Tailwind CSS
+- Vercel AI SDK (`ai`, `@ai-sdk/vue`)
 - Icônes `lucide-vue-next`
 - Toasts `vue-sonner`
 
@@ -285,6 +308,7 @@ Créer `web/.env` avec:
 ```bash
 SUPABASE_URL=https://<your-project-ref>.supabase.co
 SUPABASE_PUBLISHABLE_KEY=<your-publishable-or-anon-key>
+NUXT_AI_GATEWAY_API_KEY=<your-vercel-ai-gateway-key>
 ```
 
 Le module Supabase Nuxt lit ces variables dans `nuxt.config.ts`.
@@ -327,6 +351,23 @@ Retourne les magasins dérivés des lignes `products` (pas d'usage direct d'une 
 }
 ```
 
+#### `POST /api/chat`
+Endpoint de chat en streaming utilisé par le panneau IA sur `/search`.
+
+Body de requête (simplifié):
+```ts
+{
+  messages: UIMessage[]
+  clientContext?: { sessionId?: string; page?: string }
+}
+```
+
+Comportement:
+- Utilise des tools (`search_products`, `get_stores`).
+- Exécute l'accès data en lecture seule via les repositories serveur.
+- Le chat V1 lit uniquement `products`.
+- Retourne un flux de messages UI compatible AI SDK UI.
+
 ### Types principaux (référence)
 Depuis `shared/types/index.ts` et `shared/types/search.ts`:
 
@@ -366,6 +407,7 @@ Modèle Supabase actuel utilisé par l'app:
 - `public.product_prices` (historique de prix, analytique)
 
 Les magasins de l'UI sont dérivés de `products (store, store_id)` puis agrégés côté backend.
+Le dataset produits opérationnel est traité comme un dataset de spéciaux.
 
 ### Comportement localStorage (listes)
 Clé principale:

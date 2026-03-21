@@ -133,7 +133,7 @@ Pense en couches: UI -> State -> Use-cases -> Data.
   - appeler services
   - reponses coherentes
 - `server/services/*`: logique metier
-  - ex: "search products", "fetch stores", "build promo set"
+  - ex: "search products", "fetch stores", "orchestration chat tools"
 - `server/repositories/*`: acces donnees
   - ex: `productsRepo.search(...)`, `storesRepo.list()`
   - pas de logique UI
@@ -145,21 +145,23 @@ Pense en couches: UI -> State -> Use-cases -> Data.
 ## Arborescence actuelle (a ce jour)
 
 - `app/`
-  - `app/pages/`
+  - `pages/`
     - `index.vue` landing
     - `search.vue` recherche
     - `lists.vue` listes sauvegardees
-    - `login.vue` placeholder
-    - `stores/[storeSlug]/products/[slug].vue` mock detail
-- `app/components/` (sections landing, search, lists, shared)
-  - `app/stores/` (Pinia)
+  - `components/` (sections landing, search, lists, shared + `ChatBot.vue`)
+  - `stores/` (Pinia)
     - `lists.ts` (liste courante + listes sauvegardees)
     - `search.ts`
     - `stores.ts`
-  - `app/composables/`
+    - `chat.ts`
+  - `composables/`
     - `api/useProducts.ts`
     - `api/useStores.ts`
-    - `local/useListsStorage.ts`
+    - `api/useChat.ts`
+    - `useListsStorage.ts`
+  - `layouts/`
+    - `bottom-nav.vue` (layout pour pages avec bottom nav)
 
 - `shared/`
   - `shared/types/`
@@ -170,9 +172,10 @@ Pense en couches: UI -> State -> Use-cases -> Data.
 - `server/`
   - `server/api/stores/index.get.ts`
   - `server/api/products/search.get.ts`
-
-- `app/layouts/`
-  - `bottom-nav.vue` (layout pour pages avec bottom nav)
+  - `server/api/chat/index.post.ts`
+  - `server/services/chat/chatService.ts`
+  - `server/repositories/chatProductsRepository.ts`
+  - `server/repositories/chatStoresRepository.ts`
 
 ## Conventions de code
 
@@ -193,6 +196,7 @@ API routes Nitro
 - Nomage: `server/api/foo/bar.get.ts` -> `GET /api/foo/bar`.
 - Toujours coercer/valider les query params (`getQuery(event)` + `parseInt`, etc.).
 - En cas d'erreur: `throw createError({ statusCode, message })`.
+- `server/*` ne doit jamais importer `app/*`.
 
 Supabase
 - Dans `server/api`, utiliser `serverSupabaseClient(event)`.
@@ -203,13 +207,16 @@ Supabase
 
 Tables principales:
 - `products`
-- `prices`
-- `stores`
-Vue:
-- `public.latest_price` (dernier prix par produit/store)
+- `product_prices`
 
-Regle navigation:
-- Produit scope par store: `/stores/[storeSlug]/products/[slug]`.
+Contrat data actuel:
+- La recherche UI lit le snapshot courant depuis `products`.
+- Les magasins filtres UI sont derives de `products (store, store_id)` cote backend.
+- Le chat V1 utilise uniquement `products` (pas `product_prices`).
+- Le dataset produits actuel est traite comme specials.
+
+Regle UI actuelle:
+- La navigation principale est centree sur `index`, `search`, `lists`.
 
 ## UX: listes (localStorage)
 
@@ -237,6 +244,23 @@ Plan court recommande:
 2) Search feature:
 - composants UI-only
 - store `search.ts` pour state feature + composable domain pour fetch products
+
+3) Chat feature:
+- UI/component `ChatBot.vue` + store `chat.ts` pour l'etat conversationnel
+- composable `useChat.ts` pour le transport UI vers `/api/chat`
+- route `POST /api/chat` fine (validation + delegation)
+- service `chatService` pour orchestration model + tools
+- repositories dedies pour data access (`chatProductsRepository`, `chatStoresRepository`)
+
+## Flux Chat IA (actuel)
+
+Flux impose:
+- `ChatBot.vue` -> `chat.ts` -> `useChat.ts` -> `POST /api/chat` -> `chatService` -> repositories chat -> Supabase
+
+Regles:
+- pas d'appel Supabase depuis UI/store/composable chat
+- pas de logique metier dans `server/api/chat/index.post.ts`
+- les tools du modele restent controles par des schemas et des repositories
 
 3) Docs:
 - maintenir ce contrat a jour avant gros changements

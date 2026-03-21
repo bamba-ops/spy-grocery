@@ -138,7 +138,6 @@ Query params:
 - `q?: string`
 - `store?: string` (`all` or one store id/slug)
 - `sort?: 'price_asc' | 'price_desc' | 'title_asc' | 'recent'`
-- `on_sale?: 'true' | 'false'`
 - `limit?: number` (default `50`)
 - `offset?: number` (default `0`)
 
@@ -164,9 +163,23 @@ Response:
 - `StoreFacet = { id, store_id, name, slug, product_count }`
 - `id = store_id` when present, otherwise fallback to store slug.
 
+### `POST /api/chat`
+
+Purpose:
+- Chat orchestration endpoint using tool calling.
+
+Data access contract:
+- Tools query `products` only (chat V1 scope).
+- No raw SQL is executed from model output.
+- Chat tools available: `search_products`, `get_stores`.
+
+Operational note:
+- Current `products` dataset is treated as specials-only.
+
 ## Notes for Agents
 
 - Do not assume `stores`, `prices`, or `latest_price` exist.
 - For current price display, use `products.price_num`.
 - Keep `product_prices` for analytics/history workflows.
+- Chatbot must not depend on `product_prices` for current V1 behavior.
 - If schema is uncertain, re-check with Supabase MCP before coding.

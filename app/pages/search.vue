@@ -42,5 +42,7 @@ onMounted(() => {
         <SearchListPanel />
       </aside>
     </main>
+
+    <ChatBot />
   </div>
 </template>

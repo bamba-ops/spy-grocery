@@ -3,6 +3,10 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
   modules: ['@nuxtjs/tailwindcss', '@nuxtjs/supabase', 'shadcn-nuxt'],
+  runtimeConfig: {
+    aiGatewayApiKey: process.env.NUXT_AI_GATEWAY_API_KEY || '',
+    aiGatewayModel: process.env.NUXT_AI_GATEWAY_MODEL || 'anthropic/claude-sonnet-4.5'
+  },
   imports: {
     dirs: ['~/composables/**']
   },
