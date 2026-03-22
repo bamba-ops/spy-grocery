@@ -73,6 +73,7 @@ const getBlockedReason = (sql: string): string | null => {
 }
 
 const wrapSqlWithLimit = (sql: string) => `select * from (${sql}) as q limit 100`
+const normalizeLogText = (value: string) => value.replace(/\s+/g, ' ').trim()
 
 export const streamChatWithProductsDb = async ({
   supabase,
@@ -153,10 +154,22 @@ export const streamChatWithProductsDb = async ({
             durationMs: Date.now() - dbStartedAt
           })
 
+          console.log(`${AI_LOG_PREFIX}[${requestId}] tool SQL executed`, rows)
+
           return {
             rows
           }
         }
+      })
+    },
+    onFinish: ({ text, finishReason, usage }) => {
+      const normalizedResponseText = normalizeLogText(text || '')
+      console.info(`${AI_LOG_PREFIX}[${requestId}] assistant final response`, {
+        finishReason,
+        durationMs: Date.now() - startedAt,
+        usage,
+        responseLength: normalizedResponseText.length,
+        responsePreview: normalizedResponseText.slice(0, 600)
       })
     },
     stopWhen: stepCountIs(20)

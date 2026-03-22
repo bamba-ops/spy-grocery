@@ -47,6 +47,7 @@ export default defineEventHandler(async (event) => {
 
   const body = await readBody<ChatRequestBody | null>(event)
   const messages = getMessagesFromBody(body)
+  console.log(body)
 
   if (messages.length === 0) {
     console.warn(`${AI_LOG_PREFIX}[${requestId}] invalid payload: empty messages array`)
@@ -87,8 +88,8 @@ export default defineEventHandler(async (event) => {
       aiGatewayModel,
       requestId
     })
-
-    console.info(`${AI_LOG_PREFIX}[${requestId}] stream initialized`, {
+    
+    console.log(`${AI_LOG_PREFIX}[${requestId}] stream initialized`, {
       durationMs: Date.now() - startedAt
     })
 

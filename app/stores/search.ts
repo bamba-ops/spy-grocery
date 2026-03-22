@@ -1,4 +1,4 @@
-import { defineStore } from 'pinia'
+import { defineStore, setActivePinia } from 'pinia'
 import type { SearchProduct, StoreFacet } from '#shared/types'
 import type { ProductsQueryParams, SearchSort } from '#shared/types/search'
 
