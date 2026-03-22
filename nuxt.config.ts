@@ -4,8 +4,9 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   modules: ['@nuxtjs/tailwindcss', '@nuxtjs/supabase', 'shadcn-nuxt'],
   runtimeConfig: {
-    aiGatewayApiKey: process.env.NUXT_AI_GATEWAY_API_KEY || '',
-    aiGatewayModel: process.env.NUXT_AI_GATEWAY_MODEL || 'anthropic/claude-sonnet-4.5'
+    aiGatewayApiKey: process.env.NUXT_AI_GATEWAY_API_KEY || process.env.AI_GATEWAY_API_KEY || '',
+    aiGatewayModel:
+      process.env.NUXT_AI_GATEWAY_MODEL || process.env.AI_GATEWAY_MODEL || 'openai/gpt-5-nano'
   },
   imports: {
     dirs: ['~/composables/**']
