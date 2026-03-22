@@ -31,5 +31,3 @@ export interface StoreFacet {
   slug: string
   product_count: number
 }
-
-export * from './chat'

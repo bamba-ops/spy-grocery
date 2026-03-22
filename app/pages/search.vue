@@ -43,6 +43,5 @@ onMounted(() => {
       </aside>
     </main>
 
-    <ChatBot />
   </div>
 </template>
