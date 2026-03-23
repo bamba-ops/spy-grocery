@@ -1,9 +1,10 @@
 import { serverSupabaseClient } from '#supabase/server'
 import type { UIMessage } from 'ai'
-import { streamChatWithProductsDb } from '../../services/ai/chatService'
+import { buildGroceryListItems, streamChatWithProductsDb } from '../../services/ai/chatService'
 
 interface ChatRequestBody {
   messages?: UIMessage[]
+  createListMode?: boolean
 }
 
 const getMessagesFromBody = (body: ChatRequestBody | null): UIMessage[] => {
@@ -17,6 +18,7 @@ const getMessagesFromBody = (body: ChatRequestBody | null): UIMessage[] => {
 export default defineEventHandler(async (event) => {
   const body = await readBody<ChatRequestBody | null>(event)
   const messages = getMessagesFromBody(body)
+  const createListMode = body?.createListMode === true
 
   if (messages.length === 0) {
     throw createError({
@@ -38,6 +40,17 @@ export default defineEventHandler(async (event) => {
 
   try {
     const supabase = await serverSupabaseClient(event)
+
+    if (createListMode) {
+      const items = await buildGroceryListItems({
+        supabase,
+        messages
+      })
+
+      return {
+        items
+      }
+    }
 
     const result = await streamChatWithProductsDb({
       supabase,
