@@ -81,9 +81,9 @@ Current concrete API flows:
 - Stores filter list:
   - Component/Page -> `useSearchStore` -> `useStores().fetchStores()` -> `GET /api/stores` -> `listStores` service -> `fetchProductStoreRows` repository -> Supabase `products`
 - AI chat (normal mode):
-  - `app/components/ai/AiChatbot.vue` -> `Chat(DefaultChatTransport)` -> `POST /api/ai/chat` -> `streamChatWithProductsDb` -> `query_products_sql` tool -> `executeProductsSelectSql` repository -> Supabase `products`
+  - `app/components/ai/AiChatbot.vue` -> `useChatStore` -> `useChat` -> `POST /api/ai/chat` -> `streamChatWithProductsDb` -> `query_products_sql` tool -> `executeProductsSelectSql` repository -> Supabase `products`
 - AI chat (list mode):
-  - `app/components/ai/AiChatbot.vue` toggle (`createListMode`) -> `POST /api/ai/chat` -> same SQL tool flow + `submit_list_items` tool -> server emits `data-grocery-list` stream part (`items: ListProduct[]`)
+  - `app/components/ai/AiChatbot.vue` toggle (`createListMode`) -> `useChatStore` -> `useChat` -> `POST /api/ai/chat` -> same SQL tool flow + `submit_list_items` tool -> server emits `data-grocery-list` stream part (`items: ListProduct[]`)
 
 Rules:
 - Avoid skipping layers (for example, component calling DB logic directly).

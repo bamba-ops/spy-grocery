@@ -1,18 +1,15 @@
-export interface AiChatRequest {
-  prompt: string
-  debug?: boolean
+import type { UIMessage } from 'ai'
+import type { ListProduct } from './lists'
+
+export interface ChatRequestBody {
+  messages?: UIMessage[]
+  createListMode?: boolean
 }
 
-export interface AiChatDebugEntry {
-  sql: string
-  rowCount: number
-  blocked?: string | null
-}
-
-export interface AiChatResponse {
-  answer: string
-  debug?: {
-    model: string
-    toolCalls: AiChatDebugEntry[]
+export interface GroceryListDataPart {
+  id?: string
+  type: 'data-grocery-list'
+  data: {
+    items: ListProduct[]
   }
 }

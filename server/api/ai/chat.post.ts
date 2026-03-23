@@ -1,12 +1,9 @@
 import { serverSupabaseClient } from '#supabase/server'
+import type { ChatRequestBody, GroceryListDataPart } from '#shared/types/ai-chat'
 import type { ListProduct } from '#shared/types/lists'
+import { GROCERY_LIST_DATA_PART_TYPE } from '#shared/utils/aiChat'
 import { createUIMessageStream, createUIMessageStreamResponse, type UIMessage } from 'ai'
 import { streamChatWithProductsDb } from '../../services/ai/chatService'
-
-interface ChatRequestBody {
-  messages?: UIMessage[]
-  createListMode?: boolean
-}
 
 const getMessagesFromBody = (body: ChatRequestBody | null): UIMessage[] => {
   if (!Array.isArray(body?.messages)) {
@@ -59,12 +56,14 @@ export default defineEventHandler(async (event) => {
         execute: ({ writer }) => {
           writer.merge(result.toUIMessageStream({
             onFinish: () => {
-              writer.write({
-                type: 'data-grocery-list',
+              const dataPart: GroceryListDataPart = {
+                type: GROCERY_LIST_DATA_PART_TYPE,
                 data: {
                   items: listItems
                 }
-              } as any)
+              }
+
+              writer.write(dataPart as Parameters<typeof writer.write>[0])
             }
           }))
         },

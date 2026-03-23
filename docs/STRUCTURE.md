@@ -153,9 +153,11 @@ Pense en couches: UI -> State -> Use-cases -> Data.
   - `stores/` (Pinia)
     - `lists.ts` (liste courante + listes sauvegardees)
     - `search.ts`
+    - `chat.ts`
   - `composables/`
     - `api/useProducts.ts`
     - `api/useStores.ts`
+    - `api/useChat.ts`
     - `useListsStorage.ts`
   - `layouts/`
     - `bottom-nav.vue` (layout pour pages avec bottom nav)
@@ -242,7 +244,9 @@ Plan court recommande:
 - store `search.ts` pour state feature + composable domain pour fetch products
 
 3) Chat feature:
-- UI/component `ai/AiChatbot.vue` (AI SDK `Chat` + `DefaultChatTransport`)
+- UI/component `ai/AiChatbot.vue` (UI only)
+- store `app/stores/chat.ts` pour etat/derivations/actions feature chat
+- composable `app/composables/api/useChat.ts` pour transport AI SDK vers `/api/ai/chat`
 - route `POST /api/ai/chat` fine (validation + delegation)
 - service `server/services/ai/chatService.ts` pour orchestration model + tools
 - repository dedie `server/repositories/ai/productsSqlRepository.ts` (SQL lecture seule)
@@ -251,7 +255,7 @@ Plan court recommande:
 ## Flux Chat IA (actuel)
 
 Flux impose:
-- `app/components/ai/AiChatbot.vue` -> `POST /api/ai/chat` -> `server/services/ai/chatService.ts` -> `server/repositories/ai/productsSqlRepository.ts` -> Supabase
+- `app/components/ai/AiChatbot.vue` -> `app/stores/chat.ts` -> `app/composables/api/useChat.ts` -> `POST /api/ai/chat` -> `server/services/ai/chatService.ts` -> `server/repositories/ai/productsSqlRepository.ts` -> Supabase
 - en mode liste: le meme flux ajoute un tool `submit_list_items`, puis `server/api/ai/chat.post.ts` emet `data-grocery-list`
 
 Regles:

@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { Chat } from '@ai-sdk/vue'
-import { DefaultChatTransport } from 'ai'
 import { Loader2, Send, X } from 'lucide-vue-next'
-import type { ListProduct } from '#shared/types/lists'
+import { computed } from 'vue'
+import { useChatStore } from '~/stores/chat'
 import { useListsStore } from '~/stores/lists'
 
 const props = defineProps<{
@@ -16,177 +15,10 @@ const emit = defineEmits<{
 const input = ref('')
 const inputRef = ref<HTMLInputElement | null>(null)
 const messagesContainerRef = ref<HTMLElement | null>(null)
-const isCreateListMode = ref(false)
-const dismissedAiListKey = ref<string | null>(null)
-const quickPrompts = [
-  'Montre-moi les 5 produits les moins chers (titre, magasin, prix).',
-  'Y a-t-il des produits chez Costco ? Donne quelques exemples.',
-  'Quelles marques apparaissent le plus souvent ?',
-  'Dans quels magasins les bananes sont les moins chères ?',
-  "Donne 5 produits dont le titre contient 'organic'."
-]
-
-const chat = new Chat({
-  transport: new DefaultChatTransport({
-    api: '/api/ai/chat'
-  })
-})
-
 const lists = useListsStore()
+const chatStore = useChatStore()
 
-
-const isBusy = computed(() => chat.status === 'submitted' || chat.status === 'streaming')
-const canSend = computed(() => input.value.trim().length > 0 && !isBusy.value)
-
-const getDataGroceryListItems = (part: any): ListProduct[] => {
-  if (!part || part.type !== 'data-grocery-list' || !part.data || typeof part.data !== 'object') {
-    return []
-  }
-
-  const items = (part.data as { items?: unknown }).items
-  return Array.isArray(items) ? (items as ListProduct[]) : []
-}
-
-const latestAssistantMessage = computed(() => {
-  for (let index = chat.messages.length - 1; index >= 0; index -= 1) {
-    const message = chat.messages[index]
-    if (message?.role === 'assistant' && Array.isArray(message.parts)) {
-      return message
-    }
-  }
-
-  return null
-})
-
-const latestAiListPayload = computed(() => {
-  const message = latestAssistantMessage.value
-  if (!message) {
-    return null
-  }
-
-  for (const part of message.parts) {
-    const items = getDataGroceryListItems(part)
-    if (items.length === 0) {
-      continue
-    }
-
-    const partId = typeof part.id === 'string' ? part.id : 'grocery-list'
-    return {
-      key: `${message.id}:${partId}`,
-      items
-    }
-  }
-
-  return null
-})
-
-const aiListItems = computed(() => {
-  const payload = latestAiListPayload.value
-  if (!payload) {
-    return []
-  }
-
-  if (dismissedAiListKey.value === payload.key) {
-    return []
-  }
-
-  return payload.items
-})
-
-const isUnsafeAssistantText = (text: string) => {
-  const trimmed = text.trim()
-  if (!trimmed) {
-    return false
-  }
-
-  const lower = trimmed.toLowerCase()
-
-  if (/^\{[\s\S]*"sql"\s*:/.test(trimmed)) {
-    return true
-  }
-
-  if (/\{[\s\S]*"(rows|query|blocked|toolCallId|toolName)"\s*:/.test(trimmed)) {
-    return true
-  }
-
-  if (/^select\s+[\s\S]+?\s+from\s+/i.test(trimmed)) {
-    return true
-  }
-
-  if (/```(?:json|sql)?[\s\S]*```/i.test(trimmed)) {
-    return true
-  }
-
-  if (/\b(i will run|i will query|i will fetch|now fetch|count query|without semicolons?)\b/i.test(lower)) {
-    return true
-  }
-
-  return false
-}
-
-const hasTextPart = (message: any) =>
-  message.parts.some((part: any) => part.type === 'text' && typeof part.text === 'string' && part.text.trim().length > 0)
-
-const hasSafeTextPart = (message: any) =>
-  message.parts.some((part: any) =>
-    part.type === 'text' &&
-    typeof part.text === 'string' &&
-    part.text.trim().length > 0 &&
-    !isUnsafeAssistantText(part.text)
-  )
-
-const visibleMessages = computed(() => {
-  return chat.messages.filter((message) => {
-    if (message.role === 'user') {
-      return hasTextPart(message)
-    }
-
-    if (message.role === 'assistant') {
-      return hasSafeTextPart(message)
-    }
-
-    return false
-  })
-})
-
-const messageKey = computed(() => {
-  return visibleMessages.value
-    .map((message) => {
-      const text = message.parts
-        .filter((part) => part.type === 'text')
-        .map((part) => part.text)
-        .join('')
-
-      return `${message.id}:${text}`
-    })
-    .join('|')
-})
-
-const showThinking = computed(() => {
-  if (!isBusy.value) {
-    return false
-  }
-
-  const lastMessage = chat.messages.at(-1)
-  if (!lastMessage || lastMessage.role !== 'assistant') {
-    return true
-  }
-
-  return !hasTextPart(lastMessage)
-})
-
-const showSanitizedLeakNotice = computed(() => {
-  if (isBusy.value || !!chat.error) {
-    return false
-  }
-
-  const lastMessage = chat.messages.at(-1)
-  if (!lastMessage || lastMessage.role !== 'assistant') {
-    return false
-  }
-
-  return hasTextPart(lastMessage) && !hasSafeTextPart(lastMessage)
-})
+const canSend = computed(() => input.value.trim().length > 0 && !chatStore.isBusy)
 
 const setClosePanel = () => {
   emit('update:open', false)
@@ -201,52 +33,29 @@ const scrollToBottom = () => {
 }
 
 const setAddAiItemsToCurrentList = () => {
-  if (aiListItems.value.length === 0) {
+  if (chatStore.aiListItems.length === 0) {
     return
   }
 
-  for (const item of aiListItems.value) {
+  for (const item of chatStore.aiListItems) {
     for (let index = 0; index < item.quantity; index += 1) {
       lists.setProductInCurrentList(item.product)
     }
   }
 
   lists.setShoppingListDrawerOpen()
-  setDismissAiList()
-}
-
-const setDismissAiList = () => {
-  dismissedAiListKey.value = latestAiListPayload.value?.key ?? null
-}
-
-const setSendText = async (rawText: string) => {
-  const text = rawText.trim()
-  if (!text || isBusy.value) {
-    return
-  }
-
-  input.value = ''
-
-  await chat.sendMessage(
-    { text },
-    {
-      body: {
-        createListMode: isCreateListMode.value
-      }
-    }
-  )
+  chatStore.setDismissAiList()
 }
 
 const setSubmitMessage = async () => {
-  await setSendText(input.value)
+  const isSent = await chatStore.setSendText(input.value)
+  if (isSent) {
+    input.value = ''
+  }
 }
 
 const setQuickPrompt = async (prompt: string) => {
-  if (!prompt || isBusy.value) {
-    return
-  }
-
-  await setSendText(prompt)
+  await chatStore.setQuickPrompt(prompt)
 }
 
 watch(
@@ -263,21 +72,12 @@ watch(
   }
 )
 
-watch(messageKey, () => {
+watch(() => chatStore.messageKey, () => {
   nextTick(scrollToBottom)
 })
 
 watch(
-  () => latestAiListPayload.value?.key,
-  (nextKey, previousKey) => {
-    if (nextKey && nextKey !== previousKey) {
-      dismissedAiListKey.value = null
-    }
-  }
-)
-
-watch(
-  () => chat.status,
+  () => chatStore.status,
   () => {
     nextTick(scrollToBottom)
   }
@@ -308,7 +108,7 @@ watch(
       </header>
 
       <div ref="messagesContainerRef" class="flex-1 space-y-5 overflow-y-auto px-5 py-5 sm:px-6">
-        <template v-if="visibleMessages.length === 0">
+        <template v-if="chatStore.visibleMessages.length === 0">
           <div>
             <p class="mb-2 text-[10px] uppercase tracking-[0.35em] text-white/55">Spy AI</p>
             <div class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
@@ -317,11 +117,11 @@ watch(
               </p>
               <div class="flex flex-wrap gap-2">
                 <button
-                  v-for="(prompt, index) in quickPrompts"
+                  v-for="(prompt, index) in chatStore.quickPrompts"
                   :key="`quick-prompt-${index}`"
                   type="button"
                   class="rounded-full border border-white/20 bg-black/60 px-3 py-2 text-left text-xs text-white/90 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm"
-                  :disabled="isBusy"
+                  :disabled="chatStore.isBusy"
                   @click="setQuickPrompt(prompt)"
                 >
                   {{ prompt }}
@@ -332,7 +132,7 @@ watch(
         </template>
 
         <div
-          v-for="(message, index) in visibleMessages"
+          v-for="(message, index) in chatStore.visibleMessages"
           :key="message.id ? message.id : index"
           :class="[
             'flex flex-col',
@@ -352,14 +152,14 @@ watch(
             ]"
           >
             <template v-for="(part, partIndex) in message.parts" :key="`${message.id}-${part.type}-${partIndex}`">
-              <p v-if="part.type === 'text' && !isUnsafeAssistantText(part.text)" class="whitespace-pre-wrap">
+              <p v-if="part.type === 'text' && !chatStore.getIsUnsafeAssistantText(part.text)" class="whitespace-pre-wrap">
                 {{ part.text }}
               </p>
             </template>
           </div>
         </div>
 
-        <div v-if="showThinking" class="flex flex-col items-start">
+        <div v-if="chatStore.showThinking" class="flex flex-col items-start">
           <p class="mb-2 text-[10px] uppercase tracking-[0.35em] text-white/55">Spy AI</p>
           <div class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm sm:text-base">
             <div class="flex items-center gap-2">
@@ -373,7 +173,7 @@ watch(
           </div>
         </div>
 
-        <div v-if="showSanitizedLeakNotice" class="flex flex-col items-start">
+        <div v-if="chatStore.showSanitizedLeakNotice" class="flex flex-col items-start">
           <p class="mb-2 text-[10px] uppercase tracking-[0.35em] text-white/55">Spy AI</p>
           <div class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/80 sm:text-base">
             I could not format that answer correctly. Please try again.
@@ -381,18 +181,18 @@ watch(
         </div>
 
         <div
-          v-if="chat.error"
+          v-if="chatStore.error"
           class="rounded-2xl border border-white/20 bg-white/5 px-4 py-3 text-sm text-white/80"
         >
           Something went wrong.
         </div>
 
-        <div v-if="aiListItems.length > 0" class="flex flex-col items-start">
+        <div v-if="chatStore.aiListItems.length > 0" class="flex flex-col items-start">
           <p class="mb-2 text-[10px] uppercase tracking-[0.35em] text-white/55">Spy AI</p>
           <AiListPreview
-            :items="aiListItems"
+            :items="chatStore.aiListItems"
             @add="setAddAiItemsToCurrentList"
-            @dismiss="setDismissAiList"
+            @dismiss="chatStore.setDismissAiList"
           />
         </div>
       </div>
@@ -406,18 +206,18 @@ watch(
           <button
             type="button"
             class="inline-flex h-9 items-center gap-2 rounded-full border px-3 text-[10px] uppercase tracking-[0.3em] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:cursor-not-allowed disabled:opacity-40"
-            :class="isCreateListMode
+            :class="chatStore.isCreateListMode
               ? 'border-white/25 bg-white text-black shadow-[0_0_24px_rgba(255,255,255,0.2)]'
               : 'border-white/20 bg-white/5 text-white/80 hover:bg-white/10'"
-            :disabled="isBusy"
-            @click="isCreateListMode = !isCreateListMode"
+            :disabled="chatStore.isBusy"
+            @click="chatStore.setToggleCreateListMode"
           >
             <span>Liste</span>
             <span
               class="inline-flex min-w-12 items-center justify-center rounded-full px-2 py-1 text-[9px] tracking-[0.25em]"
-              :class="isCreateListMode ? 'bg-black text-white' : 'bg-white/15 text-white/90'"
+              :class="chatStore.isCreateListMode ? 'bg-black text-white' : 'bg-white/15 text-white/90'"
             >
-              {{ isCreateListMode ? 'ON' : 'OFF' }}
+              {{ chatStore.isCreateListMode ? 'ON' : 'OFF' }}
             </span>
           </button>
         </div>
@@ -429,7 +229,7 @@ watch(
             type="text"
             class="h-10 flex-1 bg-transparent px-2 text-sm text-white placeholder:text-white/35 focus:outline-none sm:text-base"
             placeholder="Ask Spy AI..."
-            :disabled="isBusy"
+            :disabled="chatStore.isBusy"
           >
 
           <button
@@ -438,7 +238,7 @@ watch(
             :disabled="!canSend"
             aria-label="Send message"
           >
-            <Loader2 v-if="isBusy" class="h-4 w-4 animate-spin" />
+            <Loader2 v-if="chatStore.isBusy" class="h-4 w-4 animate-spin" />
             <Send v-else class="h-4 w-4" />
           </button>
         </div>

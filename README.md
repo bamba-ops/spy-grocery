@@ -75,11 +75,11 @@ Key rule: do not skip layers for business/data logic.
 web/
   app/
     components/      # UI components
-    composables/     # Front data access + local persistence helpers
+    composables/     # Front data access + local persistence helpers (incl. api/useChat.ts)
     layouts/         # Shared layouts
     pages/           # Routes (/, /search, /lists)
     plugins/         # Pinia plugin
-    stores/          # Pinia feature stores
+    stores/          # Pinia feature stores (incl. chat.ts)
   server/
     api/             # Nitro HTTP handlers
     services/        # Use-case/business orchestration
@@ -286,11 +286,11 @@ Règle clé: ne pas sauter de couche pour la logique métier ou data.
 web/
   app/
     components/      # Composants UI
-    composables/     # Accès data front + persistance locale
+    composables/     # Accès data front + persistance locale (incl. api/useChat.ts)
     layouts/         # Layouts partagés
     pages/           # Routes (/, /search, /lists)
     plugins/         # Plugin Pinia
-    stores/          # Stores Pinia
+    stores/          # Stores Pinia (incl. chat.ts)
   server/
     api/             # Handlers HTTP Nitro
     services/        # Orchestration métier
