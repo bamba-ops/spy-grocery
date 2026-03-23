@@ -48,9 +48,16 @@ const setAddAiItemsToCurrentList = () => {
 }
 
 const setSubmitMessage = async () => {
-  const isSent = await chatStore.setSendText(input.value)
-  if (isSent) {
-    input.value = ''
+  const draft = input.value
+  if (!draft.trim() || chatStore.isBusy) {
+    return
+  }
+
+  input.value = ''
+  const isSent = await chatStore.setSendText(draft)
+
+  if (!isSent) {
+    input.value = draft
   }
 }
 
