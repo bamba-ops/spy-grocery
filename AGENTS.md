@@ -11,6 +11,7 @@ It documents practical conventions, commands, and architecture constraints for t
 - Backend layer: Nitro routes (`server/api/*`) with service/repository split.
 - Data access: Supabase via `serverSupabaseClient(event)`.
 - Visual direction: editorial black/white, strong typography, low-color UI.
+- AI chat transport: Vercel AI SDK UI stream (`/api/ai/chat`) with optional grocery-list data parts.
 
 Current runtime data model (important):
 - Search/read model uses `public.products`.
@@ -79,6 +80,10 @@ Current concrete API flows:
   - Component/Page -> `useSearchStore` -> `useProducts().search()` -> `GET /api/products/search` -> `searchProducts` service -> `searchProductsRows` repository -> Supabase `products`
 - Stores filter list:
   - Component/Page -> `useSearchStore` -> `useStores().fetchStores()` -> `GET /api/stores` -> `listStores` service -> `fetchProductStoreRows` repository -> Supabase `products`
+- AI chat (normal mode):
+  - `app/components/ai/AiChatbot.vue` -> `Chat(DefaultChatTransport)` -> `POST /api/ai/chat` -> `streamChatWithProductsDb` -> `query_products_sql` tool -> `executeProductsSelectSql` repository -> Supabase `products`
+- AI chat (list mode):
+  - `app/components/ai/AiChatbot.vue` toggle (`createListMode`) -> `POST /api/ai/chat` -> same SQL tool flow + `submit_list_items` tool -> server emits `data-grocery-list` stream part (`items: ListProduct[]`)
 
 Rules:
 - Avoid skipping layers (for example, component calling DB logic directly).
@@ -107,10 +112,26 @@ Response shape:
 - Returns `stores: StoreFacet[]`
 - Stores are derived from `products`, aggregated by name/id.
 
+### `POST /api/ai/chat`
+Request body:
+- `messages: UIMessage[]`
+- `createListMode?: boolean`
+
+Response:
+- UI message stream (SSE) for AI SDK clients.
+- In list mode (`createListMode: true`), stream also includes a data part:
+  - `type: 'data-grocery-list'`
+  - `data: { items: ListProduct[] }`
+
+Tooling contract:
+- SQL tool: `query_products_sql` (read-only `SELECT`, `public.products` only, server-side validation + limit wrapping).
+- List submit tool (list mode only): `submit_list_items` (validated product payload + quantity).
+
 Type anchors:
 - `SearchProduct` (`shared/types/index.ts`)
 - `StoreFacet` (`shared/types/index.ts`)
 - `SearchResponse` (`shared/types/search.ts`)
+- `ListProduct` (`shared/types/lists.ts`)
 
 ## Code Style and Formatting
 - Use 2-space indentation.
@@ -188,6 +209,7 @@ Repository note for large scans:
 - Tailwind config changes may require restarting dev server.
 - Store list is derived from `products`; backend paging is required to avoid missing stores.
 - Local list storage normalizes legacy payloads to current product shape.
+- Chat list mode is stream-based: UI reads `data-grocery-list` from assistant `message.parts`.
 - No formal lint/test safety net exists yet; run build/typecheck frequently.
 
 ## Agent Workflow Checklist

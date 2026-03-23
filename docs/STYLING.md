@@ -143,6 +143,16 @@ Disabled (obligatoire):
   - `Save list` / `Update list` (plein)
 - Si liste vide: CTA visiblement disabled.
 
+## Pattern visuel de reference (AI list preview)
+
+- Dans le chat IA, la preview liste doit reutiliser le langage visuel du drawer shopping list.
+- Groupement par store avec sous-total par groupe et total global en bas.
+- Cards produits: vignette image (`h-16 w-16`), overlay subtil, titre display/italique, prix + quantite.
+- Actions en bas de preview:
+  - primaire plein (`Add to list`)
+  - secondaire outline (`Dismiss`)
+- Toggle mode liste pres de l'input: pill noir/blanc, focus visible, etat ON/OFF explicite.
+
 ## Toasts (Sonner)
 
 - Position: top-center.

@@ -49,7 +49,9 @@ It lets users search products once and compare prices across stores, then build 
 - Product cards include a store link (`View on store`) when `url` is available.
 - List management (`/lists`): save, update, delete lists in local storage.
 - Shopping drawer with grouped items by store and total estimate.
-- AI chat on `/search` focused on recipes and shopping-list building with product/store tools.
+- AI chat on `/search` with two modes:
+  - normal assistant mode (streamed text answers),
+  - grocery-list mode (`createListMode`) that streams a structured list data part for UI preview/add-to-list.
 
 ### Tech Stack
 - Nuxt 4 + Vue 3
@@ -150,22 +152,25 @@ Returns stores derived from `products` rows (not from a dedicated `stores` table
 }
 ```
 
-#### `POST /api/chat`
+#### `POST /api/ai/chat`
 Streaming chat endpoint used by the AI chat panel on `/search`.
 
 Request body (simplified):
 ```ts
 {
   messages: UIMessage[]
-  clientContext?: { sessionId?: string; page?: string }
+  createListMode?: boolean
 }
 ```
 
 Behavior:
-- Uses tool calling (`search_products`, `get_stores`).
-- Executes read-only data access through server repositories.
+- Uses tool calling with read-only SQL access to `public.products` (`query_products_sql`).
+- In list mode, model must submit `ListProduct[]` through `submit_list_items`.
 - Chat V1 reads from `products` only.
 - Returns a UI message stream response for AI SDK UI clients.
+- In list mode, stream includes a persistent data part:
+  - `type: 'data-grocery-list'`
+  - `data: { items: ListProduct[] }`
 
 ### Core Types (Reference)
 From `shared/types/index.ts` and `shared/types/search.ts`:
@@ -197,6 +202,11 @@ interface StoreFacet {
   name: string
   slug: string
   product_count: number
+}
+
+interface ListProduct {
+  product: SearchProduct
+  quantity: number
 }
 ```
 
@@ -250,7 +260,9 @@ Elle permet de rechercher des produits, comparer les prix entre magasins, puis c
 - Les cards produits affichent un lien (`View on store`) vers le site du magasin si `url` existe.
 - Gestion des listes (`/lists`): sauvegarde, mise à jour, suppression en local storage.
 - Drawer shopping list avec groupement par magasin et total estimé.
-- Chat IA sur `/search` orienté recettes et génération de liste de courses avec tools produits/magasins.
+- Chat IA sur `/search` avec deux modes:
+  - mode assistant normal (réponses texte streamées),
+  - mode création de liste (`createListMode`) qui stream une data part structurée pour prévisualiser/ajouter la liste.
 
 ### Stack technique
 - Nuxt 4 + Vue 3
@@ -351,22 +363,25 @@ Retourne les magasins dérivés des lignes `products` (pas d'usage direct d'une 
 }
 ```
 
-#### `POST /api/chat`
+#### `POST /api/ai/chat`
 Endpoint de chat en streaming utilisé par le panneau IA sur `/search`.
 
 Body de requête (simplifié):
 ```ts
 {
   messages: UIMessage[]
-  clientContext?: { sessionId?: string; page?: string }
+  createListMode?: boolean
 }
 ```
 
 Comportement:
-- Utilise des tools (`search_products`, `get_stores`).
-- Exécute l'accès data en lecture seule via les repositories serveur.
+- Utilise des tools avec accès SQL lecture seule sur `public.products` (`query_products_sql`).
+- En mode liste, le modèle soumet `ListProduct[]` via `submit_list_items`.
 - Le chat V1 lit uniquement `products`.
 - Retourne un flux de messages UI compatible AI SDK UI.
+- En mode liste, le flux inclut une data part persistante:
+  - `type: 'data-grocery-list'`
+  - `data: { items: ListProduct[] }`
 
 ### Types principaux (référence)
 Depuis `shared/types/index.ts` et `shared/types/search.ts`:
@@ -398,6 +413,11 @@ interface StoreFacet {
   name: string
   slug: string
   product_count: number
+}
+
+interface ListProduct {
+  product: SearchProduct
+  quantity: number
 }
 ```
 

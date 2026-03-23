@@ -163,15 +163,27 @@ Response:
 - `StoreFacet = { id, store_id, name, slug, product_count }`
 - `id = store_id` when present, otherwise fallback to store slug.
 
-### `POST /api/chat`
+### `POST /api/ai/chat`
 
 Purpose:
 - Chat orchestration endpoint using tool calling.
 
 Data access contract:
 - Tools query `products` only (chat V1 scope).
-- No raw SQL is executed from model output.
-- Chat tools available: `search_products`, `get_stores`.
+- SQL is validated server-side before execution (SELECT-only, `public.products` allowlist, no semicolons, keyword restrictions).
+- Chat tools:
+  - `query_products_sql` (all modes)
+  - `submit_list_items` (only when `createListMode: true`)
+
+Request body:
+- `messages: UIMessage[]`
+- `createListMode?: boolean`
+
+Response:
+- UI message stream (SSE) for AI SDK clients.
+- In list mode, stream includes a persistent data part:
+  - `type: 'data-grocery-list'`
+  - `data: { items: ListProduct[] }`
 
 Operational note:
 - Current `products` dataset is treated as specials-only.
