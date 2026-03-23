@@ -1,7 +1,6 @@
 import { convertToModelMessages, createGateway, stepCountIs, streamText, tool, type UIMessage } from 'ai'
 import { z } from 'zod'
 import { PRODUCTS_SCHEMA_PROMPT } from '#shared/utils/productsSchemaPrompt'
-import type { Product } from '#shared/types'
 import type { ListProduct } from '#shared/types/lists'
 import { executeProductsSelectSql } from '../../repositories/ai/productsSqlRepository'
 
@@ -10,11 +9,8 @@ interface StreamChatWithProductsDbParams {
   messages: UIMessage[]
   aiGatewayApiKey: string
   aiGatewayModel: string
-}
-
-interface BuildGroceryListItemsParams {
-  supabase: any
-  messages: UIMessage[]
+  createListMode?: boolean
+  onListItems?: (items: ListProduct[]) => void
 }
 
 const DISALLOWED_SQL_KEYWORDS_REGEX =
@@ -85,157 +81,103 @@ const getBlockedReason = (sql: string): string | null => {
 
 const wrapSqlWithLimit = (sql: string) => `select * from (${sql}) as q limit 100`
 
-const escapeSqlLiteral = (value: string) => value.replace(/'/g, "''")
+const LIST_MODE_SYSTEM_PROMPT = [
+  'You are in grocery-list construction mode.',
+  'You must use query_products_sql to find real products from public.products for requested ingredients.',
+  'Prioritize low prices and minimize number of stores when building the final list.',
+  'When querying products for list mode, always select these product columns: id, slug, title, brand, store, store_id, image_url, url, uom, price_num, was_price_num, price_text, pre_price_text, on_sale, scraped_at.',
+  'The rule about not returning image_url applies only to user-facing text. For submit_list_items, include image_url.',
+  'When ready, call submit_list_items exactly once with the final items array.',
+  'Each item must include product and quantity, and product must include all required fields.',
+  'Quantity must be an integer >= 1.',
+  'Do not output final prose to the user in this mode.'
+].join('\n')
 
-const normalizeIngredientLine = (line: string) => {
-  return line
-    .replace(/^[\-•\s]+/, '')
-    .replace(/^\d+[\d\s/,.]*(g|kg|ml|l|lb|oz|c\.?\s*à\s*soupe|c\.?\s*à\s*thé|tasse|tasses|cup|cups)?\s*/i, '')
-    .replace(/\([^)]*\)/g, ' ')
-    .replace(/[,:;]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-}
+const listProductInputSchema = z.object({
+  product: z.object({
+    id: z.string().min(1),
+    slug: z.string().min(1),
+    title: z.string().min(1),
+    brand: z.string().nullable(),
+    store: z.string().min(1),
+    store_id: z.string().nullable(),
+    image_url: z.string().nullable(),
+    url: z.string().nullable(),
+    uom: z.string().nullable(),
+    price_num: z.number().nullable(),
+    was_price_num: z.number().nullable(),
+    price_text: z.string().nullable(),
+    pre_price_text: z.string().nullable(),
+    on_sale: z.boolean().nullable(),
+    scraped_at: z.string().nullable()
+  }),
+  quantity: z.number().int().min(1)
+})
 
-const getLatestUserText = (messages: UIMessage[]) => {
-  for (let index = messages.length - 1; index >= 0; index -= 1) {
-    const message = messages[index]
-    if (!message) continue
-
-    if (message.role !== 'user' || !Array.isArray(message.parts)) continue
-
-    const text = message.parts
-      .filter((part: any) => part?.type === 'text' && typeof part?.text === 'string')
-      .map((part: any) => part.text)
-      .join('\n')
-      .trim()
-
-    if (text) return text
-  }
-
-  return ''
-}
-
-const extractIngredientsFromText = (text: string) => {
-  return text
-    .split(/\r?\n/)
-    .map((line) => normalizeIngredientLine(line))
-    .filter((line) => line.length >= 3)
-    .filter((line) => !/^(ingr(é|e)dients?|liste de course|sel et poivre)$/i.test(line))
-    .slice(0, 25)
-}
-
-const mapRowToProduct = (row: Record<string, unknown>): Product | null => {
-  const id = typeof row.id === 'string' ? row.id : null
-  const slug = typeof row.slug === 'string' ? row.slug : null
-  const title = typeof row.title === 'string' ? row.title : null
-  const store = typeof row.store === 'string' ? row.store : null
-
-  if (!id || !slug || !title || !store) return null
-
+const normalizeListItem = (item: z.infer<typeof listProductInputSchema>): ListProduct => {
   return {
-    id,
-    slug,
-    title,
-    brand: typeof row.brand === 'string' ? row.brand : null,
-    store,
-    store_id: typeof row.store_id === 'string' ? row.store_id : null,
-    image_url: typeof row.image_url === 'string' ? row.image_url : null,
-    url: typeof row.url === 'string' ? row.url : null,
-    uom: typeof row.uom === 'string' ? row.uom : null,
-    price_num: typeof row.price_num === 'number' ? row.price_num : null,
-    was_price_num: typeof row.was_price_num === 'number' ? row.was_price_num : null,
-    price_text: typeof row.price_text === 'string' ? row.price_text : null,
-    pre_price_text: typeof row.pre_price_text === 'string' ? row.pre_price_text : null,
-    on_sale: typeof row.on_sale === 'boolean' ? row.on_sale : null,
-    scraped_at: typeof row.scraped_at === 'string' ? row.scraped_at : null
+    product: {
+      id: item.product.id,
+      slug: item.product.slug,
+      title: item.product.title,
+      brand: item.product.brand ?? null,
+      store: item.product.store,
+      store_id: item.product.store_id ?? null,
+      image_url: item.product.image_url ?? null,
+      url: item.product.url ?? null,
+      uom: item.product.uom ?? null,
+      price_num: item.product.price_num ?? null,
+      was_price_num: item.product.was_price_num ?? null,
+      price_text: item.product.price_text ?? null,
+      pre_price_text: item.product.pre_price_text ?? null,
+      on_sale: item.product.on_sale ?? null,
+      scraped_at: item.product.scraped_at ?? null
+    },
+    quantity: item.quantity
   }
-}
-
-export const buildGroceryListItems = async ({
-  supabase,
-  messages
-}: BuildGroceryListItemsParams): Promise<ListProduct[]> => {
-  const latestUserText = getLatestUserText(messages)
-  const ingredients = extractIngredientsFromText(latestUserText)
-
-  if (ingredients.length === 0) {
-    return []
-  }
-
-  const itemsByProductId = new Map<string, ListProduct>()
-
-  for (const ingredient of ingredients) {
-    const term = escapeSqlLiteral(ingredient)
-    const sql = `
-      SELECT
-        id,
-        slug,
-        title,
-        brand,
-        store,
-        store_id,
-        image_url,
-        url,
-        uom,
-        price_num,
-        was_price_num,
-        price_text,
-        pre_price_text,
-        on_sale,
-        scraped_at
-      FROM public.products
-      WHERE price_num IS NOT NULL
-        AND (title ILIKE '%${term}%' OR description ILIKE '%${term}%')
-      ORDER BY price_num ASC
-      LIMIT 1
-    `.trim()
-
-    const rows = await executeProductsSelectSql(supabase, sql)
-    const firstRow = rows[0]
-
-    if (!firstRow || typeof firstRow !== 'object') {
-      continue
-    }
-
-    const product = mapRowToProduct(firstRow as Record<string, unknown>)
-    if (!product) {
-      continue
-    }
-
-    const existing = itemsByProductId.get(product.id)
-    if (existing) {
-      existing.quantity += 1
-      continue
-    }
-
-    itemsByProductId.set(product.id, {
-      product,
-      quantity: 1
-    })
-  }
-
-  return Array.from(itemsByProductId.values())
 }
 
 export const streamChatWithProductsDb = async ({
   supabase,
   messages,
   aiGatewayApiKey,
-  aiGatewayModel
+  aiGatewayModel,
+  createListMode = false,
+  onListItems
 }: StreamChatWithProductsDbParams) => {
   const gateway = createGateway({
     apiKey: aiGatewayApiKey
   })
-  const systemPrompt = `${BASE_SYSTEM_PROMPT}\n\n${PRODUCTS_SCHEMA_PROMPT}`
+  const modePrompt = createListMode ? `${LIST_MODE_SYSTEM_PROMPT}\n\n` : ''
+  const systemPrompt = `${BASE_SYSTEM_PROMPT}\n\n${modePrompt}${PRODUCTS_SCHEMA_PROMPT}`
   const modelMessages = await convertToModelMessages(messages)
+  let hasSubmittedList = false
 
   return streamText({
     model: gateway(aiGatewayModel),
     system: systemPrompt,
     messages: modelMessages,
     prepareStep: ({ stepNumber }) => {
+      if (createListMode && stepNumber === 0) {
+        return {
+          toolChoice: {
+            type: 'tool',
+            toolName: 'query_products_sql'
+          }
+        }
+      }
+
+      if (createListMode && !hasSubmittedList && stepNumber >= 12) {
+        return {
+          activeTools: ['submit_list_items']
+        }
+      }
+
       if (stepNumber >= 6) {
+        if (createListMode) {
+          return undefined
+        }
+
         return {
           activeTools: [],
           system: `${systemPrompt}\nYou must now provide a final user-facing answer in plain text only. Do not call tools. Do not return SQL. Do not return JSON.`
@@ -263,13 +205,31 @@ export const streamChatWithProductsDb = async ({
           const limitedSql = wrapSqlWithLimit(sql.trim())
           const rows = await executeProductsSelectSql(supabase, limitedSql)
 
-          console.log(rows)
-
           return {
             rows
           }
         }
-      })
+      }),
+      ...(createListMode
+        ? {
+            submit_list_items: tool({
+              description: 'Submit final grocery list items as ListProduct[].',
+              inputSchema: z.object({
+                items: z.array(listProductInputSchema).max(100)
+              }),
+              execute: async ({ items }) => {
+                hasSubmittedList = true
+                const normalizedItems = items.map((item) => normalizeListItem(item))
+                onListItems?.(normalizedItems)
+
+                return {
+                  ok: true,
+                  count: normalizedItems.length
+                }
+              }
+            })
+          }
+        : {})
     },
     stopWhen: stepCountIs(20)
   })

@@ -2,6 +2,8 @@
 import { Chat } from '@ai-sdk/vue'
 import { DefaultChatTransport } from 'ai'
 import { Loader2, Send, X } from 'lucide-vue-next'
+import type { ListProduct } from '#shared/types/lists'
+import { useListsStore } from '~/stores/lists'
 
 const props = defineProps<{
   open: boolean
@@ -14,6 +16,8 @@ const emit = defineEmits<{
 const input = ref('')
 const inputRef = ref<HTMLInputElement | null>(null)
 const messagesContainerRef = ref<HTMLElement | null>(null)
+const isCreateListMode = ref(false)
+const dismissedAiListKey = ref<string | null>(null)
 const quickPrompts = [
   'Montre-moi les 5 produits les moins chers (titre, magasin, prix).',
   'Y a-t-il des produits chez Costco ? Donne quelques exemples.',
@@ -28,9 +32,66 @@ const chat = new Chat({
   })
 })
 
+const lists = useListsStore()
+
 
 const isBusy = computed(() => chat.status === 'submitted' || chat.status === 'streaming')
 const canSend = computed(() => input.value.trim().length > 0 && !isBusy.value)
+
+const getDataGroceryListItems = (part: any): ListProduct[] => {
+  if (!part || part.type !== 'data-grocery-list' || !part.data || typeof part.data !== 'object') {
+    return []
+  }
+
+  const items = (part.data as { items?: unknown }).items
+  return Array.isArray(items) ? (items as ListProduct[]) : []
+}
+
+const latestAssistantMessage = computed(() => {
+  for (let index = chat.messages.length - 1; index >= 0; index -= 1) {
+    const message = chat.messages[index]
+    if (message?.role === 'assistant' && Array.isArray(message.parts)) {
+      return message
+    }
+  }
+
+  return null
+})
+
+const latestAiListPayload = computed(() => {
+  const message = latestAssistantMessage.value
+  if (!message) {
+    return null
+  }
+
+  for (const part of message.parts) {
+    const items = getDataGroceryListItems(part)
+    if (items.length === 0) {
+      continue
+    }
+
+    const partId = typeof part.id === 'string' ? part.id : 'grocery-list'
+    return {
+      key: `${message.id}:${partId}`,
+      items
+    }
+  }
+
+  return null
+})
+
+const aiListItems = computed(() => {
+  const payload = latestAiListPayload.value
+  if (!payload) {
+    return []
+  }
+
+  if (dismissedAiListKey.value === payload.key) {
+    return []
+  }
+
+  return payload.items
+})
 
 const isUnsafeAssistantText = (text: string) => {
   const trimmed = text.trim()
@@ -139,14 +200,45 @@ const scrollToBottom = () => {
   messagesContainerRef.value.scrollTop = messagesContainerRef.value.scrollHeight
 }
 
-const setSubmitMessage = async () => {
-  const text = input.value.trim()
+const setAddAiItemsToCurrentList = () => {
+  if (aiListItems.value.length === 0) {
+    return
+  }
+
+  for (const item of aiListItems.value) {
+    for (let index = 0; index < item.quantity; index += 1) {
+      lists.setProductInCurrentList(item.product)
+    }
+  }
+
+  lists.setShoppingListDrawerOpen()
+  setDismissAiList()
+}
+
+const setDismissAiList = () => {
+  dismissedAiListKey.value = latestAiListPayload.value?.key ?? null
+}
+
+const setSendText = async (rawText: string) => {
+  const text = rawText.trim()
   if (!text || isBusy.value) {
     return
   }
 
   input.value = ''
-  await chat.sendMessage({ text })
+
+  await chat.sendMessage(
+    { text },
+    {
+      body: {
+        createListMode: isCreateListMode.value
+      }
+    }
+  )
+}
+
+const setSubmitMessage = async () => {
+  await setSendText(input.value)
 }
 
 const setQuickPrompt = async (prompt: string) => {
@@ -154,7 +246,7 @@ const setQuickPrompt = async (prompt: string) => {
     return
   }
 
-  await chat.sendMessage({ text: prompt })
+  await setSendText(prompt)
 }
 
 watch(
@@ -174,6 +266,15 @@ watch(
 watch(messageKey, () => {
   nextTick(scrollToBottom)
 })
+
+watch(
+  () => latestAiListPayload.value?.key,
+  (nextKey, previousKey) => {
+    if (nextKey && nextKey !== previousKey) {
+      dismissedAiListKey.value = null
+    }
+  }
+)
 
 watch(
   () => chat.status,
@@ -285,12 +386,42 @@ watch(
         >
           Something went wrong.
         </div>
+
+        <div v-if="aiListItems.length > 0" class="flex flex-col items-start">
+          <p class="mb-2 text-[10px] uppercase tracking-[0.35em] text-white/55">Spy AI</p>
+          <AiListPreview
+            :items="aiListItems"
+            @add="setAddAiItemsToCurrentList"
+            @dismiss="setDismissAiList"
+          />
+        </div>
       </div>
 
       <form
         class="border-t border-white/10 p-4 sm:p-5"
         @submit.prevent="setSubmitMessage"
       >
+        <div class="mb-3 flex items-center justify-between px-1">
+          <p class="text-[10px] uppercase tracking-[0.35em] text-white/55">Mode</p>
+          <button
+            type="button"
+            class="inline-flex h-9 items-center gap-2 rounded-full border px-3 text-[10px] uppercase tracking-[0.3em] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:cursor-not-allowed disabled:opacity-40"
+            :class="isCreateListMode
+              ? 'border-white/25 bg-white text-black shadow-[0_0_24px_rgba(255,255,255,0.2)]'
+              : 'border-white/20 bg-white/5 text-white/80 hover:bg-white/10'"
+            :disabled="isBusy"
+            @click="isCreateListMode = !isCreateListMode"
+          >
+            <span>Liste</span>
+            <span
+              class="inline-flex min-w-12 items-center justify-center rounded-full px-2 py-1 text-[9px] tracking-[0.25em]"
+              :class="isCreateListMode ? 'bg-black text-white' : 'bg-white/15 text-white/90'"
+            >
+              {{ isCreateListMode ? 'ON' : 'OFF' }}
+            </span>
+          </button>
+        </div>
+
         <div class="flex items-center gap-2 rounded-full border border-white/15 bg-black/80 px-3 py-2">
           <input
             ref="inputRef"

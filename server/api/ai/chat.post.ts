@@ -1,6 +1,7 @@
 import { serverSupabaseClient } from '#supabase/server'
-import type { UIMessage } from 'ai'
-import { buildGroceryListItems, streamChatWithProductsDb } from '../../services/ai/chatService'
+import type { ListProduct } from '#shared/types/lists'
+import { createUIMessageStream, createUIMessageStreamResponse, type UIMessage } from 'ai'
+import { streamChatWithProductsDb } from '../../services/ai/chatService'
 
 interface ChatRequestBody {
   messages?: UIMessage[]
@@ -40,24 +41,38 @@ export default defineEventHandler(async (event) => {
 
   try {
     const supabase = await serverSupabaseClient(event)
-
-    if (createListMode) {
-      const items = await buildGroceryListItems({
-        supabase,
-        messages
-      })
-
-      return {
-        items
-      }
-    }
+    let listItems: ListProduct[] = []
 
     const result = await streamChatWithProductsDb({
       supabase,
       messages,
       aiGatewayApiKey,
-      aiGatewayModel
+      aiGatewayModel,
+      createListMode,
+      onListItems: (items) => {
+        listItems = items
+      }
     })
+
+    if (createListMode) {
+      const stream = createUIMessageStream({
+        execute: ({ writer }) => {
+          writer.merge(result.toUIMessageStream({
+            onFinish: () => {
+              writer.write({
+                type: 'data-grocery-list',
+                data: {
+                  items: listItems
+                }
+              } as any)
+            }
+          }))
+        },
+        onError: () => 'Something went wrong.'
+      })
+
+      return createUIMessageStreamResponse({ stream })
+    }
 
     return result.toUIMessageStreamResponse({
       onError: () => 'Something went wrong.'
