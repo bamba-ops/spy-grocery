@@ -45,6 +45,7 @@ const setAddAiItemsToCurrentList = () => {
 
   lists.setShoppingListDrawerOpen()
   chatStore.setDismissAiList()
+  setClosePanel()
 }
 
 const setSubmitMessage = async () => {
@@ -209,7 +210,7 @@ watch(
         @submit.prevent="setSubmitMessage"
       >
         <div class="mb-3 flex items-center justify-between px-1">
-          <p class="text-[10px] uppercase tracking-[0.35em] text-white/55">Mode</p>
+          <p class="text-[10px] uppercase tracking-[0.35em] text-white/55">Action</p>
           <button
             type="button"
             class="inline-flex h-9 items-center gap-2 rounded-full border px-3 text-[10px] uppercase tracking-[0.3em] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:cursor-not-allowed disabled:opacity-40"
