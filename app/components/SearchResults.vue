@@ -54,7 +54,10 @@ const getSafeProductUrl = (url: string | null) => {
             <div v-if="product.on_sale" class="absolute left-4 top-4 z-10 rounded-full border border-white/20 bg-black/80 px-3 py-1 text-[10px] uppercase tracking-[0.3em] text-white/80">
               On sale
             </div>
-            <div class="relative aspect-[16/9] overflow-hidden rounded-t-2xl border-b border-white/10 bg-black sm:aspect-square">
+            <NuxtLink
+              :to="`/products/${product.slug}`"
+              class="relative block aspect-[16/9] overflow-hidden rounded-t-2xl border-b border-white/10 bg-black transition hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:aspect-square"
+            >
               <template v-if="searchStore.getProductImageDisplay(product.image_url, product.title).type === 'url'">
                 <img
                   :src="searchStore.getProductImageDisplay(product.image_url, product.title).value"
@@ -69,16 +72,21 @@ const getSafeProductUrl = (url: string | null) => {
                 </div>
               </template>
               <div class="pointer-events-none absolute inset-0 z-0 bg-black/40"></div>
-            </div>
+            </NuxtLink>
           </div>
           <div class="flex flex-1 flex-col p-3 sm:p-5">
             <p class="text-[9px] uppercase tracking-[0.28em] text-white/60 sm:text-[10px] sm:tracking-[0.35em]">{{ product.store }}</p>
-            <h3
-              :title="product.title"
-              class="mt-1 h-[3.8rem] overflow-hidden font-display text-lg font-semibold italic leading-tight [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2] sm:mt-2 sm:h-[5.8rem] sm:text-2xl sm:[-webkit-line-clamp:3]"
+            <NuxtLink
+              :to="`/products/${product.slug}`"
+              class="mt-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:mt-2"
             >
-              {{ product.title }}
-            </h3>
+              <h3
+                :title="product.title"
+                class="h-[3.8rem] overflow-hidden font-display text-lg font-semibold italic leading-tight [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2] transition hover:text-white sm:h-[5.8rem] sm:text-2xl sm:[-webkit-line-clamp:3]"
+              >
+                {{ product.title }}
+              </h3>
+            </NuxtLink>
 
             <div class="mt-2 flex flex-wrap items-center gap-2 text-[9px] uppercase tracking-[0.24em] text-white/70 sm:mt-3 sm:text-[10px] sm:tracking-[0.3em]">
               <span v-if="product.uom" class="rounded-full border border-white/15 px-2 py-1">{{ product.uom }}</span>

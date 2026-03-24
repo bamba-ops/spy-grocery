@@ -21,6 +21,7 @@ const toSearchProduct = (row: DbProduct): SearchProduct => ({
   id: row.id,
   slug: row.slug,
   title: row.title || '',
+  description: row.description ?? null,
   brand: row.brand,
   store: row.store,
   store_id: row.store_id,

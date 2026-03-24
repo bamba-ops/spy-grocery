@@ -7,6 +7,7 @@ export interface SearchProduct {
   id: string
   slug: string
   title: string
+  description?: string | null
   brand: string | null
   store: string
   store_id: string | null

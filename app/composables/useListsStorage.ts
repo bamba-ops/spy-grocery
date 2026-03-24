@@ -52,6 +52,7 @@ const normalizeProduct = (value: unknown): SearchProduct | null => {
     id,
     slug,
     title,
+    description: toStringOrNull(raw.description),
     brand: toStringOrNull(raw.brand),
     store,
     store_id: toStringOrNull(raw.store_id) || toStringOrNull(rawStoreObject?.id),

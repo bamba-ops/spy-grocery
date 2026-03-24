@@ -8,7 +8,7 @@ const isAiChatOpen = ref(false)
 
 const route = useRoute()
 const isHome = computed(() => route.path === '/')
-const isSearch = computed(() => route.path.startsWith('/search'))
+const isSearch = computed(() => route.path.startsWith('/search') || route.path.startsWith('/products'))
 const isLists = computed(() => route.path.startsWith('/lists'))
 
 const setToggleAiChatPanel = () => {

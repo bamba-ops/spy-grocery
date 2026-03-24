@@ -1,12 +1,17 @@
 import type { SearchParams, SearchResponse } from '#shared/types/search'
+import type { ProductDetailsResponse } from '#shared/types/product-details'
 
 const fallbackEmojis: string[] = ['🥛', '🍞', '🥚', '🍎', '🥗', '🧀', '🥩', '🍕', '🥤', '🍌']
 
 export const useProducts = () => {
   const search = async (params: SearchParams): Promise<SearchResponse> => {
-    return $fetch('/api/products/search', {
+    return $fetch<SearchResponse>('/api/products/search' as string, {
       query: params
     })
+  }
+
+  const getBySlug = async (slug: string): Promise<ProductDetailsResponse> => {
+    return $fetch<ProductDetailsResponse>(`/api/products/${encodeURIComponent(slug)}` as string)
   }
 
   const getImageDisplay = (imageUrl: string | null, productTitle?: string) => {
@@ -33,6 +38,7 @@ export const useProducts = () => {
 
   return {
     search,
+    getBySlug,
     getImageDisplay
   }
 }
