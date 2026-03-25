@@ -18,6 +18,11 @@ export default defineEventHandler(async (event) => {
   const messages = getMessagesFromBody(body)
   const createListMode = body?.createListMode === true
 
+  console.log('[ai-list][api] incoming request:', {
+    createListMode,
+    messageCount: messages.length
+  })
+
   if (messages.length === 0) {
     throw createError({
       statusCode: 400,
@@ -48,6 +53,9 @@ export default defineEventHandler(async (event) => {
       createListMode,
       onListItems: (items) => {
         listItems = items
+        console.log('[ai-list][api] onListItems callback:', {
+          itemCount: items.length
+        })
       }
     })
 
@@ -56,6 +64,10 @@ export default defineEventHandler(async (event) => {
         execute: ({ writer }) => {
           writer.merge(result.toUIMessageStream({
             onFinish: () => {
+              console.log('[ai-list][api] stream finish (list mode):', {
+                itemCount: listItems.length
+              })
+
               const dataPart: GroceryListDataPart = {
                 type: GROCERY_LIST_DATA_PART_TYPE,
                 data: {
@@ -77,6 +89,7 @@ export default defineEventHandler(async (event) => {
       onError: () => 'Something went wrong.'
     })
   } catch (error) {
+    console.error('[ai-list][api] request failed:', error)
     throw error
   }
 })

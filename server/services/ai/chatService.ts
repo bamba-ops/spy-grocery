@@ -22,6 +22,12 @@ export const streamChatWithProductsDb = async ({
   createListMode = false,
   onListItems
 }: StreamChatWithProductsDbParams) => {
+  console.log('[ai-list][service] start streamChatWithProductsDb:', {
+    createListMode,
+    messageCount: messages.length,
+    model: aiGatewayModel
+  })
+
   const gateway = createGateway({
     apiKey: aiGatewayApiKey
   })
@@ -35,7 +41,14 @@ export const streamChatWithProductsDb = async ({
     system: systemPrompt,
     messages: modelMessages,
     prepareStep: ({ stepNumber }) => {
+      console.log('[ai-list][service] prepareStep:', {
+        stepNumber,
+        createListMode,
+        hasSubmittedList
+      })
+
       if (createListMode && stepNumber === 0) {
+        console.log('[ai-list][service] forcing initial sql tool call')
         return {
           toolChoice: {
             type: 'tool',
@@ -44,9 +57,21 @@ export const streamChatWithProductsDb = async ({
         }
       }
 
-      if (createListMode && !hasSubmittedList && stepNumber >= 12) {
+      if (createListMode && !hasSubmittedList) {
+        if (stepNumber >= 12) {
+          console.log('[ai-list][service] forcing submit_list_items tool call')
+          return {
+            toolChoice: {
+              type: 'tool',
+              toolName: SUBMIT_LIST_ITEMS_TOOL_NAME
+            },
+            activeTools: [SUBMIT_LIST_ITEMS_TOOL_NAME]
+          }
+        }
+
         return {
-          activeTools: [SUBMIT_LIST_ITEMS_TOOL_NAME]
+          toolChoice: 'required',
+          activeTools: [QUERY_PRODUCTS_SQL_TOOL_NAME, SUBMIT_LIST_ITEMS_TOOL_NAME]
         }
       }
 
@@ -70,9 +95,11 @@ export const streamChatWithProductsDb = async ({
           sql: z.string().min(1).max(4000)
         }),
         execute: async ({ sql }) => {
+          console.log('[ai-list][service] query_products_sql tool called')
           const blockedReason = getBlockedReason(sql)
 
           if (blockedReason) {
+            console.log('[ai-list][service] sql blocked:', blockedReason)
             return {
               blocked: blockedReason,
               rows: []
@@ -80,7 +107,12 @@ export const streamChatWithProductsDb = async ({
           }
 
           const limitedSql = wrapSqlWithLimit(sql.trim())
+          console.log('[ai-list][service] executing sql (trimmed):', limitedSql.slice(0, 220))
           const rows = await executeProductsSelectSql(supabase, limitedSql)
+
+          console.log('[ai-list][service] sql rows returned:', {
+            rowCount: Array.isArray(rows) ? rows.length : 0
+          })
 
           return {
             rows
@@ -89,25 +121,34 @@ export const streamChatWithProductsDb = async ({
       }),
       ...(createListMode
         ? {
-            [SUBMIT_LIST_ITEMS_TOOL_NAME]: tool({
-              description: 'Submit final grocery list items as ListProduct[].',
-              inputSchema: z.object({
-                items: z.array(listProductInputSchema).max(100)
-              }),
-              execute: async ({ items }) => {
-                hasSubmittedList = true
-                const normalizedItems = items.map((item) => normalizeListItem(item))
-                onListItems?.(normalizedItems)
+          [SUBMIT_LIST_ITEMS_TOOL_NAME]: tool({
+            description: 'Submit final grocery list items as ListProduct[].',
+            inputSchema: z.object({
+              items: z.array(listProductInputSchema).max(100)
+            }),
+            execute: async ({ items }) => {
+              console.log('[ai-list][service] submit_list_items tool called:', {
+                itemCount: items.length
+              })
+              hasSubmittedList = true
+              const normalizedItems = items.map((item) => normalizeListItem(item))
+              onListItems?.(normalizedItems)
 
-                return {
-                  ok: true,
-                  count: normalizedItems.length
-                }
+              console.log('[ai-list][service] normalized list items ready:', {
+                itemCount: normalizedItems.length
+              })
+
+              return {
+                ok: true,
+                count: normalizedItems.length
               }
-            })
-          }
+            }
+          })
+        }
         : {})
     },
-    stopWhen: stepCountIs(20)
+    stopWhen: createListMode
+      ? ({ steps }) => hasSubmittedList || steps.length >= 100
+      : stepCountIs(100)
   })
 }

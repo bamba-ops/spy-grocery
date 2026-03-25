@@ -141,6 +141,13 @@ export const useChatStore = defineStore('chat', () => {
   watch(
     () => latestAiListPayload.value?.key,
     (nextKey, previousKey) => {
+      if (nextKey) {
+        console.log('[ai-list] new list payload:', {
+          key: nextKey,
+          itemCount: latestAiListPayload.value?.items.length || 0
+        })
+      }
+
       if (nextKey && nextKey !== previousKey) {
         dismissedAiListKey.value = null
       }
@@ -153,22 +160,35 @@ export const useChatStore = defineStore('chat', () => {
     }
 
     isCreateListMode.value = !isCreateListMode.value
+    console.log('[ai-list] toggle createListMode:', isCreateListMode.value)
   }
 
   const setDismissAiList = () => {
     dismissedAiListKey.value = latestAiListPayload.value?.key ?? null
+    console.log('[ai-list] dismiss list payload key:', dismissedAiListKey.value)
   }
 
   const setSendText = async (rawText: string) => {
     const text = rawText.trim()
     if (!text || isBusy.value) {
+      console.log('[ai-list] send skipped:', {
+        emptyText: !text,
+        isBusy: isBusy.value
+      })
       return false
     }
+
+    console.log('[ai-list] send message:', {
+      createListMode: isCreateListMode.value,
+      textLength: text.length
+    })
 
     await sendMessage({
       text,
       createListMode: isCreateListMode.value
     })
+
+    console.log('[ai-list] send message completed')
 
     return true
   }
