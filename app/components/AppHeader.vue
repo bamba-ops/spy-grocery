@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { LogIn, Menu, X } from 'lucide-vue-next'
+import { LogIn, LogOut, Menu, X } from 'lucide-vue-next'
+import { useAuthStore } from '~/stores/auth'
 
 const isOpen = ref(false)
+const authStore = useAuthStore()
 
 const navItems = [
   { label: 'Process', href: '#process' },
@@ -15,6 +17,19 @@ const toggleMenu = () => {
 
 const closeMenu = () => {
   isOpen.value = false
+}
+
+const isAuthenticated = computed(() => {
+  return Boolean(authStore.user)
+})
+
+const setSignOut = async () => {
+  const ok = await authStore.logout()
+  if (!ok) {
+    return
+  }
+
+  closeMenu()
 }
 </script>
 
@@ -38,12 +53,24 @@ const closeMenu = () => {
 
       <div class="flex items-center gap-3">
         <NuxtLink
+          v-if="!isAuthenticated"
           to="/login"
           class="hidden items-center gap-2 rounded-full border border-white/20 bg-white px-4 py-2 font-sans text-xs font-semibold text-black transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:inline-flex"
         >
           <LogIn class="h-4 w-4" />
           Log in
         </NuxtLink>
+
+        <button
+          v-else
+          type="button"
+          :disabled="authStore.isLoading"
+          class="hidden items-center gap-2 rounded-full border border-white/20 bg-transparent px-4 py-2 font-sans text-xs font-semibold text-white/80 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:cursor-not-allowed disabled:opacity-40 sm:inline-flex"
+          @click="setSignOut"
+        >
+          <LogOut class="h-4 w-4" />
+          Log out
+        </button>
 
         <button
           class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 text-white/80 transition hover:border-white/60 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black md:hidden"
@@ -72,6 +99,7 @@ const closeMenu = () => {
         </a>
 
         <NuxtLink
+          v-if="!isAuthenticated"
           to="/login"
           class="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-full border border-white/20 bg-white px-4 py-3 font-sans text-xs font-semibold text-black transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
           @click="closeMenu"
@@ -79,6 +107,17 @@ const closeMenu = () => {
           <LogIn class="h-4 w-4" />
           Log in
         </NuxtLink>
+
+        <button
+          v-else
+          type="button"
+          :disabled="authStore.isLoading"
+          class="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-full border border-white/20 bg-transparent px-4 py-3 font-sans text-xs font-semibold text-white/80 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:cursor-not-allowed disabled:opacity-40"
+          @click="setSignOut"
+        >
+          <LogOut class="h-4 w-4" />
+          Log out
+        </button>
       </div>
     </div>
   </header>
