@@ -32,6 +32,64 @@ interface SetChatSessionMessagesParams extends GetChatSessionByIdParams {
 }
 
 const MAX_SESSION_TITLE_LENGTH = 120
+const DEFAULT_SESSION_TITLE_PREFIX = 'Conversation'
+
+const getNormalizedTitle = (value: string) => {
+  return value.trim().toLowerCase()
+}
+
+const getExistingSessionTitleSet = (rows: ChatSessionRow[]) => {
+  const titleSet = new Set<string>()
+
+  for (const row of rows) {
+    if (typeof row.title !== 'string') {
+      continue
+    }
+
+    const normalizedTitle = getNormalizedTitle(row.title)
+    if (!normalizedTitle) {
+      continue
+    }
+
+    titleSet.add(normalizedTitle)
+  }
+
+  return titleSet
+}
+
+const getNextDefaultSessionTitle = (existingTitles: Set<string>) => {
+  let nextIndex = 1
+
+  while (existingTitles.has(getNormalizedTitle(`${DEFAULT_SESSION_TITLE_PREFIX} ${nextIndex}`))) {
+    nextIndex += 1
+  }
+
+  return `${DEFAULT_SESSION_TITLE_PREFIX} ${nextIndex}`
+}
+
+const getIncrementedTitle = (baseTitle: string, existingTitles: Set<string>) => {
+  if (!existingTitles.has(getNormalizedTitle(baseTitle))) {
+    return baseTitle
+  }
+
+  let nextIndex = 2
+
+  while (existingTitles.has(getNormalizedTitle(`${baseTitle} ${nextIndex}`))) {
+    nextIndex += 1
+  }
+
+  return `${baseTitle} ${nextIndex}`
+}
+
+const getUniqueSessionTitle = (requestedTitle: string | null, rows: ChatSessionRow[]) => {
+  const existingTitles = getExistingSessionTitleSet(rows)
+
+  if (!requestedTitle) {
+    return getNextDefaultSessionTitle(existingTitles)
+  }
+
+  return getIncrementedTitle(requestedTitle, existingTitles)
+}
 
 const getSessionIdFromUnknown = (value: unknown): string => {
   if (typeof value !== 'string') {
@@ -129,7 +187,10 @@ export const createChatSession = async ({
   userId,
   payload
 }: CreateChatSessionParams): Promise<ChatSession> => {
-  const title = getSessionTitleFromUnknown(payload?.title)
+  const requestedTitle = getSessionTitleFromUnknown(payload?.title)
+  const existingRows = await getChatSessionRowsByUserId(supabase, userId)
+  const title = getUniqueSessionTitle(requestedTitle, existingRows)
+
   const row = await createChatSessionRow(supabase, {
     userId,
     title,

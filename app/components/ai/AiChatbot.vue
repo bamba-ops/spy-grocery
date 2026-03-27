@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Loader2, Send, X } from 'lucide-vue-next'
+import { ArrowLeft, Loader2, Send, X } from 'lucide-vue-next'
 import { computed } from 'vue'
 import { useChatStore } from '~/stores/chat'
 import { useListsStore } from '~/stores/lists'
@@ -17,8 +17,34 @@ const inputRef = ref<HTMLInputElement | null>(null)
 const messagesContainerRef = ref<HTMLElement | null>(null)
 const lists = useListsStore()
 const chatStore = useChatStore()
+const panelView = ref<'sessions' | 'chat'>('sessions')
 
-const canSend = computed(() => input.value.trim().length > 0 && !chatStore.isBusy)
+const currentSessionTitle = computed(() => {
+  if (!chatStore.currentChatId) {
+    return 'Conversation'
+  }
+
+  const session = chatStore.sessions.find((entry) => entry.id === chatStore.currentChatId)
+  const title = session?.title?.trim()
+
+  if (!title) {
+    return 'Conversation'
+  }
+
+  return title
+})
+
+const panelTitle = computed(() => {
+  if (panelView.value === 'sessions') {
+    return 'Conversations'
+  }
+
+  return currentSessionTitle.value
+})
+
+const canSend = computed(() => {
+  return input.value.trim().length > 0 && !chatStore.isBusy && !chatStore.isHydratingSession
+})
 
 const setClosePanel = () => {
   emit('update:open', false)
@@ -50,7 +76,7 @@ const setAddAiItemsToCurrentList = () => {
 
 const setSubmitMessage = async () => {
   const draft = input.value
-  if (!draft.trim() || chatStore.isBusy) {
+  if (!draft.trim() || chatStore.isBusy || chatStore.isHydratingSession) {
     return
   }
 
@@ -66,6 +92,48 @@ const setQuickPrompt = async (prompt: string) => {
   await chatStore.setQuickPrompt(prompt)
 }
 
+const setBackToSessions = () => {
+  panelView.value = 'sessions'
+}
+
+const setCreateChatSession = async () => {
+  const nextChatId = await chatStore.setCreateNewChatSession()
+
+  if (!nextChatId) {
+    return
+  }
+
+  panelView.value = 'chat'
+
+  nextTick(() => {
+    inputRef.value?.focus()
+    scrollToBottom()
+  })
+}
+
+const setOpenChatSession = async (chatId: string) => {
+  const isOpened = await chatStore.setOpenChatSessionById(chatId)
+
+  if (!isOpened) {
+    return
+  }
+
+  panelView.value = 'chat'
+
+  nextTick(() => {
+    inputRef.value?.focus()
+    scrollToBottom()
+  })
+}
+
+const setDeleteChatSession = async (chatId: string) => {
+  await chatStore.setDeleteChatSessionById(chatId)
+}
+
+const setRetryLoadChatSessions = async () => {
+  await chatStore.setLoadChatSessions({ force: true })
+}
+
 watch(
   () => props.open,
   (open) => {
@@ -73,20 +141,26 @@ watch(
       return
     }
 
-    nextTick(() => {
-      inputRef.value?.focus()
-      scrollToBottom()
-    })
+    panelView.value = 'sessions'
+    void chatStore.setLoadChatSessions()
   }
 )
 
 watch(() => chatStore.messageKey, () => {
+  if (panelView.value !== 'chat') {
+    return
+  }
+
   nextTick(scrollToBottom)
 })
 
 watch(
   () => chatStore.status,
   () => {
+    if (panelView.value !== 'chat') {
+      return
+    }
+
     nextTick(scrollToBottom)
   }
 )
@@ -102,10 +176,23 @@ watch(
       aria-label="Spy AI"
     >
       <header class="flex items-center justify-between border-b border-white/10 px-5 py-4 sm:px-6">
-        <div>
-          <p class="text-[10px] uppercase tracking-[0.35em] text-white/55">Spy AI</p>
-          <h2 class="font-display text-3xl italic tracking-tight text-white sm:text-4xl">Spy Assistant</h2>
+        <div class="flex min-w-0 items-center gap-3">
+          <button
+            v-if="panelView === 'chat'"
+            type="button"
+            class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 text-white/80 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+            aria-label="Back to conversations"
+            @click="setBackToSessions"
+          >
+            <ArrowLeft class="h-4 w-4" />
+          </button>
+
+          <div class="min-w-0">
+            <p class="text-[10px] uppercase tracking-[0.35em] text-white/55">Spy AI</p>
+            <h2 class="truncate font-display text-2xl italic tracking-tight text-white sm:text-3xl">{{ panelTitle }}</h2>
+          </div>
         </div>
+
         <button
           class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 text-white/80 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
           aria-label="Close AI chat"
@@ -115,142 +202,158 @@ watch(
         </button>
       </header>
 
-      <div ref="messagesContainerRef" class="flex-1 space-y-5 overflow-y-auto px-5 py-5 sm:px-6">
-        <template v-if="chatStore.visibleMessages.length === 0">
-          <div>
+      <template v-if="panelView === 'sessions'">
+        <AiChatSessionsList
+          :sessions="chatStore.sessions"
+          :current-chat-id="chatStore.currentChatId"
+          :is-loading="chatStore.sessionsLoading"
+          :is-hydrating="chatStore.isHydratingSession"
+          :error="chatStore.sessionsError"
+          :disabled="chatStore.isBusy"
+          @create="setCreateChatSession"
+          @open="setOpenChatSession"
+          @delete="setDeleteChatSession"
+          @retry="setRetryLoadChatSessions"
+        />
+      </template>
+
+      <template v-else>
+        <div ref="messagesContainerRef" class="flex-1 space-y-5 overflow-y-auto px-5 py-5 sm:px-6">
+          <template v-if="chatStore.visibleMessages.length === 0">
+            <div>
+              <p class="mb-2 text-[10px] uppercase tracking-[0.35em] text-white/55">Spy AI</p>
+              <div class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                <p class="mb-3 text-sm leading-relaxed text-white/90 sm:text-base">
+                  Prompts rapides
+                </p>
+                <div class="flex flex-wrap gap-2">
+                  <button
+                    v-for="(prompt, index) in chatStore.quickPrompts"
+                    :key="`quick-prompt-${index}`"
+                    type="button"
+                    class="rounded-full border border-white/20 bg-black/60 px-3 py-2 text-left text-xs text-white/90 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm"
+                    :disabled="chatStore.isBusy || chatStore.isHydratingSession"
+                    @click="setQuickPrompt(prompt)"
+                  >
+                    {{ prompt }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </template>
+
+          <div
+            v-for="(message, index) in chatStore.visibleMessages"
+            :key="message.id ? message.id : index"
+            :class="[
+              'flex flex-col',
+              message.role === 'user' ? 'items-end' : 'items-start'
+            ]"
+          >
+            <p class="mb-2 text-[10px] uppercase tracking-[0.35em] text-white/55">
+              {{ message.role === 'user' ? 'You' : 'Spy AI' }}
+            </p>
+
+            <div
+              :class="[
+                'max-w-[92%] rounded-2xl px-4 py-3 text-sm leading-relaxed sm:text-base',
+                message.role === 'user'
+                  ? 'bg-white text-black shadow-[0_10px_30px_rgba(0,0,0,0.45)]'
+                  : 'border border-white/10 bg-white/5 text-white/90'
+              ]"
+            >
+              <template v-for="(part, partIndex) in message.parts" :key="`${message.id}-${part.type}-${partIndex}`">
+                <p v-if="part.type === 'text' && !chatStore.getIsUnsafeAssistantText(part.text)" class="whitespace-pre-wrap">
+                  {{ part.text }}
+                </p>
+              </template>
+            </div>
+          </div>
+
+          <div v-if="chatStore.showThinking" class="flex flex-col items-start">
             <p class="mb-2 text-[10px] uppercase tracking-[0.35em] text-white/55">Spy AI</p>
-            <div class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-              <p class="mb-3 text-sm leading-relaxed text-white/90 sm:text-base">
-                Prompts rapides
-              </p>
-              <div class="flex flex-wrap gap-2">
-                <button
-                  v-for="(prompt, index) in chatStore.quickPrompts"
-                  :key="`quick-prompt-${index}`"
-                  type="button"
-                  class="rounded-full border border-white/20 bg-black/60 px-3 py-2 text-left text-xs text-white/90 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm"
-                  :disabled="chatStore.isBusy"
-                  @click="setQuickPrompt(prompt)"
+            <div class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm sm:text-base">
+              <div class="flex items-center gap-2">
+                <span
+                  class="bg-[linear-gradient(110deg,rgba(255,255,255,0.35)_20%,rgba(255,255,255,0.95)_45%,rgba(255,255,255,0.35)_70%)] bg-[length:220%_100%] bg-clip-text text-transparent animate-shimmer"
                 >
-                  {{ prompt }}
-                </button>
+                  Thinking...
+                </span>
               </div>
             </div>
           </div>
-        </template>
 
-        <div
-          v-for="(message, index) in chatStore.visibleMessages"
-          :key="message.id ? message.id : index"
-          :class="[
-            'flex flex-col',
-            message.role === 'user' ? 'items-end' : 'items-start'
-          ]"
-        >
-          <p class="mb-2 text-[10px] uppercase tracking-[0.35em] text-white/55">
-            {{ message.role === 'user' ? 'You' : 'Spy AI' }}
-          </p>
-
-          <div
-            :class="[
-              'max-w-[92%] rounded-2xl px-4 py-3 text-sm leading-relaxed sm:text-base',
-              message.role === 'user'
-                ? 'bg-white text-black shadow-[0_10px_30px_rgba(0,0,0,0.45)]'
-                : 'border border-white/10 bg-white/5 text-white/90'
-            ]"
-          >
-            <template v-for="(part, partIndex) in message.parts" :key="`${message.id}-${part.type}-${partIndex}`">
-              <p v-if="part.type === 'text' && !chatStore.getIsUnsafeAssistantText(part.text)" class="whitespace-pre-wrap">
-                {{ part.text }}
-              </p>
-            </template>
-          </div>
-        </div>
-
-        <div v-if="chatStore.showThinking" class="flex flex-col items-start">
-          <p class="mb-2 text-[10px] uppercase tracking-[0.35em] text-white/55">Spy AI</p>
-          <div class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm sm:text-base">
-            <div class="flex items-center gap-2">
-              <!--<Loader2 class="h-4 w-4 animate-spin text-white/60" />-->
-              <span
-                class="bg-[linear-gradient(110deg,rgba(255,255,255,0.35)_20%,rgba(255,255,255,0.95)_45%,rgba(255,255,255,0.35)_70%)] bg-[length:220%_100%] bg-clip-text text-transparent animate-shimmer"
-              >
-                Thinking...
-              </span>
+          <div v-if="chatStore.showSanitizedLeakNotice" class="flex flex-col items-start">
+            <p class="mb-2 text-[10px] uppercase tracking-[0.35em] text-white/55">Spy AI</p>
+            <div class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/80 sm:text-base">
+              I could not format that answer correctly. Please try again.
             </div>
           </div>
-        </div>
 
-        <div v-if="chatStore.showSanitizedLeakNotice" class="flex flex-col items-start">
-          <p class="mb-2 text-[10px] uppercase tracking-[0.35em] text-white/55">Spy AI</p>
-          <div class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/80 sm:text-base">
-            I could not format that answer correctly. Please try again.
+          <div
+            v-if="chatStore.error"
+            class="rounded-2xl border border-white/20 bg-white/5 px-4 py-3 text-sm text-white/80"
+          >
+            Something went wrong.
+          </div>
+
+          <div v-if="chatStore.aiListItems.length > 0" class="flex flex-col items-start">
+            <p class="mb-2 text-[10px] uppercase tracking-[0.35em] text-white/55">Spy AI</p>
+            <AiListPreview
+              :items="chatStore.aiListItems"
+              @add="setAddAiItemsToCurrentList"
+              @dismiss="chatStore.setDismissAiList"
+            />
           </div>
         </div>
 
-        <div
-          v-if="chatStore.error"
-          class="rounded-2xl border border-white/20 bg-white/5 px-4 py-3 text-sm text-white/80"
+        <form
+          class="border-t border-white/10 p-4 sm:p-5"
+          @submit.prevent="setSubmitMessage"
         >
-          Something went wrong.
-        </div>
-
-        <div v-if="chatStore.aiListItems.length > 0" class="flex flex-col items-start">
-          <p class="mb-2 text-[10px] uppercase tracking-[0.35em] text-white/55">Spy AI</p>
-          <AiListPreview
-            :items="chatStore.aiListItems"
-            @add="setAddAiItemsToCurrentList"
-            @dismiss="chatStore.setDismissAiList"
-          />
-        </div>
-      </div>
-
-      <form
-        class="border-t border-white/10 p-4 sm:p-5"
-        @submit.prevent="setSubmitMessage"
-      >
-        <div class="mb-3 flex items-center justify-between px-1">
-          <p class="text-[10px] uppercase tracking-[0.35em] text-white/55">Action</p>
-          <button
-            type="button"
-            class="inline-flex h-9 items-center gap-2 rounded-full border px-3 text-[10px] uppercase tracking-[0.3em] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:cursor-not-allowed disabled:opacity-40"
-            :class="chatStore.isCreateListMode
-              ? 'border-white/25 bg-white text-black shadow-[0_0_24px_rgba(255,255,255,0.2)]'
-              : 'border-white/20 bg-white/5 text-white/80 hover:bg-white/10'"
-            :disabled="chatStore.isBusy"
-            @click="chatStore.setToggleCreateListMode"
-          >
-            <span>Liste</span>
-            <span
-              class="inline-flex min-w-12 items-center justify-center rounded-full px-2 py-1 text-[9px] tracking-[0.25em]"
-              :class="chatStore.isCreateListMode ? 'bg-black text-white' : 'bg-white/15 text-white/90'"
+          <div class="mb-3 flex items-center justify-between px-1">
+            <p class="text-[10px] uppercase tracking-[0.35em] text-white/55">Action</p>
+            <button
+              type="button"
+              class="inline-flex h-9 items-center gap-2 rounded-full border px-3 text-[10px] uppercase tracking-[0.3em] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:cursor-not-allowed disabled:opacity-40"
+              :class="chatStore.isCreateListMode
+                ? 'border-white/25 bg-white text-black shadow-[0_0_24px_rgba(255,255,255,0.2)]'
+                : 'border-white/20 bg-white/5 text-white/80 hover:bg-white/10'"
+              :disabled="chatStore.isBusy || chatStore.isHydratingSession"
+              @click="chatStore.setToggleCreateListMode"
             >
-              {{ chatStore.isCreateListMode ? 'ON' : 'OFF' }}
-            </span>
-          </button>
-        </div>
+              <span>Liste</span>
+              <span
+                class="inline-flex min-w-12 items-center justify-center rounded-full px-2 py-1 text-[9px] tracking-[0.25em]"
+                :class="chatStore.isCreateListMode ? 'bg-black text-white' : 'bg-white/15 text-white/90'"
+              >
+                {{ chatStore.isCreateListMode ? 'ON' : 'OFF' }}
+              </span>
+            </button>
+          </div>
 
-        <div class="flex items-center gap-2 rounded-full border border-white/15 bg-black/80 px-3 py-2">
-          <input
-            ref="inputRef"
-            v-model="input"
-            type="text"
-            class="h-10 flex-1 bg-transparent px-2 text-sm text-white placeholder:text-white/35 focus:outline-none sm:text-base"
-            placeholder="Ask Spy AI..."
-            :disabled="chatStore.isBusy"
-          >
+          <div class="flex items-center gap-2 rounded-full border border-white/15 bg-black/80 px-3 py-2">
+            <input
+              ref="inputRef"
+              v-model="input"
+              type="text"
+              class="h-10 flex-1 bg-transparent px-2 text-sm text-white placeholder:text-white/35 focus:outline-none sm:text-base"
+              placeholder="Ask Spy AI..."
+              :disabled="chatStore.isBusy || chatStore.isHydratingSession"
+            >
 
-          <button
-            type="submit"
-            class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-white text-black transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:cursor-not-allowed disabled:opacity-40"
-            :disabled="!canSend"
-            aria-label="Send message"
-          >
-            <Loader2 v-if="chatStore.isBusy" class="h-4 w-4 animate-spin" />
-            <Send v-else class="h-4 w-4" />
-          </button>
-        </div>
-      </form>
+            <button
+              type="submit"
+              class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-white text-black transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:cursor-not-allowed disabled:opacity-40"
+              :disabled="!canSend"
+              aria-label="Send message"
+            >
+              <Loader2 v-if="chatStore.isBusy" class="h-4 w-4 animate-spin" />
+              <Send v-else class="h-4 w-4" />
+            </button>
+          </div>
+        </form>
+      </template>
     </section>
   </div>
 </template>

@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
 import type { UIMessage } from 'ai'
+import type { ChatSession } from '#shared/types/ai-chat'
 import type { ListProduct } from '#shared/types/lists'
 import { useChat } from '~/composables/api/useChat'
 import { useChatSessions } from '~/composables/api/useChatSessions'
@@ -15,6 +16,7 @@ const QUICK_PROMPTS = [
 ]
 
 const DEFAULT_CHAT_LOGIN_NEXT_PATH = '/search'
+const DEFAULT_CHAT_SESSIONS_ERROR_MESSAGE = 'Could not load conversations.'
 
 const isUnsafeAssistantText = (text: string) => {
   const trimmed = text.trim()
@@ -66,6 +68,10 @@ export const useChatStore = defineStore('chat', () => {
   const isCreateListMode = ref(false)
   const dismissedAiListKey = ref<string | null>(null)
   const currentChatId = ref<string | null>(null)
+  const sessions = ref<ChatSession[]>([])
+  const sessionsLoading = ref(false)
+  const sessionsError = ref<string | null>(null)
+  const isHydratingSession = ref(false)
 
   const quickPrompts = QUICK_PROMPTS
 
@@ -162,7 +168,7 @@ export const useChatStore = defineStore('chat', () => {
   )
 
   const setToggleCreateListMode = () => {
-    if (isBusy.value) {
+    if (isBusy.value || isHydratingSession.value) {
       return
     }
 
@@ -170,9 +176,49 @@ export const useChatStore = defineStore('chat', () => {
     console.log('[ai-list] toggle createListMode:', isCreateListMode.value)
   }
 
-  const setEnsureChatSessionId = async () => {
-    if (currentChatId.value) {
-      return currentChatId.value
+  const setHydrateCurrentChatFromSession = (session: ChatSession) => {
+    currentChatId.value = session.id
+    dismissedAiListKey.value = null
+    chat.messages = Array.isArray(session.messages_json) ? session.messages_json : []
+  }
+
+  const setLoadChatSessions = async (options?: { force?: boolean }) => {
+    if (!authStore.isReady) {
+      await authStore.initAuth()
+    }
+
+    if (!authStore.user) {
+      sessions.value = []
+      sessionsError.value = null
+      return []
+    }
+
+    const force = options?.force === true
+
+    if (!force && sessionsLoading.value) {
+      return sessions.value
+    }
+
+    sessionsLoading.value = true
+    sessionsError.value = null
+
+    try {
+      const nextSessions = await chatSessionsApi.getChatSessions()
+      sessions.value = nextSessions
+
+      return sessions.value
+    } catch (error) {
+      console.error('[ai-list] load chat sessions failed:', error)
+      sessionsError.value = DEFAULT_CHAT_SESSIONS_ERROR_MESSAGE
+      return sessions.value
+    } finally {
+      sessionsLoading.value = false
+    }
+  }
+
+  const setCreateNewChatSession = async () => {
+    if (isBusy.value || isHydratingSession.value) {
+      return null
     }
 
     if (!authStore.isReady) {
@@ -184,16 +230,104 @@ export const useChatStore = defineStore('chat', () => {
       return null
     }
 
-    const session = await chatSessionsApi.createChatSession()
-    currentChatId.value = session.id
+    try {
+      const session = await chatSessionsApi.createChatSession()
 
-    return currentChatId.value
+      const nextSessions = sessions.value.filter((entry) => entry.id !== session.id)
+      sessions.value = [session, ...nextSessions]
+      sessionsError.value = null
+
+      setHydrateCurrentChatFromSession(session)
+      return session.id
+    } catch (error) {
+      console.error('[ai-list] create chat session failed:', error)
+      sessionsError.value = DEFAULT_CHAT_SESSIONS_ERROR_MESSAGE
+      return null
+    }
+  }
+
+  const setOpenChatSessionById = async (sessionId: string) => {
+    const normalizedSessionId = sessionId.trim()
+
+    if (!normalizedSessionId || isBusy.value || isHydratingSession.value) {
+      return false
+    }
+
+    if (currentChatId.value === normalizedSessionId) {
+      return true
+    }
+
+    if (!authStore.isReady) {
+      await authStore.initAuth()
+    }
+
+    if (!authStore.user) {
+      await navigateTo(`/login?next=${encodeURIComponent(DEFAULT_CHAT_LOGIN_NEXT_PATH)}`)
+      return false
+    }
+
+    isHydratingSession.value = true
+
+    try {
+      const session = await chatSessionsApi.getChatSessionById(normalizedSessionId)
+      const otherSessions = sessions.value.filter((entry) => entry.id !== session.id)
+      sessions.value = [session, ...otherSessions]
+      sessionsError.value = null
+
+      setHydrateCurrentChatFromSession(session)
+      return true
+    } catch (error) {
+      console.error('[ai-list] open chat session failed:', error)
+      sessionsError.value = 'Could not open this conversation.'
+      return false
+    } finally {
+      isHydratingSession.value = false
+    }
+  }
+
+  const setDeleteChatSessionById = async (sessionId: string) => {
+    const normalizedSessionId = sessionId.trim()
+
+    if (!normalizedSessionId || isHydratingSession.value) {
+      return false
+    }
+
+    try {
+      await chatSessionsApi.deleteChatSession(normalizedSessionId)
+      sessions.value = sessions.value.filter((entry) => entry.id !== normalizedSessionId)
+      sessionsError.value = null
+
+      if (currentChatId.value === normalizedSessionId) {
+        setResetChatSession()
+      }
+
+      return true
+    } catch (error) {
+      console.error('[ai-list] delete chat session failed:', error)
+      sessionsError.value = 'Could not delete this conversation.'
+      return false
+    }
+  }
+
+  const setEnsureChatSessionId = async () => {
+    if (currentChatId.value) {
+      return currentChatId.value
+    }
+
+    return setCreateNewChatSession()
   }
 
   const setResetChatSession = () => {
     currentChatId.value = null
     dismissedAiListKey.value = null
     chat.messages = []
+  }
+
+  const setResetSessionsState = () => {
+    sessions.value = []
+    sessionsLoading.value = false
+    sessionsError.value = null
+    isHydratingSession.value = false
   }
 
   const setDismissAiList = () => {
@@ -203,10 +337,11 @@ export const useChatStore = defineStore('chat', () => {
 
   const setSendText = async (rawText: string) => {
     const text = rawText.trim()
-    if (!text || isBusy.value) {
+    if (!text || isBusy.value || isHydratingSession.value) {
       console.log('[ai-list] send skipped:', {
         emptyText: !text,
-        isBusy: isBusy.value
+        isBusy: isBusy.value,
+        isHydratingSession: isHydratingSession.value
       })
       return false
     }
@@ -246,6 +381,7 @@ export const useChatStore = defineStore('chat', () => {
       }
 
       setResetChatSession()
+      setResetSessionsState()
     }
   )
 
@@ -256,6 +392,10 @@ export const useChatStore = defineStore('chat', () => {
   return {
     quickPrompts,
     isCreateListMode,
+    sessions,
+    sessionsLoading,
+    sessionsError,
+    isHydratingSession,
     messages,
     status,
     error,
@@ -268,6 +408,11 @@ export const useChatStore = defineStore('chat', () => {
     aiListItems,
     getIsUnsafeAssistantText: isUnsafeAssistantText,
     setToggleCreateListMode,
+    setLoadChatSessions,
+    setHydrateCurrentChatFromSession,
+    setCreateNewChatSession,
+    setOpenChatSessionById,
+    setDeleteChatSessionById,
     setDismissAiList,
     setResetChatSession,
     setSendText,
