@@ -18,6 +18,8 @@ const messagesContainerRef = ref<HTMLElement | null>(null)
 const lists = useListsStore()
 const chatStore = useChatStore()
 const panelView = ref<'sessions' | 'chat'>('sessions')
+const isDeleteConfirmOpen = ref(false)
+const pendingDeleteChatId = ref<string | null>(null)
 
 const currentSessionTitle = computed(() => {
   if (!chatStore.currentChatId) {
@@ -40,6 +42,21 @@ const panelTitle = computed(() => {
   }
 
   return currentSessionTitle.value
+})
+
+const pendingDeleteChatTitle = computed(() => {
+  if (!pendingDeleteChatId.value) {
+    return 'this conversation'
+  }
+
+  const session = chatStore.sessions.find((entry) => entry.id === pendingDeleteChatId.value)
+  const title = session?.title?.trim()
+
+  if (!title) {
+    return 'this conversation'
+  }
+
+  return `"${title}"`
 })
 
 const canSend = computed(() => {
@@ -126,23 +143,69 @@ const setOpenChatSession = async (chatId: string) => {
   })
 }
 
-const setDeleteChatSession = async (chatId: string) => {
-  await chatStore.setDeleteChatSessionById(chatId)
-}
-
 const setRetryLoadChatSessions = async () => {
   await chatStore.setLoadChatSessions({ force: true })
 }
 
+const setOpenMostRecentSessionIfAvailable = async () => {
+  const sessions = await chatStore.setLoadChatSessions({ force: true })
+
+  if (sessions.length === 0) {
+    panelView.value = 'sessions'
+    return
+  }
+
+  chatStore.setHydrateCurrentChatFromSession(sessions[0])
+  panelView.value = 'chat'
+
+  nextTick(() => {
+    inputRef.value?.focus()
+    scrollToBottom()
+  })
+}
+
+const setRequestDeleteChatSession = (chatId: string) => {
+  if (!chatId.trim() || chatStore.isHydratingSession) {
+    return
+  }
+
+  pendingDeleteChatId.value = chatId
+  isDeleteConfirmOpen.value = true
+}
+
+const setCloseDeleteConfirm = () => {
+  isDeleteConfirmOpen.value = false
+  pendingDeleteChatId.value = null
+}
+
+const setConfirmDeleteChatSession = async () => {
+  const chatId = pendingDeleteChatId.value
+  if (!chatId) {
+    setCloseDeleteConfirm()
+    return
+  }
+
+  const deleted = await chatStore.setDeleteChatSessionById(chatId)
+  setCloseDeleteConfirm()
+
+  if (!deleted) {
+    return
+  }
+
+  if (!chatStore.currentChatId) {
+    panelView.value = 'sessions'
+  }
+}
+
 watch(
   () => props.open,
-  (open) => {
+  async (open) => {
     if (!open) {
+      setCloseDeleteConfirm()
       return
     }
 
-    panelView.value = 'sessions'
-    void chatStore.setLoadChatSessions()
+    await setOpenMostRecentSessionIfAvailable()
   }
 )
 
@@ -212,7 +275,7 @@ watch(
           :disabled="chatStore.isBusy"
           @create="setCreateChatSession"
           @open="setOpenChatSession"
-          @delete="setDeleteChatSession"
+          @delete="setRequestDeleteChatSession"
           @retry="setRetryLoadChatSessions"
         />
       </template>
@@ -354,6 +417,18 @@ watch(
           </div>
         </form>
       </template>
+
+      <ConfirmActionModal
+        :open="isDeleteConfirmOpen"
+        eyebrow="Delete conversation"
+        title="Remove chat"
+        :message="`Are you sure you want to delete ${pendingDeleteChatTitle}?`"
+        confirm-text="Delete"
+        cancel-text="Cancel"
+        destructive
+        @close="setCloseDeleteConfirm"
+        @confirm="setConfirmDeleteChatSession"
+      />
     </section>
   </div>
 </template>
