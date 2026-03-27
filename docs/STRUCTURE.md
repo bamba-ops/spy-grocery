@@ -3,7 +3,7 @@
 Objectif: rendre le repo lisible, stable, et eviter que la logique se retrouve partout.
 Ce document definit une structure cible et des regles simples (non negociables) pour garder le controle.
 
-Voir aussi: `docs/PROJECT_MAP.md` (cartographie actuelle des flux Search / Lists / Stores).
+Voir aussi: `docs/SUPABASE_DB.md` (etat DB + contrats API actifs).
 
 ## TL;DR (regles principales)
 
@@ -147,17 +147,24 @@ Pense en couches: UI -> State -> Use-cases -> Data.
 - `app/`
   - `pages/`
     - `index.vue` landing
+    - `login.vue` auth
+    - `auth/confirm.vue` callback auth
     - `search.vue` recherche
+    - `products/[slug].vue` detail produit
     - `lists.vue` listes sauvegardees
-  - `components/` (sections landing, search, lists, shared + `ai/AiChatbot.vue`)
+  - `components/` (sections landing, search, lists, shared + `ai/AiChatbot.vue` + `BottomNavAuthAction.vue`)
   - `stores/` (Pinia)
+    - `auth.ts`
     - `lists.ts` (liste courante + listes sauvegardees)
+    - `productDetails.ts`
     - `search.ts`
     - `chat.ts`
   - `composables/`
     - `api/useProducts.ts`
     - `api/useStores.ts`
     - `api/useChat.ts`
+    - `api/useLists.ts`
+    - `api/useAuth.ts`
     - `useListsStorage.ts`
   - `layouts/`
     - `bottom-nav.vue` (layout pour pages avec bottom nav)
@@ -169,10 +176,14 @@ Pense en couches: UI -> State -> Use-cases -> Data.
     - `lists.ts`
 
 - `server/`
+  - `server/api/lists/*.ts`
   - `server/api/stores/index.get.ts`
   - `server/api/products/search.get.ts`
+  - `server/api/products/[slug].get.ts`
   - `server/api/ai/chat.post.ts`
+  - `server/services/lists/listsService.ts`
   - `server/services/ai/chatService.ts`
+  - `server/repositories/listsRepository.ts`
   - `server/repositories/ai/productsSqlRepository.ts`
 
 ## Conventions de code
@@ -211,20 +222,23 @@ Contrat data actuel:
 - La recherche UI lit le snapshot courant depuis `products`.
 - Les magasins filtres UI sont derives de `products (store, store_id)` cote backend.
 - Le chat V1 utilise uniquement `products` (pas `product_prices`).
+- Les listes sauvegardees cloud utilisent `public.lists` avec user owner (`user_id`).
 - Le dataset produits actuel est traite comme specials.
 
 Regle UI actuelle:
-- La navigation principale est centree sur `index`, `search`, `lists`.
+- La navigation principale produit est centree sur `index`, `search`, `products/[slug]`, `lists`.
+- Auth UI est geree via `login` + `auth/confirm` + action compacte sur bottom nav mobile.
 
 ## UX: listes (localStorage)
 
 Clés localStorage:
 - `spygrocery:saved-lists`: listes nommees
-- (legacy) `spygrocery:shopping-list`: ancienne sauvegarde single-list (importe automatiquement)
+- `spygrocery:deleted-list-names`: tombstones pour replay des suppressions cloud
 
 Comportement attendu:
 - Sauvegarder une liste -> reset la liste courante (items = []).
 - Sur /lists: click card -> charge la liste dans le drawer; delete -> supprime.
+- Flux persistence: local-first, puis sync cloud si session auth (strategie `local wins` par nom).
 
 ## Workflow refactor (petits pas)
 

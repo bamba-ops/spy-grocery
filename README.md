@@ -47,8 +47,11 @@ It lets users search products once and compare prices across stores, then build 
 - Sort options: `price_asc`, `price_desc`, `title_asc`, `recent`.
 - Store filter (`all` or one store).
 - Product cards include a store link (`View on store`) when `url` is available.
-- List management (`/lists`): save, update, delete lists in local storage.
+- Product details page (`/products/[slug]`) with cross-store alternatives.
+- Auth flow with Supabase (`/login` + `/auth/confirm`): magic link + Google sign-in.
+- List management (`/lists`) with local-first behavior and cloud sync when authenticated.
 - Shopping drawer with grouped items by store and total estimate.
+- Mobile bottom-nav auth action (compact floating login/logout control).
 - AI chat on `/search` with two modes:
   - normal assistant mode (streamed text answers),
   - grocery-list mode (`createListMode`) that streams a structured list data part for UI preview/add-to-list.
@@ -75,15 +78,15 @@ Key rule: do not skip layers for business/data logic.
 web/
   app/
     components/      # UI components
-    composables/     # Front data access + local persistence helpers (incl. api/useChat.ts)
+    composables/     # Front data access + local persistence helpers (incl. api/useChat.ts, api/useLists.ts)
     layouts/         # Shared layouts
-    pages/           # Routes (/, /search, /lists)
+    pages/           # Routes (/, /search, /products/[slug], /lists, /login, /auth/confirm)
     plugins/         # Pinia plugin
-    stores/          # Pinia feature stores (incl. chat.ts)
+    stores/          # Pinia feature stores (auth, lists, search, chat, productDetails)
   server/
     api/             # Nitro HTTP handlers
     services/        # Use-case/business orchestration
-    repositories/    # Supabase query layer
+    repositories/    # Supabase query layer (products, lists, ai)
   shared/
     types/           # Shared domain + DB types
     utils/           # Shared helpers
@@ -152,6 +155,48 @@ Returns stores derived from `products` rows (not from a dedicated `stores` table
 }
 ```
 
+#### `GET /api/products/[slug]`
+Returns one product plus comparable alternatives from other stores:
+
+```ts
+{
+  product: SearchProduct
+  otherStoreProducts: SearchProduct[]
+}
+```
+
+#### Lists API (authenticated)
+
+`GET /api/lists`
+```ts
+{
+  lists: PersistedList[]
+}
+```
+
+`POST /api/lists`
+```ts
+body: {
+  name: string
+  items: ListProduct[]
+}
+```
+
+`PATCH /api/lists/[id]`
+```ts
+body: {
+  name: string
+  items: ListProduct[]
+}
+```
+
+`DELETE /api/lists/[id]`
+```ts
+{
+  success: true
+}
+```
+
 #### `POST /api/ai/chat`
 Streaming chat endpoint used by the AI chat panel on `/search`.
 
@@ -214,16 +259,20 @@ interface ListProduct {
 Current Supabase model used by the app:
 - `public.products` (search/read model for current product cards)
 - `public.product_prices` (historical prices, analytics-ready)
+- `public.lists` (user-owned saved lists, `items_json` payload)
 
 Stores in UI are derived from `products (store, store_id)` and aggregated in backend.
 Current operational product dataset is treated as specials-only.
 
 ### Local Storage Behavior (Lists)
-Main key:
+Main keys:
 - `spygrocery:saved-lists`
+- `spygrocery:deleted-list-names`
 
 Behavior:
-- Saved lists are persisted locally in browser storage.
+- Lists are always written locally first for offline continuity.
+- When authenticated, local lists are synced to `/api/lists` (`local wins` conflict policy).
+- Deleted local list names are tracked and replayed to cloud on next sync.
 - On read, legacy product payload shapes are normalized to current `SearchProduct` shape.
 
 ### Styling Direction
@@ -237,13 +286,12 @@ Behavior:
 - No lint script configured currently.
 - No test runner configured currently.
 - Typecheck is optional and depends on `vue-tsc` availability in environment.
-- Auth integration is planned but not active in runtime flow yet.
+- Local/cloud list merge strategy is intentionally simple (`local wins`, by list name).
 
 ### Detailed Docs
 - [Structure guide](docs/STRUCTURE.md)
 - [Supabase DB overview](docs/SUPABASE_DB.md)
 - [Styling guide](docs/STYLING.md)
-- [Auth integration plan](docs/AUTH_INTEGRATION_PLAN.md)
 
 ---
 
@@ -258,8 +306,11 @@ Elle permet de rechercher des produits, comparer les prix entre magasins, puis c
 - Tri disponible: `price_asc`, `price_desc`, `title_asc`, `recent`.
 - Filtre magasin (`all` ou un magasin précis).
 - Les cards produits affichent un lien (`View on store`) vers le site du magasin si `url` existe.
-- Gestion des listes (`/lists`): sauvegarde, mise à jour, suppression en local storage.
+- Page détail produit (`/products/[slug]`) avec alternatives cross-store.
+- Auth Supabase active (`/login` + `/auth/confirm`) avec magic link et Google.
+- Gestion des listes (`/lists`) en mode local-first avec sync cloud si connecté.
 - Drawer shopping list avec groupement par magasin et total estimé.
+- Action auth mobile au-dessus de la bottom nav (login/logout compact).
 - Chat IA sur `/search` avec deux modes:
   - mode assistant normal (réponses texte streamées),
   - mode création de liste (`createListMode`) qui stream une data part structurée pour prévisualiser/ajouter la liste.
@@ -286,15 +337,15 @@ Règle clé: ne pas sauter de couche pour la logique métier ou data.
 web/
   app/
     components/      # Composants UI
-    composables/     # Accès data front + persistance locale (incl. api/useChat.ts)
+    composables/     # Accès data front + persistance locale (incl. api/useChat.ts, api/useLists.ts)
     layouts/         # Layouts partagés
-    pages/           # Routes (/, /search, /lists)
+    pages/           # Routes (/, /search, /products/[slug], /lists, /login, /auth/confirm)
     plugins/         # Plugin Pinia
-    stores/          # Stores Pinia (incl. chat.ts)
+    stores/          # Stores Pinia (auth, lists, search, chat, productDetails)
   server/
     api/             # Handlers HTTP Nitro
     services/        # Orchestration métier
-    repositories/    # Couche requêtes Supabase
+    repositories/    # Couche requêtes Supabase (products, lists, ai)
   shared/
     types/           # Types domaine + DB partagés
     utils/           # Helpers partagés
@@ -363,6 +414,48 @@ Retourne les magasins dérivés des lignes `products` (pas d'usage direct d'une 
 }
 ```
 
+#### `GET /api/products/[slug]`
+Retourne un produit et ses alternatives comparables dans d'autres magasins:
+
+```ts
+{
+  product: SearchProduct
+  otherStoreProducts: SearchProduct[]
+}
+```
+
+#### API listes (authentifiée)
+
+`GET /api/lists`
+```ts
+{
+  lists: PersistedList[]
+}
+```
+
+`POST /api/lists`
+```ts
+body: {
+  name: string
+  items: ListProduct[]
+}
+```
+
+`PATCH /api/lists/[id]`
+```ts
+body: {
+  name: string
+  items: ListProduct[]
+}
+```
+
+`DELETE /api/lists/[id]`
+```ts
+{
+  success: true
+}
+```
+
 #### `POST /api/ai/chat`
 Endpoint de chat en streaming utilisé par le panneau IA sur `/search`.
 
@@ -425,16 +518,20 @@ interface ListProduct {
 Modèle Supabase actuel utilisé par l'app:
 - `public.products` (modèle de lecture recherche/cards)
 - `public.product_prices` (historique de prix, analytique)
+- `public.lists` (listes sauvegardées par utilisateur, payload `items_json`)
 
 Les magasins de l'UI sont dérivés de `products (store, store_id)` puis agrégés côté backend.
 Le dataset produits opérationnel est traité comme un dataset de spéciaux.
 
 ### Comportement localStorage (listes)
-Clé principale:
+Clés principales:
 - `spygrocery:saved-lists`
+- `spygrocery:deleted-list-names`
 
 Comportement:
-- Les listes sont stockées localement dans le navigateur.
+- Les listes sont toujours écrites d'abord en local pour garantir l'usage offline.
+- Si l'utilisateur est connecté, les listes locales sont synchronisées vers `/api/lists` (`local gagne` en cas de conflit).
+- Les suppressions locales sont mémorisées puis rejouées côté cloud au prochain sync.
 - À la lecture, les anciens payloads produit sont normalisés vers le format `SearchProduct` actuel.
 
 ### Direction styling
@@ -448,10 +545,9 @@ Comportement:
 - Pas de script lint configuré actuellement.
 - Pas de runner de tests configuré actuellement.
 - Le typecheck est optionnel et dépend de la disponibilité de `vue-tsc` dans l'environnement.
-- Le plan d'auth existe mais n'est pas encore activé dans le flow runtime.
+- La stratégie de merge local/cloud reste volontairement simple (`local gagne`, par nom de liste).
 
 ### Documentation détaillée
 - [Guide structure](docs/STRUCTURE.md)
 - [Vue d'ensemble Supabase DB](docs/SUPABASE_DB.md)
 - [Guide styling](docs/STYLING.md)
-- [Plan intégration auth](docs/AUTH_INTEGRATION_PLAN.md)

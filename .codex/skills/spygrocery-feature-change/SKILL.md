@@ -38,7 +38,11 @@ description: Implement or modify a user-facing SpyGrocery web feature in the Nux
 - Avoid reintroducing legacy assumptions (`latest_price`, legacy featured/promo flows, direct `stores` table dependency) unless explicitly requested.
 - Keep current endpoint contracts aligned when touched:
   - `GET /api/products/search`
+  - `GET /api/products/[slug]`
   - `GET /api/stores`
+  - `GET/POST /api/lists`
+  - `PATCH/DELETE /api/lists/[id]`
+  - `POST /api/ai/chat`
 - Keep shared types synchronized with API responses.
 
 ## Implementation Workflow

@@ -12,10 +12,12 @@ It documents practical conventions, commands, and architecture constraints for t
 - Data access: Supabase via `serverSupabaseClient(event)`.
 - Visual direction: editorial black/white, strong typography, low-color UI.
 - AI chat transport: Vercel AI SDK UI stream (`/api/ai/chat`) with optional grocery-list data parts.
+- Auth flow: Supabase magic link + Google (`/login` -> `/auth/confirm`).
 
 Current runtime data model (important):
 - Search/read model uses `public.products`.
 - Historical prices live in `public.product_prices`.
+- Saved user lists live in `public.lists`.
 - Store list for UI is derived from `products` rows (`store`, `store_id`) in backend.
 - Current operational dataset in `products` is treated as specials-only.
 
@@ -30,7 +32,6 @@ Current runtime data model (important):
 - `docs/STRUCTURE.md` for architecture/layering intent.
 - `docs/STYLING.md` for visual/UI rules.
 - `docs/SUPABASE_DB.md` for DB facts and Supabase workflow notes.
-- `docs/AUTH_INTEGRATION_PLAN.md` for planned auth work.
 
 Practical priority rule:
 - If `docs/STRUCTURE.md` diverges from current implementation, trust the current server/API code and `docs/SUPABASE_DB.md` as source of truth.
@@ -78,8 +79,14 @@ Preferred flow:
 Current concrete API flows:
 - Product search:
   - Component/Page -> `useSearchStore` -> `useProducts().search()` -> `GET /api/products/search` -> `searchProducts` service -> `searchProductsRows` repository -> Supabase `products`
+- Product details:
+  - Component/Page -> `useProductDetailsStore` -> `useProducts().getProductDetails()` -> `GET /api/products/[slug]` -> `getProductDetails` service -> `getProductRowBySlug/getSimilarProductsRows` repository -> Supabase `products`
 - Stores filter list:
   - Component/Page -> `useSearchStore` -> `useStores().fetchStores()` -> `GET /api/stores` -> `listStores` service -> `fetchProductStoreRows` repository -> Supabase `products`
+- Saved lists (local-first + cloud sync):
+  - Component/Page -> `useListsStore` -> `useListsStorage` (local keys) + `useLists` (API transport) -> `GET/POST/PATCH/DELETE /api/lists*` -> `listsService` -> `listsRepository` -> Supabase `lists`
+- Auth:
+  - `app/pages/login.vue` / `app/components/BottomNavAuthAction.vue` -> `useAuthStore` -> `useAuth` -> Supabase Auth SDK (`signInWithOtp`, `signInWithOAuth`, `signOut`, `getUser`)
 - AI chat (normal mode):
   - `app/components/ai/AiChatbot.vue` -> `useChatStore` -> `useChat` -> `POST /api/ai/chat` -> `streamChatWithProductsDb` -> `query_products_sql` tool -> `executeProductsSelectSql` repository -> Supabase `products`
 - AI chat (list mode):
@@ -112,6 +119,23 @@ Response shape:
 - Returns `stores: StoreFacet[]`
 - Stores are derived from `products`, aggregated by name/id.
 
+### `GET /api/products/[slug]`
+- Returns:
+  - `product: SearchProduct`
+  - `otherStoreProducts: SearchProduct[]`
+
+### Lists API (authenticated)
+- `GET /api/lists`
+  - Returns `lists: PersistedList[]`
+- `POST /api/lists`
+  - Body: `{ name: string, items: ListProduct[] }`
+  - Returns `list: PersistedList`
+- `PATCH /api/lists/[id]`
+  - Body: `{ name: string, items: ListProduct[] }`
+  - Returns `list: PersistedList`
+- `DELETE /api/lists/[id]`
+  - Returns `{ success: true }`
+
 ### `POST /api/ai/chat`
 Request body:
 - `messages: UIMessage[]`
@@ -132,6 +156,7 @@ Type anchors:
 - `StoreFacet` (`shared/types/index.ts`)
 - `SearchResponse` (`shared/types/search.ts`)
 - `ListProduct` (`shared/types/lists.ts`)
+- `PersistedList` (`shared/types/lists.ts`)
 
 ## Code Style and Formatting
 - Use 2-space indentation.
@@ -180,6 +205,7 @@ Type anchors:
 
 ## Supabase and Data Access Rules
 - In server routes, use `serverSupabaseClient(event)`.
+- For authenticated routes, extract auth user id from claims (`serverSupabaseUser(event)` -> `sub`) via shared helper.
 - Keep DB access in repositories.
 - Keep query/business orchestration in services.
 - Select only needed fields.
@@ -208,8 +234,9 @@ Repository note for large scans:
 ## Common Gotchas
 - Tailwind config changes may require restarting dev server.
 - Store list is derived from `products`; backend paging is required to avoid missing stores.
-- Local list storage normalizes legacy payloads to current product shape.
+- Local list storage normalizes legacy payloads to current product shape and tracks deleted names for cloud sync.
 - Chat list mode is stream-based: UI reads `data-grocery-list` from assistant `message.parts`.
+- Lists are local-first; authenticated sessions sync local state to cloud (`local wins` by list name).
 - No formal lint/test safety net exists yet; run build/typecheck frequently.
 
 ## Agent Workflow Checklist

@@ -1,6 +1,6 @@
 # Supabase DB Overview (SpyGrocery)
 
-This document reflects the current production-like Supabase state inspected via MCP on **March 20, 2026**.
+This document reflects the current production-like Supabase state inspected via MCP on **March 27, 2026**.
 
 ## Quick Summary
 
@@ -9,25 +9,31 @@ This document reflects the current production-like Supabase state inspected via 
 - Active tables used by web app:
   - `products`
   - `product_prices`
+  - `lists`
 - No public views are currently present (`latest_price` no longer exists).
 
 Current row counts:
 - `products`: `5,362`
-- `product_prices`: `5,362`
+- `product_prices`: `5,311`
+- `lists`: `1`
 
 ## Data Model
 
 Logical model:
 - `products` is the current searchable product snapshot table.
 - `product_prices` is historical price tracking per product observation.
+- `lists` stores authenticated user saved lists (`items_json` payload).
 
 Database-level relationship:
 - `product_prices.product_id -> products.id` (`ON DELETE CASCADE`)
+- `lists.user_id -> auth.users.id` (`ON DELETE CASCADE`)
 
 Key uniqueness:
 - `products.slug` is unique.
 - `product_prices` enforces one row per product per UTC day via expression unique index:
   - `(product_id, ((observed_at AT TIME ZONE 'UTC')::date))`
+- `lists` enforces one list name per user:
+  - `(user_id, name)`
 
 ## Tables
 
@@ -94,10 +100,35 @@ Important indexes:
 - `product_prices_observed_idx` (`observed_at desc`)
 - `product_prices_product_day_utc_expr_uidx` (UNIQUE daily UTC)
 
+### `public.lists`
+
+Purpose:
+- Authenticated user saved lists used by `/lists` cloud CRUD.
+
+Primary key:
+- `id uuid` (default `gen_random_uuid()`)
+
+Key columns:
+- `id uuid`
+- `user_id uuid` (FK -> `auth.users.id`)
+- `name text`
+- `items_json jsonb`
+- `created_at timestamptz`
+- `updated_at timestamptz`
+
+Important indexes:
+- `lists_pkey` (PK)
+- `lists_user_id_idx` (`user_id`)
+- `lists_user_id_name_key` (UNIQUE on `user_id`, `name`)
+
+Triggers:
+- `set_lists_updated_at` (`BEFORE UPDATE`) -> updates `updated_at` automatically.
+
 ## Views and Functions
 
 - `public` views: none.
-- `public` functions: none.
+- `public` functions:
+  - `set_lists_updated_at()` (trigger helper for `public.lists.updated_at`)
 
 ## RLS / Security Status
 
@@ -105,11 +136,22 @@ Supabase advisors currently report:
 - `RLS Disabled in Public` on:
   - `public.products`
   - `public.product_prices`
+- `Function Search Path Mutable` on:
+  - `public.set_lists_updated_at`
+
+Current `public.lists` RLS status:
+- RLS: enabled
+- Policy: `lists_owner_all`
+  - role: `authenticated`
+  - `USING (auth.uid() = user_id)`
+  - `WITH CHECK (auth.uid() = user_id)`
 
 Reference:
 - https://supabase.com/docs/guides/database/database-linter?lint=0013_rls_disabled_in_public
+- https://supabase.com/docs/guides/database/database-linter?lint=0011_function_search_path_mutable
 
 Performance advisory currently reported:
+- `auth_rls_initplan` on `public.lists` policy `lists_owner_all`
 - `unused_index` on `products_created_at_price_idx`
 
 Reference:
@@ -129,6 +171,14 @@ Applied migrations currently visible:
 - `20260310061128 use_utc_only_for_product_prices_daily_uniqueness`
 - `20260319214807 add_pre_price_text_columns`
 - `20260319215208 add_price_text_columns`
+- `20260321173534 add_exec_readonly_sql_rpc_for_chat`
+- `20260321174007 fix_exec_readonly_sql_select_with_regex`
+- `20260321174045 fix_exec_readonly_sql_from_join_regex`
+- `20260321194006 drop_exec_readonly_sql_rpc_for_chat`
+- `20260321203210 recreate_execute_sql_fn_after_drop`
+
+Note:
+- `public.lists` was created directly via SQL (MCP execute SQL), so it may not appear in `supabase_migrations.schema_migrations` history yet.
 
 ## Current Web API Contract (Aligned)
 
@@ -163,6 +213,31 @@ Response:
 - `StoreFacet = { id, store_id, name, slug, product_count }`
 - `id = store_id` when present, otherwise fallback to store slug.
 
+### `GET /api/products/[slug]`
+
+Source:
+- Primary product from `products.slug`.
+- Comparable alternatives from `products` with matching heuristics in service layer.
+
+Response:
+- `product: SearchProduct`
+- `otherStoreProducts: SearchProduct[]`
+
+### Lists API (authenticated)
+
+Storage:
+- `public.lists`
+
+Endpoints:
+- `GET /api/lists` -> `{ lists: PersistedList[] }`
+- `POST /api/lists` -> body `{ name: string, items: ListProduct[] }`, returns `{ list: PersistedList }`
+- `PATCH /api/lists/[id]` -> body `{ name: string, items: ListProduct[] }`, returns `{ list: PersistedList }`
+- `DELETE /api/lists/[id]` -> `{ success: true }`
+
+Auth contract:
+- All lists endpoints require authenticated user context.
+- Owner is enforced by RLS policy (`auth.uid() = user_id`).
+
 ### `POST /api/ai/chat`
 
 Purpose:
@@ -193,5 +268,6 @@ Operational note:
 - Do not assume `stores`, `prices`, or `latest_price` exist.
 - For current price display, use `products.price_num`.
 - Keep `product_prices` for analytics/history workflows.
+- Lists cloud persistence uses `public.lists`; frontend remains local-first with sync on authenticated sessions.
 - Chatbot must not depend on `product_prices` for current V1 behavior.
 - If schema is uncertain, re-check with Supabase MCP before coding.

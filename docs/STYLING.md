@@ -153,6 +153,18 @@ Disabled (obligatoire):
   - secondaire outline (`Dismiss`)
 - Toggle mode liste pres de l'input: pill noir/blanc, focus visible, etat ON/OFF explicite.
 
+## Pattern visuel de reference (bottom nav mobile + auth)
+
+- Eviter d'ajouter un 6e bouton dans la bottom nav mobile (densite trop forte).
+- Preferer une action auth separee, compacte, au-dessus de la bottom nav (pill flottante).
+- Garder la meme grammaire visuelle:
+  - `rounded-full`
+  - `border-white/20`
+  - `bg-black/80`
+  - focus visible (`focus-visible:ring-2 ... ring-offset-black`)
+  - disabled clair (`disabled:opacity-40 disabled:cursor-not-allowed`)
+- Label court obligatoire (`Log in` / `Log out`) + icone lucide, pour lisibilite mobile.
+
 ## Toasts (Sonner)
 
 - Position: top-center.
