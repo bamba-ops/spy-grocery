@@ -12,12 +12,14 @@ It documents practical conventions, commands, and architecture constraints for t
 - Data access: Supabase via `serverSupabaseClient(event)`.
 - Visual direction: editorial black/white, strong typography, low-color UI.
 - AI chat transport: Vercel AI SDK UI stream (`/api/ai/chat`) with optional grocery-list data parts.
-- Auth flow: Supabase magic link + Google (`/login` -> `/auth/confirm`).
+- Auth flow: Supabase magic link + Google (`/login` -> `/auth/confirm`) with `next` redirects.
+- Route guards: `app/middleware/auth.ts` for private pages and `app/middleware/guest.ts` for login.
 
 Current runtime data model (important):
 - Search/read model uses `public.products`.
 - Historical prices live in `public.product_prices`.
 - Saved user lists live in `public.lists`.
+- Saved AI chat sessions live in `public.ai_chat_sessions`.
 - Store list for UI is derived from `products` rows (`store`, `store_id`) in backend.
 - Current operational dataset in `products` is treated as specials-only.
 
@@ -85,12 +87,16 @@ Current concrete API flows:
   - Component/Page -> `useSearchStore` -> `useStores().fetchStores()` -> `GET /api/stores` -> `listStores` service -> `fetchProductStoreRows` repository -> Supabase `products`
 - Saved lists (local-first + cloud sync):
   - Component/Page -> `useListsStore` -> `useListsStorage` (local keys) + `useLists` (API transport) -> `GET/POST/PATCH/DELETE /api/lists*` -> `listsService` -> `listsRepository` -> Supabase `lists`
+  - Save/update actions are auth-gated in UI (`useAuthStore` prompt), then write local + sync cloud.
 - Auth:
   - `app/pages/login.vue` / `app/components/BottomNavAuthAction.vue` -> `useAuthStore` -> `useAuth` -> Supabase Auth SDK (`signInWithOtp`, `signInWithOAuth`, `signOut`, `getUser`)
+- AI chat sessions:
+  - `app/components/ai/AiChatbot.vue` -> `useChatStore` -> `useChatSessions` -> `GET/POST/GET[id]/DELETE[id] /api/ai/sessions*` -> `chatSessionsService` -> `chatSessionsRepository` -> Supabase `ai_chat_sessions`
 - AI chat (normal mode):
-  - `app/components/ai/AiChatbot.vue` -> `useChatStore` -> `useChat` -> `POST /api/ai/chat` -> `streamChatWithProductsDb` -> `query_products_sql` tool -> `executeProductsSelectSql` repository -> Supabase `products`
+  - `app/components/ai/AiChatbot.vue` -> `useChatStore` -> `useChat` -> `POST /api/ai/chat` (`chatId` required) -> `streamChatWithProductsDb` -> `query_products_sql` tool -> `executeProductsSelectSql` repository -> Supabase `products`
 - AI chat (list mode):
   - `app/components/ai/AiChatbot.vue` toggle (`createListMode`) -> `useChatStore` -> `useChat` -> `POST /api/ai/chat` -> same SQL tool flow + `submit_list_items` tool -> server emits `data-grocery-list` stream part (`items: ListProduct[]`)
+  - End-of-stream snapshot persistence writes full `UIMessage[]` to `ai_chat_sessions.messages_json`.
 
 Rules:
 - Avoid skipping layers (for example, component calling DB logic directly).
@@ -136,10 +142,27 @@ Response shape:
 - `DELETE /api/lists/[id]`
   - Returns `{ success: true }`
 
+### AI Sessions API (authenticated)
+- `GET /api/ai/sessions`
+  - Returns `sessions: ChatSession[]`
+- `POST /api/ai/sessions`
+  - Body: `{ title?: string | null }`
+  - Returns `session: ChatSession`
+- `GET /api/ai/sessions/[id]`
+  - Returns `session: ChatSession`
+- `DELETE /api/ai/sessions/[id]`
+  - Returns `{ success: true }`
+
 ### `POST /api/ai/chat`
 Request body:
 - `messages: UIMessage[]`
+- `chatId: string`
 - `createListMode?: boolean`
+
+Auth/session contract:
+- Route requires authenticated user context.
+- `chatId` must exist and belong to the same authenticated user.
+- Final streamed messages are persisted back into the same session snapshot.
 
 Response:
 - UI message stream (SSE) for AI SDK clients.
@@ -157,6 +180,7 @@ Type anchors:
 - `SearchResponse` (`shared/types/search.ts`)
 - `ListProduct` (`shared/types/lists.ts`)
 - `PersistedList` (`shared/types/lists.ts`)
+- `ChatSession` (`shared/types/ai-chat.ts`)
 
 ## Code Style and Formatting
 - Use 2-space indentation.

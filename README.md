@@ -49,12 +49,14 @@ It lets users search products once and compare prices across stores, then build 
 - Product cards include a store link (`View on store`) when `url` is available.
 - Product details page (`/products/[slug]`) with cross-store alternatives.
 - Auth flow with Supabase (`/login` + `/auth/confirm`): magic link + Google sign-in.
-- List management (`/lists`) with local-first behavior and cloud sync when authenticated.
+- Protected lists page (`/lists`) with auth middleware and post-login `next` redirect.
+- Save/update list actions gated by an auth-required prompt.
 - Shopping drawer with grouped items by store and total estimate.
 - Mobile bottom-nav auth action (compact floating login/logout control).
 - AI chat on `/search` with two modes:
   - normal assistant mode (streamed text answers),
   - grocery-list mode (`createListMode`) that streams a structured list data part for UI preview/add-to-list.
+- AI chat sessions (`/api/ai/sessions*`) with persisted `UIMessage[]` snapshots.
 
 ### Tech Stack
 - Nuxt 4 + Vue 3
@@ -197,6 +199,36 @@ body: {
 }
 ```
 
+#### AI Sessions API (authenticated)
+
+`GET /api/ai/sessions`
+```ts
+{
+  sessions: ChatSession[]
+}
+```
+
+`POST /api/ai/sessions`
+```ts
+body: {
+  title?: string | null
+}
+```
+
+`GET /api/ai/sessions/[id]`
+```ts
+{
+  session: ChatSession
+}
+```
+
+`DELETE /api/ai/sessions/[id]`
+```ts
+{
+  success: true
+}
+```
+
 #### `POST /api/ai/chat`
 Streaming chat endpoint used by the AI chat panel on `/search`.
 
@@ -204,11 +236,13 @@ Request body (simplified):
 ```ts
 {
   messages: UIMessage[]
+  chatId: string
   createListMode?: boolean
 }
 ```
 
 Behavior:
+- Requires an authenticated user and a valid owned `chatId`.
 - Uses tool calling with read-only SQL access to `public.products` (`query_products_sql`).
 - In list mode, model must submit `ListProduct[]` through `submit_list_items`.
 - Chat V1 reads from `products` only.
@@ -253,6 +287,16 @@ interface ListProduct {
   product: SearchProduct
   quantity: number
 }
+
+interface ChatSession {
+  id: string
+  user_id: string
+  title: string | null
+  messages_json: UIMessage[]
+  created_at: string
+  updated_at: string
+  last_message_at: string
+}
 ```
 
 ### Data Model Summary
@@ -260,6 +304,7 @@ Current Supabase model used by the app:
 - `public.products` (search/read model for current product cards)
 - `public.product_prices` (historical prices, analytics-ready)
 - `public.lists` (user-owned saved lists, `items_json` payload)
+- `public.ai_chat_sessions` (user-owned chat sessions, `messages_json` snapshot payload)
 
 Stores in UI are derived from `products (store, store_id)` and aggregated in backend.
 Current operational product dataset is treated as specials-only.
@@ -270,8 +315,9 @@ Main keys:
 - `spygrocery:deleted-list-names`
 
 Behavior:
-- Lists are always written locally first for offline continuity.
-- When authenticated, local lists are synced to `/api/lists` (`local wins` conflict policy).
+- Current shopping drawer items stay local in memory.
+- Named list save/update is authenticated and opens a login prompt when needed.
+- When authenticated, saved lists are written locally first, then synced to `/api/lists` (`local wins` conflict policy).
 - Deleted local list names are tracked and replayed to cloud on next sync.
 - On read, legacy product payload shapes are normalized to current `SearchProduct` shape.
 
@@ -308,12 +354,14 @@ Elle permet de rechercher des produits, comparer les prix entre magasins, puis c
 - Les cards produits affichent un lien (`View on store`) vers le site du magasin si `url` existe.
 - Page détail produit (`/products/[slug]`) avec alternatives cross-store.
 - Auth Supabase active (`/login` + `/auth/confirm`) avec magic link et Google.
-- Gestion des listes (`/lists`) en mode local-first avec sync cloud si connecté.
+- Page listes protégée (`/lists`) avec middleware auth et redirection `next` après login.
+- Actions save/update de liste bloquées sans session (prompt de connexion).
 - Drawer shopping list avec groupement par magasin et total estimé.
 - Action auth mobile au-dessus de la bottom nav (login/logout compact).
 - Chat IA sur `/search` avec deux modes:
   - mode assistant normal (réponses texte streamées),
   - mode création de liste (`createListMode`) qui stream une data part structurée pour prévisualiser/ajouter la liste.
+- Sessions chat IA (`/api/ai/sessions*`) avec persistance snapshot `UIMessage[]`.
 
 ### Stack technique
 - Nuxt 4 + Vue 3
@@ -456,6 +504,36 @@ body: {
 }
 ```
 
+#### API sessions IA (authentifiée)
+
+`GET /api/ai/sessions`
+```ts
+{
+  sessions: ChatSession[]
+}
+```
+
+`POST /api/ai/sessions`
+```ts
+body: {
+  title?: string | null
+}
+```
+
+`GET /api/ai/sessions/[id]`
+```ts
+{
+  session: ChatSession
+}
+```
+
+`DELETE /api/ai/sessions/[id]`
+```ts
+{
+  success: true
+}
+```
+
 #### `POST /api/ai/chat`
 Endpoint de chat en streaming utilisé par le panneau IA sur `/search`.
 
@@ -463,11 +541,13 @@ Body de requête (simplifié):
 ```ts
 {
   messages: UIMessage[]
+  chatId: string
   createListMode?: boolean
 }
 ```
 
 Comportement:
+- Nécessite un utilisateur authentifié et un `chatId` possédé par cet utilisateur.
 - Utilise des tools avec accès SQL lecture seule sur `public.products` (`query_products_sql`).
 - En mode liste, le modèle soumet `ListProduct[]` via `submit_list_items`.
 - Le chat V1 lit uniquement `products`.
@@ -512,6 +592,16 @@ interface ListProduct {
   product: SearchProduct
   quantity: number
 }
+
+interface ChatSession {
+  id: string
+  user_id: string
+  title: string | null
+  messages_json: UIMessage[]
+  created_at: string
+  updated_at: string
+  last_message_at: string
+}
 ```
 
 ### Résumé du modèle de données
@@ -519,6 +609,7 @@ Modèle Supabase actuel utilisé par l'app:
 - `public.products` (modèle de lecture recherche/cards)
 - `public.product_prices` (historique de prix, analytique)
 - `public.lists` (listes sauvegardées par utilisateur, payload `items_json`)
+- `public.ai_chat_sessions` (sessions chat utilisateur, payload snapshot `messages_json`)
 
 Les magasins de l'UI sont dérivés de `products (store, store_id)` puis agrégés côté backend.
 Le dataset produits opérationnel est traité comme un dataset de spéciaux.
@@ -529,8 +620,9 @@ Clés principales:
 - `spygrocery:deleted-list-names`
 
 Comportement:
-- Les listes sont toujours écrites d'abord en local pour garantir l'usage offline.
-- Si l'utilisateur est connecté, les listes locales sont synchronisées vers `/api/lists` (`local gagne` en cas de conflit).
+- Les items du drawer shopping list restent locaux en mémoire.
+- Save/update d'une liste nommée est authentifié et ouvre un prompt de connexion si nécessaire.
+- Si l'utilisateur est connecté, les listes sauvegardées sont écrites d'abord en local puis synchronisées vers `/api/lists` (`local gagne` en cas de conflit).
 - Les suppressions locales sont mémorisées puis rejouées côté cloud au prochain sync.
 - À la lecture, les anciens payloads produit sont normalisés vers le format `SearchProduct` actuel.
 

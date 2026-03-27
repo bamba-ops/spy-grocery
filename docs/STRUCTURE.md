@@ -14,6 +14,7 @@ Voir aussi: `docs/SUPABASE_DB.md` (etat DB + contrats API actifs).
 - `server/api` = controleurs HTTP (parse/valide, appelle services, retourne).
 - `server/services` = logique metier (use-cases).
 - `server/repositories` = acces donnees (Supabase/SQL), appels isoles.
+- Pages privees via middleware `auth`, page login via middleware `guest`.
 - Ne pas renommer/deplacer des fichiers sans une raison claire + un commit dedie.
 - Tailwind classes only: pas de fichiers CSS custom.
 
@@ -145,6 +146,9 @@ Pense en couches: UI -> State -> Use-cases -> Data.
 ## Arborescence actuelle (a ce jour)
 
 - `app/`
+  - `middleware/`
+    - `auth.ts` guard pages privees (`/lists`)
+    - `guest.ts` garde login/guest
   - `pages/`
     - `index.vue` landing
     - `login.vue` auth
@@ -163,8 +167,9 @@ Pense en couches: UI -> State -> Use-cases -> Data.
     - `api/useProducts.ts`
     - `api/useStores.ts`
     - `api/useChat.ts`
+    - `api/useChatSessions.ts`
     - `api/useLists.ts`
-    - `api/useAuth.ts`
+    - `useAuth.ts`
     - `useListsStorage.ts`
   - `layouts/`
     - `bottom-nav.vue` (layout pour pages avec bottom nav)
@@ -181,10 +186,13 @@ Pense en couches: UI -> State -> Use-cases -> Data.
   - `server/api/products/search.get.ts`
   - `server/api/products/[slug].get.ts`
   - `server/api/ai/chat.post.ts`
+  - `server/api/ai/sessions/*.ts`
   - `server/services/lists/listsService.ts`
   - `server/services/ai/chatService.ts`
+  - `server/services/ai/chatSessionsService.ts`
   - `server/repositories/listsRepository.ts`
   - `server/repositories/ai/productsSqlRepository.ts`
+  - `server/repositories/ai/chatSessionsRepository.ts`
 
 ## Conventions de code
 
@@ -223,6 +231,7 @@ Contrat data actuel:
 - Les magasins filtres UI sont derives de `products (store, store_id)` cote backend.
 - Le chat V1 utilise uniquement `products` (pas `product_prices`).
 - Les listes sauvegardees cloud utilisent `public.lists` avec user owner (`user_id`).
+- Les sessions chat IA utilisent `public.ai_chat_sessions` (`messages_json` snapshot).
 - Le dataset produits actuel est traite comme specials.
 
 Regle UI actuelle:
@@ -238,7 +247,8 @@ Clés localStorage:
 Comportement attendu:
 - Sauvegarder une liste -> reset la liste courante (items = []).
 - Sur /lists: click card -> charge la liste dans le drawer; delete -> supprime.
-- Flux persistence: local-first, puis sync cloud si session auth (strategie `local wins` par nom).
+- Save/update est auth-gate via prompt login.
+- Flux persistence cloud: ecriture locale puis sync cloud si session auth (strategie `local wins` par nom).
 
 ## Workflow refactor (petits pas)
 
@@ -261,16 +271,21 @@ Plan court recommande:
 - UI/component `ai/AiChatbot.vue` (UI only)
 - store `app/stores/chat.ts` pour etat/derivations/actions feature chat
 - composable `app/composables/api/useChat.ts` pour transport AI SDK vers `/api/ai/chat`
-- route `POST /api/ai/chat` fine (validation + delegation)
+- composable `app/composables/api/useChatSessions.ts` pour CRUD sessions
+- routes `POST /api/ai/chat` + `/api/ai/sessions*` fines (validation + delegation)
 - service `server/services/ai/chatService.ts` pour orchestration model + tools
+- service `server/services/ai/chatSessionsService.ts` pour orchestration sessions
 - repository dedie `server/repositories/ai/productsSqlRepository.ts` (SQL lecture seule)
+- repository `server/repositories/ai/chatSessionsRepository.ts` pour persistance sessions
 - en mode liste (`createListMode`): data part `data-grocery-list` avec `items: ListProduct[]`
 
 ## Flux Chat IA (actuel)
 
 Flux impose:
-- `app/components/ai/AiChatbot.vue` -> `app/stores/chat.ts` -> `app/composables/api/useChat.ts` -> `POST /api/ai/chat` -> `server/services/ai/chatService.ts` -> `server/repositories/ai/productsSqlRepository.ts` -> Supabase
+- `app/components/ai/AiChatbot.vue` -> `app/stores/chat.ts` -> `app/composables/api/useChatSessions.ts` -> `GET/POST/GET[id]/DELETE[id] /api/ai/sessions*` -> `server/services/ai/chatSessionsService.ts` -> `server/repositories/ai/chatSessionsRepository.ts` -> Supabase `ai_chat_sessions`
+- `app/components/ai/AiChatbot.vue` -> `app/stores/chat.ts` -> `app/composables/api/useChat.ts` -> `POST /api/ai/chat` (`chatId` requis) -> `server/services/ai/chatService.ts` -> `server/repositories/ai/productsSqlRepository.ts` -> Supabase
 - en mode liste: le meme flux ajoute un tool `submit_list_items`, puis `server/api/ai/chat.post.ts` emet `data-grocery-list`
+- fin de stream: snapshot complet `UIMessage[]` persiste dans `ai_chat_sessions.messages_json`
 
 Regles:
 - pas d'appel Supabase depuis UI/store/composable chat

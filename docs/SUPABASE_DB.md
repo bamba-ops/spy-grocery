@@ -10,12 +10,14 @@ This document reflects the current production-like Supabase state inspected via 
   - `products`
   - `product_prices`
   - `lists`
+  - `ai_chat_sessions`
 - No public views are currently present (`latest_price` no longer exists).
 
 Current row counts:
 - `products`: `5,362`
 - `product_prices`: `5,311`
-- `lists`: `1`
+- `lists`: `0`
+- `ai_chat_sessions`: `2`
 
 ## Data Model
 
@@ -23,10 +25,12 @@ Logical model:
 - `products` is the current searchable product snapshot table.
 - `product_prices` is historical price tracking per product observation.
 - `lists` stores authenticated user saved lists (`items_json` payload).
+- `ai_chat_sessions` stores authenticated user chat sessions (`messages_json` payload).
 
 Database-level relationship:
 - `product_prices.product_id -> products.id` (`ON DELETE CASCADE`)
 - `lists.user_id -> auth.users.id` (`ON DELETE CASCADE`)
+- `ai_chat_sessions.user_id -> auth.users.id` (`ON DELETE CASCADE`)
 
 Key uniqueness:
 - `products.slug` is unique.
@@ -34,6 +38,7 @@ Key uniqueness:
   - `(product_id, ((observed_at AT TIME ZONE 'UTC')::date))`
 - `lists` enforces one list name per user:
   - `(user_id, name)`
+- `ai_chat_sessions` uses UUID PK and user/time indexes (no unique per-title constraint).
 
 ## Tables
 
@@ -124,6 +129,27 @@ Important indexes:
 Triggers:
 - `set_lists_updated_at` (`BEFORE UPDATE`) -> updates `updated_at` automatically.
 
+### `public.ai_chat_sessions`
+
+Purpose:
+- Authenticated user AI conversations with full `UIMessage[]` snapshot persistence.
+
+Primary key:
+- `id uuid` (default `gen_random_uuid()`)
+
+Key columns:
+- `id uuid`
+- `user_id uuid` (FK -> `auth.users.id`)
+- `title text`
+- `messages_json jsonb`
+- `created_at timestamptz`
+- `updated_at timestamptz`
+- `last_message_at timestamptz`
+
+Important indexes:
+- `ai_chat_sessions_pkey` (PK)
+- `ai_chat_sessions_user_updated_at_idx` (`user_id`, `updated_at desc`)
+
 ## Views and Functions
 
 - `public` views: none.
@@ -146,12 +172,22 @@ Current `public.lists` RLS status:
   - `USING (auth.uid() = user_id)`
   - `WITH CHECK (auth.uid() = user_id)`
 
+Current `public.ai_chat_sessions` RLS status:
+- RLS: enabled
+- Policies (role `authenticated`):
+  - `ai_chat_sessions_select_own`
+  - `ai_chat_sessions_insert_own`
+  - `ai_chat_sessions_update_own`
+  - `ai_chat_sessions_delete_own`
+  - owner rule: `auth.uid() = user_id` (with explicit null checks)
+
 Reference:
 - https://supabase.com/docs/guides/database/database-linter?lint=0013_rls_disabled_in_public
 - https://supabase.com/docs/guides/database/database-linter?lint=0011_function_search_path_mutable
 
 Performance advisory currently reported:
 - `auth_rls_initplan` on `public.lists` policy `lists_owner_all`
+- `auth_rls_initplan` on `public.ai_chat_sessions` policies (`select/insert/update/delete`)
 - `unused_index` on `products_created_at_price_idx`
 
 Reference:
@@ -178,7 +214,7 @@ Applied migrations currently visible:
 - `20260321203210 recreate_execute_sql_fn_after_drop`
 
 Note:
-- `public.lists` was created directly via SQL (MCP execute SQL), so it may not appear in `supabase_migrations.schema_migrations` history yet.
+- `public.lists` and `public.ai_chat_sessions` were created directly via SQL (MCP execute SQL), so they may not appear in `supabase_migrations.schema_migrations` history yet.
 
 ## Current Web API Contract (Aligned)
 
@@ -238,6 +274,21 @@ Auth contract:
 - All lists endpoints require authenticated user context.
 - Owner is enforced by RLS policy (`auth.uid() = user_id`).
 
+### AI Sessions API (authenticated)
+
+Storage:
+- `public.ai_chat_sessions`
+
+Endpoints:
+- `GET /api/ai/sessions` -> `{ sessions: ChatSession[] }`
+- `POST /api/ai/sessions` -> body `{ title?: string | null }`, returns `{ session: ChatSession }`
+- `GET /api/ai/sessions/[id]` -> `{ session: ChatSession }`
+- `DELETE /api/ai/sessions/[id]` -> `{ success: true }`
+
+Auth contract:
+- All sessions endpoints require authenticated user context.
+- Ownership is enforced in query filters (`id` + `user_id`) and by RLS.
+
 ### `POST /api/ai/chat`
 
 Purpose:
@@ -252,7 +303,13 @@ Data access contract:
 
 Request body:
 - `messages: UIMessage[]`
+- `chatId: string`
 - `createListMode?: boolean`
+
+Auth/session contract:
+- Requires authenticated user context.
+- `chatId` must exist and belong to the same user.
+- End-of-stream writes full message snapshot back to `ai_chat_sessions.messages_json`.
 
 Response:
 - UI message stream (SSE) for AI SDK clients.
@@ -269,5 +326,6 @@ Operational note:
 - For current price display, use `products.price_num`.
 - Keep `product_prices` for analytics/history workflows.
 - Lists cloud persistence uses `public.lists`; frontend remains local-first with sync on authenticated sessions.
+- AI conversation persistence uses `public.ai_chat_sessions` (`messages_json` snapshots).
 - Chatbot must not depend on `product_prices` for current V1 behavior.
 - If schema is uncertain, re-check with Supabase MCP before coding.

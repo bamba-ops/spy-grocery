@@ -165,6 +165,36 @@ Disabled (obligatoire):
   - disabled clair (`disabled:opacity-40 disabled:cursor-not-allowed`)
 - Label court obligatoire (`Log in` / `Log out`) + icone lucide, pour lisibilite mobile.
 
+## Pattern visuel de reference (auth required prompt)
+
+- Reutiliser `ConfirmActionModal` pour les actions protegees (save list, AI sessions, navigation `/lists` depuis UI).
+- Ton du message: marketing court et actionnable (benefice utilisateur + raison de connexion).
+- Structure recommandee:
+  - eyebrow: `Account required`
+  - title court orienté benefice
+  - description en une phrase
+  - CTA principal vers login (`Continue to login` / `Sign in ...`)
+  - secondaire: `Not now`
+- Respecter le style modal existant:
+  - backdrop `bg-black/60 backdrop-blur-sm`
+  - surface `rounded-2xl border border-white/10 bg-black`
+  - focus visible sur les 2 boutons
+
+## Pattern visuel de reference (AI chat sessions-first)
+
+- Dans `AiChatbot`, ne pas afficher simultanement liste sessions + conversation.
+- Vue 1: sessions (`Conversations`) avec bouton `New chat`, etat actif, delete discret.
+- Vue 2: conversation avec bouton `Back` explicite vers la liste.
+- Header dynamique:
+  - vue sessions: titre `Conversations`
+  - vue chat: titre session courante (truncate)
+- Garder la meme grammaire visuelle:
+  - `rounded-[32px]` pour le panel
+  - `border-white/10`/`border-white/20`
+  - `bg-black/90`
+  - actions en `rounded-full`
+- Pendant hydratation session, desactiver les actions de saisie/envoi (etat disabled visible).
+
 ## Toasts (Sonner)
 
 - Position: top-center.

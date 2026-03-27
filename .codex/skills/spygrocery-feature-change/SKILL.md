@@ -34,7 +34,7 @@ description: Implement or modify a user-facing SpyGrocery web feature in the Nux
 - Verify mobile and desktop behavior for touched UI.
 
 ## Data and Contract Guardrails
-- Respect current data model: `products` + `product_prices`, with stores derived from `products`.
+- Respect current data model: `products` + `product_prices` + `lists` + `ai_chat_sessions`, with stores derived from `products`.
 - Avoid reintroducing legacy assumptions (`latest_price`, legacy featured/promo flows, direct `stores` table dependency) unless explicitly requested.
 - Keep current endpoint contracts aligned when touched:
   - `GET /api/products/search`
@@ -42,6 +42,8 @@ description: Implement or modify a user-facing SpyGrocery web feature in the Nux
   - `GET /api/stores`
   - `GET/POST /api/lists`
   - `PATCH/DELETE /api/lists/[id]`
+  - `GET/POST /api/ai/sessions`
+  - `GET/DELETE /api/ai/sessions/[id]`
   - `POST /api/ai/chat`
 - Keep shared types synchronized with API responses.
 
