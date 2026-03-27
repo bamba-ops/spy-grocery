@@ -3,6 +3,8 @@ import { computed, ref, watch } from 'vue'
 import type { UIMessage } from 'ai'
 import type { ListProduct } from '#shared/types/lists'
 import { useChat } from '~/composables/api/useChat'
+import { useChatSessions } from '~/composables/api/useChatSessions'
+import { useAuthStore } from '~/stores/auth'
 
 const QUICK_PROMPTS = [
   'Montre-moi les 5 produits les moins chers (titre, magasin, prix).',
@@ -11,6 +13,8 @@ const QUICK_PROMPTS = [
   'Dans quels magasins les bananes sont les moins chères ?',
   "Donne 5 produits dont le titre contient 'organic'."
 ]
+
+const DEFAULT_CHAT_LOGIN_NEXT_PATH = '/search'
 
 const isUnsafeAssistantText = (text: string) => {
   const trimmed = text.trim()
@@ -57,8 +61,11 @@ const hasSafeTextPart = (message: UIMessage) => {
 
 export const useChatStore = defineStore('chat', () => {
   const { chat, sendMessage, getLatestAssistantListPayload } = useChat()
+  const chatSessionsApi = useChatSessions()
+  const authStore = useAuthStore()
   const isCreateListMode = ref(false)
   const dismissedAiListKey = ref<string | null>(null)
+  const currentChatId = ref<string | null>(null)
 
   const quickPrompts = QUICK_PROMPTS
 
@@ -163,6 +170,32 @@ export const useChatStore = defineStore('chat', () => {
     console.log('[ai-list] toggle createListMode:', isCreateListMode.value)
   }
 
+  const setEnsureChatSessionId = async () => {
+    if (currentChatId.value) {
+      return currentChatId.value
+    }
+
+    if (!authStore.isReady) {
+      await authStore.initAuth()
+    }
+
+    if (!authStore.user) {
+      await navigateTo(`/login?next=${encodeURIComponent(DEFAULT_CHAT_LOGIN_NEXT_PATH)}`)
+      return null
+    }
+
+    const session = await chatSessionsApi.createChatSession()
+    currentChatId.value = session.id
+
+    return currentChatId.value
+  }
+
+  const setResetChatSession = () => {
+    currentChatId.value = null
+    dismissedAiListKey.value = null
+    chat.messages = []
+  }
+
   const setDismissAiList = () => {
     dismissedAiListKey.value = latestAiListPayload.value?.key ?? null
     console.log('[ai-list] dismiss list payload key:', dismissedAiListKey.value)
@@ -183,15 +216,38 @@ export const useChatStore = defineStore('chat', () => {
       textLength: text.length
     })
 
-    await sendMessage({
-      text,
-      createListMode: isCreateListMode.value
-    })
+    const chatId = await setEnsureChatSessionId()
+    if (!chatId) {
+      return false
+    }
+
+    try {
+      await sendMessage({
+        text,
+        createListMode: isCreateListMode.value,
+        chatId
+      })
+    } catch (error) {
+      console.error('[ai-list] send message failed:', error)
+      currentChatId.value = null
+      return false
+    }
 
     console.log('[ai-list] send message completed')
 
     return true
   }
+
+  watch(
+    () => authStore.user?.id,
+    (nextUserId, previousUserId) => {
+      if (previousUserId === undefined || nextUserId === previousUserId) {
+        return
+      }
+
+      setResetChatSession()
+    }
+  )
 
   const setQuickPrompt = async (prompt: string) => {
     return setSendText(prompt)
@@ -204,6 +260,7 @@ export const useChatStore = defineStore('chat', () => {
     status,
     error,
     isBusy,
+    currentChatId,
     visibleMessages,
     messageKey,
     showThinking,
@@ -212,6 +269,7 @@ export const useChatStore = defineStore('chat', () => {
     getIsUnsafeAssistantText: isUnsafeAssistantText,
     setToggleCreateListMode,
     setDismissAiList,
+    setResetChatSession,
     setSendText,
     setQuickPrompt
   }

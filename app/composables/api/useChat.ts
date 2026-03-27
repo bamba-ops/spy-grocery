@@ -10,6 +10,7 @@ import {
 interface SendChatMessageParams {
   text: string
   createListMode: boolean
+  chatId: string
 }
 
 interface LatestListPayload {
@@ -117,9 +118,10 @@ export const useChat = () => {
     })
   })
 
-  const sendMessage = async ({ text, createListMode }: SendChatMessageParams) => {
+  const sendMessage = async ({ text, createListMode, chatId }: SendChatMessageParams) => {
     console.log('[ai-list] transport send start:', {
       createListMode,
+      chatId,
       textLength: text.length
     })
 
@@ -128,7 +130,8 @@ export const useChat = () => {
         { text },
         {
           body: {
-            createListMode
+            createListMode,
+            chatId
           }
         }
       )
