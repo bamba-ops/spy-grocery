@@ -1,8 +1,15 @@
 import { defineStore } from 'pinia'
 import { toast } from 'vue-sonner'
 import type { Product } from '#shared/types'
-import type { ListProduct, ListsProduct } from '#shared/types/lists'
+import type {
+  ListProduct,
+  ListStorage,
+  ListsProduct,
+  PersistedList
+} from '#shared/types/lists'
+import { useLists } from '~/composables/api/useLists'
 import { useListsStorage } from '~/composables/useListsStorage'
+import { useAuthStore } from '~/stores/auth'
 
 type ListsSort = 'recent' | 'name' | 'total'
 type ListsControls = {
@@ -16,6 +23,53 @@ const getListItemsSnapshot = (items: ListProduct[]) => {
     .sort((a, b) => a.id.localeCompare(b.id))
 
   return JSON.stringify(compact)
+}
+
+const toUiListFromStorage = (list: ListStorage): ListsProduct => ({
+  id: list.name,
+  name: list.name,
+  items: list.items as ListProduct[],
+  createdAt: new Date(list.savedAt),
+  updatedAt: new Date(list.savedAt)
+})
+
+const toUiListFromPersisted = (list: PersistedList): ListsProduct => ({
+  id: list.id,
+  name: list.name,
+  items: list.items,
+  createdAt: new Date(list.createdAt),
+  updatedAt: new Date(list.updatedAt)
+})
+
+const toStorageListFromPersisted = (list: PersistedList): ListStorage => ({
+  name: list.name,
+  items: list.items,
+  savedAt: list.updatedAt
+})
+
+const getApiErrorMessage = (value: unknown, fallback: string): string => {
+  if (!value || typeof value !== 'object') {
+    return fallback
+  }
+
+  const maybeError = value as {
+    data?: { message?: unknown }
+    message?: unknown
+  }
+
+  if (typeof maybeError.data?.message === 'string' && maybeError.data.message.trim()) {
+    return maybeError.data.message.trim()
+  }
+
+  if (typeof maybeError.message === 'string' && maybeError.message.trim()) {
+    return maybeError.message.trim()
+  }
+
+  return fallback
+}
+
+const toListProducts = (items: unknown[]) => {
+  return items as ListProduct[]
 }
 
 export const useListsStore = defineStore('lists', {
@@ -36,12 +90,15 @@ export const useListsStore = defineStore('lists', {
     error: null as string | null,
     justSaved: false,
     setNameList: '' as string,
+    currentListSourceId: null as string | null,
     currentListSourceName: null as string | null,
     currentListSourceSnapshot: '' as string,
     lastSaveError: null as string | null,
     ADD_FEEDBACK_MS: 300,
     SAVE_FEEDBACK_MS: 1200,
-    listsStorage: useListsStorage()
+    listsStorage: useListsStorage(),
+    listsApi: useLists(),
+    isSyncingLocalToDb: false
   }),
 
   getters: {
@@ -105,6 +162,186 @@ export const useListsStore = defineStore('lists', {
   },
 
   actions: {
+    async getCurrentAuthUser() {
+      const authStore = useAuthStore()
+
+      if (!authStore.isReady) {
+        await authStore.initAuth()
+      }
+
+      return authStore.user
+    },
+
+    getSavedListByName(name: string) {
+      const trimmedName = name.trim()
+      if (!trimmedName) return null
+
+      return this.multipleListsOfProducts.find((list) => list.name === trimmedName) || null
+    },
+
+    setLoadListsFromLocalStorage() {
+      const saved = this.listsStorage.getListsStorageItems()
+      this.multipleListsOfProducts = saved.map(toUiListFromStorage)
+    },
+
+    setSyncCurrentListSourceWithSavedLists() {
+      if (!this.currentListSourceName) {
+        return
+      }
+
+      const matched = this.multipleListsOfProducts.find((list) => list.name === this.currentListSourceName)
+
+      if (!matched) {
+        this.currentListSourceId = null
+        this.currentListSourceName = null
+        this.currentListSourceSnapshot = ''
+        return
+      }
+
+      this.currentListSourceId = matched.id
+    },
+
+    setListsSyncedToast(created: number, updated: number, deleted: number) {
+      if (!process.client) {
+        return
+      }
+
+      const parts: string[] = []
+
+      if (created > 0) {
+        parts.push(`${created} created`)
+      }
+
+      if (updated > 0) {
+        parts.push(`${updated} updated`)
+      }
+
+      if (deleted > 0) {
+        parts.push(`${deleted} deleted`)
+      }
+
+      if (parts.length === 0) {
+        return
+      }
+
+      toast.success('Lists synced', {
+        description: parts.join(', ')
+      })
+    },
+
+    setListsSyncErrorToast() {
+      if (!process.client) {
+        return
+      }
+
+      toast.error('Could not sync local lists', {
+        description: 'Your local changes are kept and will retry later.'
+      })
+    },
+
+    async setSyncLocalListsToApi(options?: { silent?: boolean }) {
+      const authUser = await this.getCurrentAuthUser()
+      if (!authUser) {
+        return false
+      }
+
+      if (this.isSyncingLocalToDb) {
+        return true
+      }
+
+      this.error = null
+      this.isSyncingLocalToDb = true
+
+      try {
+        const localLists = this.listsStorage.getListsStorageItems()
+        const deletedNames = this.listsStorage.getDeletedListsStorageNames()
+        const remoteLists = await this.listsApi.getLists()
+        const remoteByName = new Map(remoteLists.map((list) => [list.name, list]))
+
+        let created = 0
+        let updated = 0
+        let deleted = 0
+
+        for (const deletedName of deletedNames) {
+          const name = deletedName.trim()
+          if (!name) {
+            continue
+          }
+
+          const existingRemoteList = remoteByName.get(name)
+          if (!existingRemoteList) {
+            continue
+          }
+
+          await this.listsApi.deleteList(existingRemoteList.id)
+          remoteByName.delete(name)
+          deleted += 1
+        }
+
+        for (const localList of localLists) {
+          const name = localList.name.trim()
+          if (!name) {
+            continue
+          }
+
+          const localItems = toListProducts(localList.items)
+          const existingRemoteList = remoteByName.get(name)
+
+          if (!existingRemoteList) {
+            const createdList = await this.listsApi.createList({
+              name,
+              items: localItems
+            })
+
+            remoteByName.set(createdList.name, createdList)
+            created += 1
+            continue
+          }
+
+          const localSnapshot = getListItemsSnapshot(localItems)
+          const remoteSnapshot = getListItemsSnapshot(existingRemoteList.items)
+
+          if (localSnapshot === remoteSnapshot) {
+            continue
+          }
+
+          const updatedList = await this.listsApi.updateList(existingRemoteList.id, {
+            name,
+            items: localItems
+          })
+
+          remoteByName.set(updatedList.name, updatedList)
+          updated += 1
+        }
+
+        const latestRemoteLists = await this.listsApi.getLists()
+        this.multipleListsOfProducts = latestRemoteLists.map(toUiListFromPersisted)
+        this.listsStorage.setReplaceListsStorageItems(
+          latestRemoteLists.map(toStorageListFromPersisted),
+          { clearDeletedNames: true }
+        )
+        this.setSyncCurrentListSourceWithSavedLists()
+
+        if (!options?.silent) {
+          this.setListsSyncedToast(created, updated, deleted)
+        }
+
+        return true
+      } catch (error) {
+        this.error = getApiErrorMessage(error, 'Could not sync local lists.')
+        this.setLoadListsFromLocalStorage()
+        this.setSyncCurrentListSourceWithSavedLists()
+
+        if (!options?.silent) {
+          this.setListsSyncErrorToast()
+        }
+
+        return false
+      } finally {
+        this.isSyncingLocalToDb = false
+      }
+    },
+
     setProductInCurrentList(product: Product) {
       const existingProduct = this.productList.find((item) => item.product.id === product.id)
       if (existingProduct) {
@@ -205,7 +442,7 @@ export const useListsStore = defineStore('lists', {
       this.isSaveModalOpen = true
     },
 
-    setSaveOrUpdateCurrentList() {
+    async setSaveOrUpdateCurrentList() {
       if (this.currentListSourceName) {
         return this.setUpdatedCurrentList()
       }
@@ -270,12 +507,13 @@ export const useListsStore = defineStore('lists', {
 
       const isCurrentListName = this.currentListSourceName === trimmed
       const ok = isCurrentListName
-        ? this.setUpdatedListsStorage(trimmed)
-        : this.setListsStorage(trimmed)
+        ? await this.setUpdatedListsStorage(trimmed)
+        : await this.setListsStorage(trimmed)
 
       if (!ok) return false
 
       this.setCurrentListItems([])
+      this.currentListSourceId = null
       this.currentListSourceName = null
       this.currentListSourceSnapshot = ''
       this.setSavedFeedback()
@@ -284,11 +522,11 @@ export const useListsStore = defineStore('lists', {
       return true
     },
 
-    setUpdatedCurrentList() {
+    async setUpdatedCurrentList() {
       if (!this.currentListSourceName) return false
       if (!this.getCanSubmitList) return false
 
-      const ok = this.setUpdatedListsStorage(this.currentListSourceName)
+      const ok = await this.setUpdatedListsStorage(this.currentListSourceName)
       if (!ok) return false
 
       this.currentListSourceSnapshot = getListItemsSnapshot(this.productList)
@@ -310,14 +548,19 @@ export const useListsStore = defineStore('lists', {
       this.error = null
 
       try {
-        const saved = this.listsStorage.getListsStorageItems()
-        this.multipleListsOfProducts = saved.map((list) => ({
-          id: list.name,
-          name: list.name,
-          items: list.items as ListProduct[],
-          createdAt: new Date(list.savedAt),
-          updatedAt: new Date(list.savedAt)
-        }))
+        const authUser = await this.getCurrentAuthUser()
+
+        if (authUser) {
+          const synced = await this.setSyncLocalListsToApi({ silent: true })
+
+          if (!synced) {
+            this.setLoadListsFromLocalStorage()
+          }
+
+          return
+        }
+
+        this.setLoadListsFromLocalStorage()
       } catch {
         this.error = 'Could not load lists storage.'
       } finally {
@@ -325,7 +568,7 @@ export const useListsStore = defineStore('lists', {
       }
     },
 
-    setListsStorage(name: string) {
+    async setListsStorage(name: string) {
       const items = this.productList.map((item) => ({ product: item.product, quantity: item.quantity }))
       const result = this.listsStorage.setListStorageItem(name, items as unknown[])
 
@@ -336,11 +579,22 @@ export const useListsStore = defineStore('lists', {
         return false
       }
 
-      this.getListsStorage()
+      this.setLoadListsFromLocalStorage()
+
+      const authUser = await this.getCurrentAuthUser()
+      if (authUser) {
+        await this.setSyncLocalListsToApi()
+      }
+
+      const savedList = this.getSavedListByName(name)
+      if (savedList) {
+        this.currentListSourceId = savedList.id
+      }
+
       return true
     },
 
-    setUpdatedListsStorage(name: string) {
+    async setUpdatedListsStorage(name: string) {
       const items = this.productList.map((item) => ({ product: item.product, quantity: item.quantity }))
       const result = this.listsStorage.setUpdatedListStorageItemByName(name, items as unknown[])
       if (!result.ok) {
@@ -348,7 +602,18 @@ export const useListsStore = defineStore('lists', {
         return false
       }
 
-      this.getListsStorage()
+      this.setLoadListsFromLocalStorage()
+
+      const authUser = await this.getCurrentAuthUser()
+      if (authUser) {
+        await this.setSyncLocalListsToApi()
+      }
+
+      const savedList = this.getSavedListByName(name)
+      if (savedList) {
+        this.currentListSourceId = savedList.id
+      }
+
       return true
     },
 
@@ -360,26 +625,32 @@ export const useListsStore = defineStore('lists', {
       }
 
       if (this.currentListSourceName === name) {
+        this.currentListSourceId = null
         this.currentListSourceName = null
         this.currentListSourceSnapshot = ''
       }
 
-      await this.getListsStorage()
+      this.setLoadListsFromLocalStorage()
+
+      const authUser = await this.getCurrentAuthUser()
+      if (authUser) {
+        await this.setSyncLocalListsToApi()
+      }
+
       this.setListDeletedToast(name)
       return true
     },
 
     getListsStorageByName(name: string) {
-      const list = this.listsStorage.getListStorageItemByName(name)
-      if (!list) return null
+      const fromState = this.getSavedListByName(name)
+      if (fromState) {
+        return fromState
+      }
 
-      return {
-        id: list.name,
-        name: list.name,
-        items: list.items as ListProduct[],
-        createdAt: new Date(list.savedAt),
-        updatedAt: new Date(list.savedAt)
-      } as ListsProduct
+      const fromStorage = this.listsStorage.getListStorageItemByName(name)
+      if (!fromStorage) return null
+
+      return toUiListFromStorage(fromStorage)
     },
 
     setCurrentListFromStorageByName(name: string) {
@@ -387,6 +658,7 @@ export const useListsStore = defineStore('lists', {
       if (!list || !Array.isArray(list.items)) return false
 
       this.setCurrentListItems(list.items)
+      this.currentListSourceId = list.id
       this.currentListSourceName = list.name
       this.currentListSourceSnapshot = getListItemsSnapshot(list.items)
       this.setShoppingListDrawerOpen()

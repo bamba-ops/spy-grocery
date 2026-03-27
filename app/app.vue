@@ -1,11 +1,27 @@
 <script setup lang="ts">
 import 'vue-sonner/style.css'
 import { useAuthStore } from '~/stores/auth'
+import { useListsStore } from '~/stores/lists'
 
 const authStore = useAuthStore()
+const listsStore = useListsStore()
 
 onMounted(() => {
   void authStore.initAuth()
+
+  watch(
+    () => authStore.user?.id,
+    (userId) => {
+      if (!userId) {
+        return
+      }
+
+      void listsStore.setSyncLocalListsToApi()
+    },
+    {
+      immediate: true
+    }
+  )
 })
 </script>
 

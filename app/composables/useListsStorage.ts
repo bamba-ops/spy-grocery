@@ -2,6 +2,7 @@ import type { SearchProduct } from '#shared/types'
 import type { ListStorage, ResultListStorage } from '#shared/types/lists'
 
 const LISTS_STORAGE_KEY = 'spygrocery:saved-lists'
+const LISTS_DELETED_NAMES_KEY = 'spygrocery:deleted-list-names'
 
 const toStringOrNull = (value: unknown): string | null => {
   if (typeof value !== 'string') return null
@@ -136,6 +137,73 @@ export const useListsStorage = () => {
     }
   }
 
+  const getParsedDeletedNames = (): string[] => {
+    if (!process.client) {
+      return []
+    }
+
+    try {
+      const raw = localStorage.getItem(LISTS_DELETED_NAMES_KEY)
+      if (!raw) {
+        return []
+      }
+
+      const parsed = JSON.parse(raw)
+      if (!Array.isArray(parsed)) {
+        return []
+      }
+
+      return parsed
+        .map((entry) => toStringOrNull(entry))
+        .filter((entry): entry is string => entry !== null)
+    } catch {
+      return []
+    }
+  }
+
+  const setParsedDeletedNames = (names: string[]) => {
+    if (!process.client) {
+      return false
+    }
+
+    try {
+      localStorage.setItem(LISTS_DELETED_NAMES_KEY, JSON.stringify(names))
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  const setTrackDeletedName = (name: string) => {
+    const trimmedName = name.trim()
+    if (!trimmedName) {
+      return false
+    }
+
+    const existingNames = getParsedDeletedNames()
+    if (existingNames.includes(trimmedName)) {
+      return true
+    }
+
+    return setParsedDeletedNames([...existingNames, trimmedName])
+  }
+
+  const setUntrackDeletedName = (name: string) => {
+    const trimmedName = name.trim()
+    if (!trimmedName) {
+      return false
+    }
+
+    const existingNames = getParsedDeletedNames()
+    const nextNames = existingNames.filter((entry) => entry !== trimmedName)
+
+    if (nextNames.length === existingNames.length) {
+      return true
+    }
+
+    return setParsedDeletedNames(nextNames)
+  }
+
   const getListsStorageItems = (): ListStorage[] => {
     return getParsedStorage()
   }
@@ -170,12 +238,14 @@ export const useListsStorage = () => {
       return { ok: false, error: 'duplicate_name' }
     }
 
+    const savedAt = new Date().toISOString()
+
     const nextItems = [
       ...getParsedStorage(),
       {
         name: trimmedName,
         items: normalizeListItems(items),
-        savedAt: new Date().toISOString()
+        savedAt
       }
     ]
 
@@ -183,6 +253,8 @@ export const useListsStorage = () => {
     if (!ok) {
       return { ok: false, error: 'storage' }
     }
+
+    setUntrackDeletedName(trimmedName)
 
     return { ok: true }
   }
@@ -203,17 +275,21 @@ export const useListsStorage = () => {
       return { ok: false, error: 'storage' }
     }
 
+    const savedAt = new Date().toISOString()
+
     const nextItems = [...existingItems]
     nextItems[index] = {
       name: trimmedName,
       items: normalizeListItems(items),
-      savedAt: new Date().toISOString()
+      savedAt
     }
 
     const ok = setParsedStorage(nextItems)
     if (!ok) {
       return { ok: false, error: 'storage' }
     }
+
+    setUntrackDeletedName(trimmedName)
 
     return { ok: true }
   }
@@ -226,7 +302,62 @@ export const useListsStorage = () => {
     const nextItems = existingItems.filter((item) => item.name !== trimmedName)
     if (nextItems.length === existingItems.length) return false
 
-    return setParsedStorage(nextItems)
+    const ok = setParsedStorage(nextItems)
+
+    if (!ok) {
+      return false
+    }
+
+    setTrackDeletedName(trimmedName)
+
+    return true
+  }
+
+  const setReplaceListsStorageItems = (
+    items: ListStorage[],
+    options?: { clearDeletedNames?: boolean }
+  ) => {
+    if (!process.client) {
+      return false
+    }
+
+    const normalized = items
+      .map((entry): ListStorage | null => {
+        const name = toStringOrNull(entry?.name)
+        const savedAt = toStringOrNull(entry?.savedAt)
+        const rawItems = Array.isArray(entry?.items) ? entry.items : []
+
+        if (!name || !savedAt) {
+          return null
+        }
+
+        return {
+          name,
+          items: normalizeListItems(rawItems),
+          savedAt
+        }
+      })
+      .filter((entry): entry is ListStorage => entry !== null)
+
+    const ok = setParsedStorage(normalized)
+
+    if (!ok) {
+      return false
+    }
+
+    if (options?.clearDeletedNames) {
+      setParsedDeletedNames([])
+    }
+
+    return true
+  }
+
+  const getDeletedListsStorageNames = () => {
+    return getParsedDeletedNames()
+  }
+
+  const setClearDeletedListsStorageNames = () => {
+    return setParsedDeletedNames([])
   }
 
   return {
@@ -235,6 +366,9 @@ export const useListsStorage = () => {
     getListStorageItemByName,
     setListStorageItem,
     setUpdatedListStorageItemByName,
-    deleteListStorageItemByName
+    deleteListStorageItemByName,
+    setReplaceListsStorageItems,
+    getDeletedListsStorageNames,
+    setClearDeletedListsStorageNames
   }
 }
