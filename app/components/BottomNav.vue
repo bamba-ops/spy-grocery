@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { Bot, Home, Search, ShoppingBag, List } from 'lucide-vue-next'
 import { useListsStore } from '~/stores/lists'
+import { useAuthStore } from '~/stores/auth'
 import AiChatbot from '~/components/ai/AiChatbot.vue'
 
 const lists = useListsStore()
+const authStore = useAuthStore()
 const isAiChatOpen = ref(false)
 
 const route = useRoute()
@@ -13,6 +15,24 @@ const isLists = computed(() => route.path.startsWith('/lists'))
 
 const setToggleAiChatPanel = () => {
   isAiChatOpen.value = !isAiChatOpen.value
+}
+
+const setOpenLists = async () => {
+  if (!authStore.isReady) {
+    await authStore.initAuth()
+  }
+
+  if (authStore.user) {
+    await navigateTo('/lists')
+    return
+  }
+
+  authStore.setOpenAuthPrompt({
+    title: 'Your lists, saved for later',
+    description: 'Create an account to keep all your lists in one place and access them anytime.',
+    nextPath: '/lists',
+    ctaLabel: 'Sign in to continue'
+  })
 }
 </script>
 
@@ -45,16 +65,18 @@ const setToggleAiChatPanel = () => {
           <Search class="h-5 w-5" />
         </NuxtLink>
 
-        <NuxtLink
-          to="/lists"
+        <button
+          type="button"
           :class="[
-            'inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:h-11 sm:w-11',
+            'inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:cursor-not-allowed disabled:opacity-40 sm:h-11 sm:w-11',
             isLists ? 'bg-white text-black' : 'text-white/80'
           ]"
+          :disabled="authStore.isLoading"
           aria-label="Lists"
+          @click="setOpenLists"
         >
           <List class="h-5 w-5" />
-        </NuxtLink>
+        </button>
 
         <button
           :class="[

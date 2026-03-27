@@ -4,7 +4,8 @@ import { useListsStore } from '~/stores/lists'
 const listsStore = useListsStore()
 
 definePageMeta({
-  layout: 'bottom-nav'
+  layout: 'bottom-nav',
+  middleware: 'auth'
 })
 
 useHead({

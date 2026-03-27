@@ -443,6 +443,21 @@ export const useListsStore = defineStore('lists', {
     },
 
     async setSaveOrUpdateCurrentList() {
+      const authUser = await this.getCurrentAuthUser()
+
+      if (!authUser) {
+        const authStore = useAuthStore()
+
+        authStore.setOpenAuthPrompt({
+          title: 'Save your grocery lists',
+          description: 'Sign in to keep your lists synced, reusable, and ready whenever you come back.',
+          nextPath: '/lists',
+          ctaLabel: 'Sign in to save'
+        })
+
+        return false
+      }
+
       if (this.currentListSourceName) {
         return this.setUpdatedCurrentList()
       }

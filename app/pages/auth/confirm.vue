@@ -3,6 +3,7 @@ import { Loader2 } from 'lucide-vue-next'
 import { useAuthStore } from '~/stores/auth'
 
 const DEFAULT_NEXT_PATH = '/search'
+const LOGIN_NEXT_STORAGE_KEY = 'spygrocery:auth:next-path'
 
 const authStore = useAuthStore()
 const route = useRoute()
@@ -32,8 +33,36 @@ const getSafeNextPath = (value: string | null) => {
   return trimmed
 }
 
+const getStoredNextPath = () => {
+  if (!process.client) {
+    return null
+  }
+
+  const value = window.sessionStorage.getItem(LOGIN_NEXT_STORAGE_KEY)
+
+  if (!value) {
+    return null
+  }
+
+  return value
+}
+
+const clearStoredNextPath = () => {
+  if (!process.client) {
+    return
+  }
+
+  window.sessionStorage.removeItem(LOGIN_NEXT_STORAGE_KEY)
+}
+
 const nextPath = computed(() => {
-  return getSafeNextPath(getSingleQueryValue(route.query.next as string | string[] | undefined))
+  const nextFromQuery = getSingleQueryValue(route.query.next as string | string[] | undefined)
+
+  if (nextFromQuery) {
+    return getSafeNextPath(nextFromQuery)
+  }
+
+  return getSafeNextPath(getStoredNextPath())
 })
 
 const wait = async (ms: number) => {
@@ -59,6 +88,7 @@ const setFinalizeAuth = async () => {
 
     if (authStore.user) {
       statusMessage.value = 'Session restored. Redirecting...'
+      clearStoredNextPath()
       await navigateTo(nextPath.value, { replace: true })
       return
     }

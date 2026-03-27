@@ -4,6 +4,10 @@ import { useAuthStore } from '~/stores/auth'
 
 const authStore = useAuthStore()
 
+definePageMeta({
+  middleware: 'guest'
+})
+
 onMounted(() => {
   authStore.setInitializeLoginPage()
 })

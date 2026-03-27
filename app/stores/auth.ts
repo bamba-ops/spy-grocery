@@ -5,6 +5,40 @@ import { useAuth } from '~/composables/useAuth'
 
 const DEFAULT_ERROR_MESSAGE = 'Something went wrong. Please try again.'
 const DEFAULT_NEXT_PATH = '/search'
+const LOGIN_NEXT_STORAGE_KEY = 'spygrocery:auth:next-path'
+const DEFAULT_AUTH_PROMPT_TITLE = 'Sign in to continue'
+const DEFAULT_AUTH_PROMPT_DESCRIPTION = 'Create an account to unlock this feature.'
+const DEFAULT_AUTH_PROMPT_CTA_LABEL = 'Continue to login'
+
+const setStoredNextPath = (value: string) => {
+  if (!process.client) {
+    return
+  }
+
+  window.sessionStorage.setItem(LOGIN_NEXT_STORAGE_KEY, value)
+}
+
+const getStoredNextPath = () => {
+  if (!process.client) {
+    return null
+  }
+
+  const value = window.sessionStorage.getItem(LOGIN_NEXT_STORAGE_KEY)
+
+  if (!value) {
+    return null
+  }
+
+  return value
+}
+
+const clearStoredNextPath = () => {
+  if (!process.client) {
+    return
+  }
+
+  window.sessionStorage.removeItem(LOGIN_NEXT_STORAGE_KEY)
+}
 
 const getIsMissingAuthSessionError = (message: string | undefined, name: string | undefined) => {
   const normalizedMessage = message?.toLowerCase().trim() || ''
@@ -66,6 +100,11 @@ export const useAuthStore = defineStore('auth', () => {
   const loginNextPath = ref(DEFAULT_NEXT_PATH)
   const loginHasAuthFailed = ref(false)
   const isLoginPageInitialized = ref(false)
+  const authPromptOpen = ref(false)
+  const authPromptTitle = ref(DEFAULT_AUTH_PROMPT_TITLE)
+  const authPromptDescription = ref(DEFAULT_AUTH_PROMPT_DESCRIPTION)
+  const authPromptNextPath = ref(DEFAULT_NEXT_PATH)
+  const authPromptCtaLabel = ref(DEFAULT_AUTH_PROMPT_CTA_LABEL)
 
   let stopLoginRouteWatcher: (() => void) | null = null
   let stopLoginUserWatcher: (() => void) | null = null
@@ -79,7 +118,15 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   const setSyncLoginRouteState = (query: Record<string, unknown>) => {
-    loginNextPath.value = getSafeNextPath(getSingleQueryValue(query.next))
+    const queryNextPath = getSingleQueryValue(query.next)
+
+    if (queryNextPath) {
+      loginNextPath.value = getSafeNextPath(queryNextPath)
+      setStoredNextPath(loginNextPath.value)
+    } else {
+      loginNextPath.value = getSafeNextPath(getStoredNextPath())
+    }
+
     loginHasAuthFailed.value = getSingleQueryValue(query.error) === 'auth_failed'
   }
 
@@ -125,6 +172,34 @@ export const useAuthStore = defineStore('auth', () => {
     stopLoginRouteWatcher = null
     stopLoginUserWatcher = null
     isLoginPageInitialized.value = false
+  }
+
+  const setOpenAuthPrompt = (options?: {
+    title?: string
+    description?: string
+    nextPath?: string
+    ctaLabel?: string
+  }) => {
+    authPromptTitle.value = options?.title?.trim() || DEFAULT_AUTH_PROMPT_TITLE
+    authPromptDescription.value = options?.description?.trim() || DEFAULT_AUTH_PROMPT_DESCRIPTION
+    authPromptNextPath.value = getSafeNextPath(options?.nextPath?.trim() || null)
+    authPromptCtaLabel.value = options?.ctaLabel?.trim() || DEFAULT_AUTH_PROMPT_CTA_LABEL
+    authPromptOpen.value = true
+  }
+
+  const setCloseAuthPrompt = () => {
+    authPromptOpen.value = false
+  }
+
+  const setContinueAuthPromptToLogin = async () => {
+    const nextPath = getSafeNextPath(authPromptNextPath.value)
+    setStoredNextPath(nextPath)
+    setCloseAuthPrompt()
+    await navigateTo(`/login?next=${encodeURIComponent(nextPath)}`)
+  }
+
+  const setClearStoredLoginNextPath = () => {
+    clearStoredNextPath()
   }
 
   const setResetLoginMagicLinkState = () => {
@@ -211,6 +286,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   const setSubmitLoginMagicLink = async () => {
     loginMagicLinkSent.value = false
+    setStoredNextPath(loginNextPath.value)
 
     const ok = await loginWithMagicLink(loginEmail.value, loginNextPath.value)
     if (!ok) {
@@ -222,6 +298,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   const setContinueLoginWithGoogle = async () => {
+    setStoredNextPath(loginNextPath.value)
     return loginWithGoogle(loginNextPath.value)
   }
 
@@ -239,6 +316,7 @@ export const useAuthStore = defineStore('auth', () => {
 
       user.value = null
       setSignedOutToast()
+      clearStoredNextPath()
       return true
     } finally {
       isLoading.value = false
@@ -250,6 +328,11 @@ export const useAuthStore = defineStore('auth', () => {
     isLoading,
     isReady,
     error,
+    authPromptOpen,
+    authPromptTitle,
+    authPromptDescription,
+    authPromptNextPath,
+    authPromptCtaLabel,
     loginEmail,
     loginMagicLinkSent,
     loginHasAuthFailed,
@@ -257,6 +340,10 @@ export const useAuthStore = defineStore('auth', () => {
     initAuth,
     setInitializeLoginPage,
     setDisposeLoginPage,
+    setOpenAuthPrompt,
+    setCloseAuthPrompt,
+    setContinueAuthPromptToLogin,
+    setClearStoredLoginNextPath,
     setResetLoginMagicLinkState,
     loginWithMagicLink,
     loginWithGoogle,

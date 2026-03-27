@@ -31,5 +31,15 @@ onMounted(() => {
       <NuxtPage />
     </NuxtLayout>
     <Sonner />
+    <ConfirmActionModal
+      :open="authStore.authPromptOpen"
+      eyebrow="Account required"
+      :title="authStore.authPromptTitle"
+      :message="authStore.authPromptDescription"
+      :confirm-text="authStore.authPromptCtaLabel"
+      cancel-text="Not now"
+      @close="authStore.setCloseAuthPrompt"
+      @confirm="authStore.setContinueAuthPromptToLogin"
+    />
   </div>
 </template>

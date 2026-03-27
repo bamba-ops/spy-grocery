@@ -226,7 +226,12 @@ export const useChatStore = defineStore('chat', () => {
     }
 
     if (!authStore.user) {
-      await navigateTo(`/login?next=${encodeURIComponent(DEFAULT_CHAT_LOGIN_NEXT_PATH)}`)
+      authStore.setOpenAuthPrompt({
+        title: 'Unlock Spy AI',
+        description: 'Sign in to save your conversations and build smarter grocery lists with AI.',
+        nextPath: DEFAULT_CHAT_LOGIN_NEXT_PATH,
+        ctaLabel: 'Sign in to use AI'
+      })
       return null
     }
 
@@ -262,7 +267,12 @@ export const useChatStore = defineStore('chat', () => {
     }
 
     if (!authStore.user) {
-      await navigateTo(`/login?next=${encodeURIComponent(DEFAULT_CHAT_LOGIN_NEXT_PATH)}`)
+      authStore.setOpenAuthPrompt({
+        title: 'Unlock Spy AI',
+        description: 'Sign in to save your conversations and build smarter grocery lists with AI.',
+        nextPath: DEFAULT_CHAT_LOGIN_NEXT_PATH,
+        ctaLabel: 'Sign in to use AI'
+      })
       return false
     }
 
