@@ -120,12 +120,12 @@ useHead({
           </button>
         </form>
 
-        <p class="mt-7 text-center text-xs text-white/45 sm:mt-8">
+        <!--<p class="mt-7 text-center text-xs text-white/45 sm:mt-8">
           By continuing, you agree to our
           <NuxtLink to="/" class="underline underline-offset-4 transition hover:text-white">Terms of Service</NuxtLink>
           and
           <NuxtLink to="/" class="underline underline-offset-4 transition hover:text-white">Privacy Policy</NuxtLink>.
-        </p>
+        </p>-->
 
         <p
           v-if="authStore.loginHasAuthFailed"
@@ -142,7 +142,7 @@ useHead({
         </p>
       </section>
 
-      <p class="mt-8 text-center text-xs text-white/45 sm:mt-10 sm:text-sm">
+      <!--<p class="mt-8 text-center text-xs text-white/45 sm:mt-10 sm:text-sm">
         New here?
         <NuxtLink
           to="/"
@@ -151,7 +151,7 @@ useHead({
           Explore the methodology
           <ArrowRight class="h-4 w-4" />
         </NuxtLink>
-      </p>
+      </p>-->
     </main>
   </div>
 </template>
