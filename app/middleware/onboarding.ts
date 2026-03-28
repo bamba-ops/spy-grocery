@@ -29,7 +29,16 @@ export default defineNuxtRouteMiddleware(async (to) => {
     }
 
     return navigateTo(ONBOARDING_ROUTE_PATH)
-  } catch (error) {
-    console.error('[onboarding] middleware check failed:', error)
+  } catch (error: any) {
+    const statusCode = Number(error?.statusCode || error?.response?.status || 0)
+
+    if (statusCode === 401) {
+      return
+    }
+
+    console.error('[onboarding] middleware check failed:', {
+      statusCode,
+      message: error?.message || 'Unknown onboarding middleware error'
+    })
   }
 })

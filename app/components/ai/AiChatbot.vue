@@ -231,14 +231,22 @@ watch(
 </script>
 
 <template>
-  <div
-    v-if="open"
-    class="fixed inset-x-4 bottom-20 z-50 sm:inset-x-auto sm:bottom-24 sm:right-6 sm:w-[min(46rem,calc(100vw-3rem))]"
+  <Transition
+    enter-active-class="transition-all duration-300 ease-out"
+    enter-from-class="translate-y-4 scale-[0.98] opacity-0"
+    enter-to-class="translate-y-0 scale-100 opacity-100"
+    leave-active-class="transition-all duration-200 ease-in"
+    leave-from-class="translate-y-0 scale-100 opacity-100"
+    leave-to-class="translate-y-3 scale-[0.98] opacity-0"
   >
-    <section
-      class="flex h-[min(78vh,640px)] w-full flex-col overflow-hidden rounded-[32px] border border-white/15 bg-black/90 shadow-[0_40px_100px_rgba(0,0,0,0.65)] backdrop-blur-md"
-      aria-label="Spy AI"
+    <div
+      v-if="open"
+      class="fixed inset-x-4 bottom-20 z-50 sm:inset-x-auto sm:bottom-24 sm:right-6 sm:w-[min(46rem,calc(100vw-3rem))]"
     >
+      <section
+        class="flex h-[min(78vh,640px)] w-full flex-col overflow-hidden rounded-[32px] border border-white/15 bg-black/90 shadow-[0_40px_100px_rgba(0,0,0,0.65)] backdrop-blur-md"
+        aria-label="Spy AI"
+      >
       <header class="flex items-center justify-between border-b border-white/10 px-5 py-4 sm:px-6">
         <div class="flex min-w-0 items-center gap-3">
           <button
@@ -419,17 +427,18 @@ watch(
         </form>
       </template>
 
-      <ConfirmActionModal
-        :open="isDeleteConfirmOpen"
-        eyebrow="Delete conversation"
-        title="Remove chat"
-        :message="`Are you sure you want to delete ${pendingDeleteChatTitle}?`"
-        confirm-text="Delete"
-        cancel-text="Cancel"
-        destructive
-        @close="setCloseDeleteConfirm"
-        @confirm="setConfirmDeleteChatSession"
-      />
-    </section>
-  </div>
+        <ConfirmActionModal
+          :open="isDeleteConfirmOpen"
+          eyebrow="Delete conversation"
+          title="Remove chat"
+          :message="`Are you sure you want to delete ${pendingDeleteChatTitle}?`"
+          confirm-text="Delete"
+          cancel-text="Cancel"
+          destructive
+          @close="setCloseDeleteConfirm"
+          @confirm="setConfirmDeleteChatSession"
+        />
+      </section>
+    </div>
+  </Transition>
 </template>

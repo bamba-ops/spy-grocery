@@ -80,7 +80,7 @@ const setOpenLists = async () => {
 
         <button
           :class="[
-            'inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:h-11 sm:w-11',
+            'inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black active:scale-95 sm:h-11 sm:w-11',
             isAiChatOpen ? 'bg-white text-black' : 'text-white/80 hover:text-white'
           ]"
           aria-label="Spy AI"
