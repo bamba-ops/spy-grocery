@@ -94,7 +94,7 @@ const normalizeListItems = (items: unknown[]): unknown[] => {
 
 export const useListsStorage = () => {
   const getParsedStorage = (): ListStorage[] => {
-    if (!process.client) return []
+    if (!import.meta.client) return []
 
     try {
       const raw = localStorage.getItem(LISTS_STORAGE_KEY)
@@ -127,7 +127,7 @@ export const useListsStorage = () => {
   }
 
   const setParsedStorage = (items: ListStorage[]) => {
-    if (!process.client) return false
+    if (!import.meta.client) return false
 
     try {
       localStorage.setItem(LISTS_STORAGE_KEY, JSON.stringify(items))
@@ -138,7 +138,7 @@ export const useListsStorage = () => {
   }
 
   const getParsedDeletedNames = (): string[] => {
-    if (!process.client) {
+    if (!import.meta.client) {
       return []
     }
 
@@ -162,7 +162,7 @@ export const useListsStorage = () => {
   }
 
   const setParsedDeletedNames = (names: string[]) => {
-    if (!process.client) {
+    if (!import.meta.client) {
       return false
     }
 
@@ -225,7 +225,7 @@ export const useListsStorage = () => {
   }
 
   const setListStorageItem = (name: string, items: unknown[]): ResultListStorage => {
-    if (!process.client) {
+    if (!import.meta.client) {
       return { ok: false, error: 'unavailable' }
     }
 
@@ -260,7 +260,7 @@ export const useListsStorage = () => {
   }
 
   const setUpdatedListStorageItemByName = (name: string, items: unknown[]): ResultListStorage => {
-    if (!process.client) {
+    if (!import.meta.client) {
       return { ok: false, error: 'unavailable' }
     }
 
@@ -317,7 +317,7 @@ export const useListsStorage = () => {
     items: ListStorage[],
     options?: { clearDeletedNames?: boolean }
   ) => {
-    if (!process.client) {
+    if (!import.meta.client) {
       return false
     }
 

@@ -149,16 +149,19 @@ Pense en couches: UI -> State -> Use-cases -> Data.
   - `middleware/`
     - `auth.ts` guard pages privees (`/lists`)
     - `guest.ts` garde login/guest
+    - `onboarding.ts` guard onboarding-first (`/search`, `/products/[slug]`, `/lists`)
   - `pages/`
     - `index.vue` landing
     - `login.vue` auth
     - `auth/confirm.vue` callback auth
+    - `onboarding.vue` onboarding AI guide
     - `search.vue` recherche
     - `products/[slug].vue` detail produit
     - `lists.vue` listes sauvegardees
   - `components/` (sections landing, search, lists, shared + `ai/AiChatbot.vue` + `BottomNavAuthAction.vue`)
   - `stores/` (Pinia)
     - `auth.ts`
+    - `onboarding.ts`
     - `lists.ts` (liste courante + listes sauvegardees)
     - `productDetails.ts`
     - `search.ts`
@@ -168,6 +171,7 @@ Pense en couches: UI -> State -> Use-cases -> Data.
     - `api/useStores.ts`
     - `api/useChat.ts`
     - `api/useChatSessions.ts`
+    - `api/useOnboarding.ts`
     - `api/useLists.ts`
     - `useAuth.ts`
     - `useListsStorage.ts`
@@ -182,15 +186,18 @@ Pense en couches: UI -> State -> Use-cases -> Data.
 
 - `server/`
   - `server/api/lists/*.ts`
+  - `server/api/onboarding/*.ts`
   - `server/api/stores/index.get.ts`
   - `server/api/products/search.get.ts`
   - `server/api/products/[slug].get.ts`
   - `server/api/ai/chat.post.ts`
   - `server/api/ai/sessions/*.ts`
   - `server/services/lists/listsService.ts`
+  - `server/services/onboarding/onboardingService.ts`
   - `server/services/ai/chatService.ts`
   - `server/services/ai/chatSessionsService.ts`
   - `server/repositories/listsRepository.ts`
+  - `server/repositories/onboardingRepository.ts`
   - `server/repositories/ai/productsSqlRepository.ts`
   - `server/repositories/ai/chatSessionsRepository.ts`
 

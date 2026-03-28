@@ -1,11 +1,17 @@
 <script setup lang="ts">
 import { Loader2 } from 'lucide-vue-next'
+import {
+  getIsBlockingOnboardingStatus,
+  ONBOARDING_ROUTE_PATH
+} from '#shared/utils/onboarding'
+import { useOnboarding } from '~/composables/api/useOnboarding'
 import { useAuthStore } from '~/stores/auth'
 
 const DEFAULT_NEXT_PATH = '/search'
 const LOGIN_NEXT_STORAGE_KEY = 'spygrocery:auth:next-path'
 
 const authStore = useAuthStore()
+const onboardingApi = useOnboarding()
 const route = useRoute()
 const supabase = useSupabaseClient()
 
@@ -34,7 +40,7 @@ const getSafeNextPath = (value: string | null) => {
 }
 
 const getStoredNextPath = () => {
-  if (!process.client) {
+  if (!import.meta.client) {
     return null
   }
 
@@ -48,7 +54,7 @@ const getStoredNextPath = () => {
 }
 
 const clearStoredNextPath = () => {
-  if (!process.client) {
+  if (!import.meta.client) {
     return
   }
 
@@ -69,6 +75,35 @@ const wait = async (ms: number) => {
   await new Promise((resolve) => setTimeout(resolve, ms))
 }
 
+const getPostLoginPath = async () => {
+  const intendedPath = nextPath.value
+
+  if (intendedPath.startsWith(ONBOARDING_ROUTE_PATH)) {
+    return intendedPath
+  }
+
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    try {
+      const onboardingState = await onboardingApi.getOnboardingState()
+
+      if (getIsBlockingOnboardingStatus(onboardingState.status)) {
+        return ONBOARDING_ROUTE_PATH
+      }
+
+      return intendedPath
+    } catch (error) {
+      if (attempt === 3) {
+        console.error('[onboarding] auth confirm onboarding check failed:', error)
+        break
+      }
+
+      await wait(200)
+    }
+  }
+
+  return intendedPath
+}
+
 const setFinalizeAuth = async () => {
   const authCode = getSingleQueryValue(route.query.code as string | string[] | undefined)
 
@@ -76,8 +111,13 @@ const setFinalizeAuth = async () => {
     const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(authCode)
 
     if (exchangeError) {
-      await navigateTo('/login?error=auth_failed', { replace: true })
-      return
+      await authStore.initAuth()
+      await authStore.refreshUser()
+
+      if (!authStore.user) {
+        await navigateTo('/login?error=auth_failed', { replace: true })
+        return
+      }
     }
   }
 
@@ -88,8 +128,9 @@ const setFinalizeAuth = async () => {
 
     if (authStore.user) {
       statusMessage.value = 'Session restored. Redirecting...'
+      const destinationPath = await getPostLoginPath()
       clearStoredNextPath()
-      await navigateTo(nextPath.value, { replace: true })
+      await navigateTo(destinationPath, { replace: true })
       return
     }
 

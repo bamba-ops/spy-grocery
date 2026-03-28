@@ -5,7 +5,7 @@ const listsStore = useListsStore()
 
 definePageMeta({
   layout: 'bottom-nav',
-  middleware: 'auth'
+  middleware: ['auth', 'onboarding']
 })
 
 useHead({

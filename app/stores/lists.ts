@@ -202,7 +202,7 @@ export const useListsStore = defineStore('lists', {
     },
 
     setListsSyncedToast(created: number, updated: number, deleted: number) {
-      if (!process.client) {
+      if (!import.meta.client) {
         return
       }
 
@@ -230,7 +230,7 @@ export const useListsStore = defineStore('lists', {
     },
 
     setListsSyncErrorToast() {
-      if (!process.client) {
+      if (!import.meta.client) {
         return
       }
 
@@ -361,7 +361,7 @@ export const useListsStore = defineStore('lists', {
     },
 
     setProductAddedToast(product: Product) {
-      if (!process.client) return
+      if (!import.meta.client) return
 
       toast.success(product.title, {
         description: `${product.store} - added to your list.`
@@ -369,7 +369,7 @@ export const useListsStore = defineStore('lists', {
     },
 
     setListSavedToast(name: string) {
-      if (!process.client) return
+      if (!import.meta.client) return
 
       toast.success(name, {
         description: 'List saved successfully.'
@@ -377,7 +377,7 @@ export const useListsStore = defineStore('lists', {
     },
 
     setListClearedToast() {
-      if (!process.client) return
+      if (!import.meta.client) return
 
       toast.success('List cleared', {
         description: 'Your current list is now empty.'
@@ -385,7 +385,7 @@ export const useListsStore = defineStore('lists', {
     },
 
     setListDeletedToast(name: string) {
-      if (!process.client) return
+      if (!import.meta.client) return
 
       toast.success(name, {
         description: 'List deleted successfully.'
@@ -393,7 +393,7 @@ export const useListsStore = defineStore('lists', {
     },
 
     setListUpdatedToast(name: string) {
-      if (!process.client) return
+      if (!import.meta.client) return
 
       toast.success(name, {
         description: 'List updated successfully.'

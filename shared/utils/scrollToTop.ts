@@ -1,5 +1,5 @@
 export function scrollToTop() {
-  if (process.client) {
+  if (import.meta.client) {
     const maybeWindow = (globalThis as { window?: unknown }).window
 
     if (!maybeWindow || typeof maybeWindow !== 'object') {

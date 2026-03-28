@@ -57,6 +57,7 @@ It lets users search products once and compare prices across stores, then build 
   - normal assistant mode (streamed text answers),
   - grocery-list mode (`createListMode`) that streams a structured list data part for UI preview/add-to-list.
 - AI chat sessions (`/api/ai/sessions*`) with persisted `UIMessage[]` snapshots.
+- AI-guided onboarding (`/onboarding`) with 3 steps toward a first generated grocery list and add-to-current-list completion.
 
 ### Tech Stack
 - Nuxt 4 + Vue 3
@@ -229,6 +230,27 @@ body: {
 }
 ```
 
+#### Onboarding API (authenticated)
+
+`GET /api/onboarding`
+```ts
+{
+  onboarding: OnboardingState
+}
+```
+
+`PATCH /api/onboarding`
+```ts
+body: {
+  status?: 'not_started' | 'in_progress' | 'completed' | 'skipped'
+  current_step?: 1 | 2 | 3
+  first_intent?: string | null
+  first_chat_session_id?: string | null
+  has_preview?: boolean
+  has_added_list?: boolean
+}
+```
+
 #### `POST /api/ai/chat`
 Streaming chat endpoint used by the AI chat panel on `/search`.
 
@@ -338,6 +360,7 @@ Behavior:
 - [Structure guide](docs/STRUCTURE.md)
 - [Supabase DB overview](docs/SUPABASE_DB.md)
 - [Styling guide](docs/STYLING.md)
+- [Onboarding contract](docs/ONBOARDING.md)
 
 ---
 
@@ -362,6 +385,7 @@ Elle permet de rechercher des produits, comparer les prix entre magasins, puis c
   - mode assistant normal (réponses texte streamées),
   - mode création de liste (`createListMode`) qui stream une data part structurée pour prévisualiser/ajouter la liste.
 - Sessions chat IA (`/api/ai/sessions*`) avec persistance snapshot `UIMessage[]`.
+- Onboarding guidé par IA (`/onboarding`) en 3 étapes vers une première liste générée et ajoutée à la liste courante.
 
 ### Stack technique
 - Nuxt 4 + Vue 3
@@ -534,6 +558,27 @@ body: {
 }
 ```
 
+#### API onboarding (authentifiée)
+
+`GET /api/onboarding`
+```ts
+{
+  onboarding: OnboardingState
+}
+```
+
+`PATCH /api/onboarding`
+```ts
+body: {
+  status?: 'not_started' | 'in_progress' | 'completed' | 'skipped'
+  current_step?: 1 | 2 | 3
+  first_intent?: string | null
+  first_chat_session_id?: string | null
+  has_preview?: boolean
+  has_added_list?: boolean
+}
+```
+
 #### `POST /api/ai/chat`
 Endpoint de chat en streaming utilisé par le panneau IA sur `/search`.
 
@@ -643,3 +688,4 @@ Comportement:
 - [Guide structure](docs/STRUCTURE.md)
 - [Vue d'ensemble Supabase DB](docs/SUPABASE_DB.md)
 - [Guide styling](docs/STYLING.md)
+- [Contrat onboarding](docs/ONBOARDING.md)

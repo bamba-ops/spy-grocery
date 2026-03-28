@@ -168,6 +168,63 @@ export type Database = {
           }
         ]
       }
+      onboarding: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          current_step: number
+          first_chat_session_id: string | null
+          first_intent: string | null
+          has_added_list: boolean
+          has_preview: boolean
+          skipped_at: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          current_step?: number
+          first_chat_session_id?: string | null
+          first_intent?: string | null
+          has_added_list?: boolean
+          has_preview?: boolean
+          skipped_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          current_step?: number
+          first_chat_session_id?: string | null
+          first_intent?: string | null
+          has_added_list?: boolean
+          has_preview?: boolean
+          skipped_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'onboarding_first_chat_session_id_fkey'
+            columns: ['first_chat_session_id']
+            isOneToOne: false
+            referencedRelation: 'ai_chat_sessions'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'onboarding_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: true
+            referencedRelation: 'users'
+            referencedColumns: ['id']
+          }
+        ]
+      }
       products: {
         Row: {
           article_number: string | null

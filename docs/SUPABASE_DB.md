@@ -11,13 +11,15 @@ This document reflects the current production-like Supabase state inspected via 
   - `product_prices`
   - `lists`
   - `ai_chat_sessions`
+  - `onboarding`
 - No public views are currently present (`latest_price` no longer exists).
 
 Current row counts:
 - `products`: `5,362`
 - `product_prices`: `5,311`
 - `lists`: `0`
-- `ai_chat_sessions`: `2`
+- `ai_chat_sessions`: `0`
+- `onboarding`: `0`
 
 ## Data Model
 
@@ -26,11 +28,14 @@ Logical model:
 - `product_prices` is historical price tracking per product observation.
 - `lists` stores authenticated user saved lists (`items_json` payload).
 - `ai_chat_sessions` stores authenticated user chat sessions (`messages_json` payload).
+- `onboarding` stores authenticated user onboarding progression.
 
 Database-level relationship:
 - `product_prices.product_id -> products.id` (`ON DELETE CASCADE`)
 - `lists.user_id -> auth.users.id` (`ON DELETE CASCADE`)
 - `ai_chat_sessions.user_id -> auth.users.id` (`ON DELETE CASCADE`)
+- `onboarding.user_id -> auth.users.id` (`ON DELETE CASCADE`)
+- `onboarding.first_chat_session_id -> ai_chat_sessions.id` (`ON DELETE SET NULL`)
 
 Key uniqueness:
 - `products.slug` is unique.
@@ -39,6 +44,7 @@ Key uniqueness:
 - `lists` enforces one list name per user:
   - `(user_id, name)`
 - `ai_chat_sessions` uses UUID PK and user/time indexes (no unique per-title constraint).
+- `onboarding` enforces one row per user (`user_id` PK).
 
 ## Tables
 
@@ -150,6 +156,32 @@ Important indexes:
 - `ai_chat_sessions_pkey` (PK)
 - `ai_chat_sessions_user_updated_at_idx` (`user_id`, `updated_at desc`)
 
+### `public.onboarding`
+
+Purpose:
+- Persist one onboarding state row per authenticated user.
+
+Primary key:
+- `user_id uuid` (FK -> `auth.users.id`)
+
+Key columns:
+- `user_id uuid`
+- `status text` (`not_started`, `in_progress`, `completed`, `skipped`)
+- `current_step integer` (`1..3`)
+- `first_intent text`
+- `first_chat_session_id uuid` (nullable FK -> `ai_chat_sessions.id`)
+- `has_preview boolean`
+- `has_added_list boolean`
+- `completed_at timestamptz`
+- `skipped_at timestamptz`
+- `created_at timestamptz`
+- `updated_at timestamptz`
+
+Important indexes:
+- `onboarding_pkey` (PK)
+- `onboarding_first_chat_session_id_idx` (`first_chat_session_id`)
+- `onboarding_updated_at_idx` (`updated_at desc`)
+
 ## Views and Functions
 
 - `public` views: none.
@@ -181,6 +213,13 @@ Current `public.ai_chat_sessions` RLS status:
   - `ai_chat_sessions_delete_own`
   - owner rule: `auth.uid() = user_id` (with explicit null checks)
 
+Current `public.onboarding` RLS status:
+- RLS: enabled
+- Policy: `onboarding_owner_all`
+  - role: `authenticated`
+  - `USING (auth.uid() = user_id)`
+  - `WITH CHECK (auth.uid() = user_id)`
+
 Reference:
 - https://supabase.com/docs/guides/database/database-linter?lint=0013_rls_disabled_in_public
 - https://supabase.com/docs/guides/database/database-linter?lint=0011_function_search_path_mutable
@@ -188,6 +227,9 @@ Reference:
 Performance advisory currently reported:
 - `auth_rls_initplan` on `public.lists` policy `lists_owner_all`
 - `auth_rls_initplan` on `public.ai_chat_sessions` policies (`select/insert/update/delete`)
+- `auth_rls_initplan` on `public.onboarding` policy `onboarding_owner_all`
+- `unused_index` on `onboarding_first_chat_session_id_idx`
+- `unused_index` on `onboarding_updated_at_idx`
 - `unused_index` on `products_created_at_price_idx`
 
 Reference:
@@ -212,6 +254,8 @@ Applied migrations currently visible:
 - `20260321174045 fix_exec_readonly_sql_from_join_regex`
 - `20260321194006 drop_exec_readonly_sql_rpc_for_chat`
 - `20260321203210 recreate_execute_sql_fn_after_drop`
+- `20260327214906 create_onboarding_table`
+- `20260327220732 add_onboarding_first_chat_session_index`
 
 Note:
 - `public.lists` and `public.ai_chat_sessions` were created directly via SQL (MCP execute SQL), so they may not appear in `supabase_migrations.schema_migrations` history yet.
@@ -289,6 +333,19 @@ Auth contract:
 - All sessions endpoints require authenticated user context.
 - Ownership is enforced in query filters (`id` + `user_id`) and by RLS.
 
+### Onboarding API (authenticated)
+
+Storage:
+- `public.onboarding`
+
+Endpoints:
+- `GET /api/onboarding` -> `{ onboarding: OnboardingState }`
+- `PATCH /api/onboarding` -> `{ onboarding: OnboardingState }`
+
+Auth contract:
+- All onboarding endpoints require authenticated user context.
+- Ownership is enforced by RLS (`auth.uid() = user_id`).
+
 ### `POST /api/ai/chat`
 
 Purpose:
@@ -327,5 +384,6 @@ Operational note:
 - Keep `product_prices` for analytics/history workflows.
 - Lists cloud persistence uses `public.lists`; frontend remains local-first with sync on authenticated sessions.
 - AI conversation persistence uses `public.ai_chat_sessions` (`messages_json` snapshots).
+- Onboarding progression persistence uses `public.onboarding`.
 - Chatbot must not depend on `product_prices` for current V1 behavior.
 - If schema is uncertain, re-check with Supabase MCP before coding.

@@ -4,7 +4,8 @@ import { useProductDetailsStore } from '~/stores/productDetails'
 import { useListsStore } from '~/stores/lists'
 
 definePageMeta({
-  layout: 'bottom-nav'
+  layout: 'bottom-nav',
+  middleware: 'onboarding'
 })
 
 const route = useRoute()

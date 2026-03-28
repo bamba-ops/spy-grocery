@@ -149,13 +149,14 @@ const setRetryLoadChatSessions = async () => {
 
 const setOpenMostRecentSessionIfAvailable = async () => {
   const sessions = await chatStore.setLoadChatSessions({ force: true })
+  const mostRecentSession = sessions[0]
 
-  if (sessions.length === 0) {
+  if (!mostRecentSession) {
     panelView.value = 'sessions'
     return
   }
 
-  chatStore.setHydrateCurrentChatFromSession(sessions[0])
+  chatStore.setHydrateCurrentChatFromSession(mostRecentSession)
   panelView.value = 'chat'
 
   nextTick(() => {

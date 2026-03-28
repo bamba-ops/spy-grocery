@@ -24,7 +24,7 @@ const getSafeNextPath = (value: string | null) => {
 }
 
 const getStoredNextPath = () => {
-  if (!process.client) {
+  if (!import.meta.client) {
     return null
   }
 
@@ -38,7 +38,7 @@ const getStoredNextPath = () => {
 }
 
 const clearStoredNextPath = () => {
-  if (!process.client) {
+  if (!import.meta.client) {
     return
   }
 

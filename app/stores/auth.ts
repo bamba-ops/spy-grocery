@@ -11,7 +11,7 @@ const DEFAULT_AUTH_PROMPT_DESCRIPTION = 'Create an account to unlock this featur
 const DEFAULT_AUTH_PROMPT_CTA_LABEL = 'Continue to login'
 
 const setStoredNextPath = (value: string) => {
-  if (!process.client) {
+  if (!import.meta.client) {
     return
   }
 
@@ -19,7 +19,7 @@ const setStoredNextPath = (value: string) => {
 }
 
 const getStoredNextPath = () => {
-  if (!process.client) {
+  if (!import.meta.client) {
     return null
   }
 
@@ -33,7 +33,7 @@ const getStoredNextPath = () => {
 }
 
 const clearStoredNextPath = () => {
-  if (!process.client) {
+  if (!import.meta.client) {
     return
   }
 
@@ -79,7 +79,7 @@ const getSafeNextPath = (value: string | null) => {
 }
 
 const setSignedOutToast = () => {
-  if (!process.client) {
+  if (!import.meta.client) {
     return
   }
 
