@@ -25,6 +25,7 @@ const setAddPreviewToCurrentList = async () => {
 
 onMounted(async () => {
   await onboardingStore.setLoadOnboardingState({ force: true })
+  onboardingStore.setConsumeHeroPrompt()
 
   if (onboardingStore.status === 'completed') {
     await navigateTo('/search')

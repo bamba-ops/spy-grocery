@@ -1,7 +1,7 @@
 import type { User } from '@supabase/supabase-js'
 import { defineStore } from 'pinia'
 import { toast } from 'vue-sonner'
-import { useAuth } from '~/composables/useAuth'
+import { useAuth } from '~/composables/supabase/useAuth'
 
 const DEFAULT_ERROR_MESSAGE = 'Something went wrong. Please try again.'
 const DEFAULT_NEXT_PATH = '/search'

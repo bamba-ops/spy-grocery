@@ -8,7 +8,7 @@ import type {
   PersistedList
 } from '#shared/types/lists'
 import { useLists } from '~/composables/api/useLists'
-import { useListsStorage } from '~/composables/useListsStorage'
+import { useListsStorage } from '~/composables/local/useListsStorage'
 import { useAuthStore } from '~/stores/auth'
 
 type ListsSort = 'recent' | 'name' | 'total'

@@ -14,6 +14,7 @@ import {
   ONBOARDING_MAX_INTENT_LENGTH,
   ONBOARDING_MAX_STEP
 } from '#shared/utils/onboarding'
+import { useOnboardingStorage } from '~/composables/local/useOnboardingStorage'
 import { useChat } from '~/composables/api/useChat'
 import { useChatSessions } from '~/composables/api/useChatSessions'
 import { useOnboarding } from '~/composables/api/useOnboarding'
@@ -22,6 +23,7 @@ import { useListsStore } from '~/stores/lists'
 
 export const useOnboardingStore = defineStore('onboarding', () => {
   const onboardingApi = useOnboarding()
+  const onboardingStorage = useOnboardingStorage()
   const { chat, sendMessage, getLatestAssistantListPayload } = useChat()
   const chatSessionsApi = useChatSessions()
   const authStore = useAuthStore()
@@ -360,6 +362,28 @@ export const useOnboardingStore = defineStore('onboarding', () => {
     firstIntent.value = prompt
   }
 
+  const setConsumeHeroPrompt = () => {
+    const heroPrompt = onboardingStorage.getOnboardingHeroPrompt()
+    onboardingStorage.deleteOnboardingHeroPrompt()
+
+    if (!heroPrompt) {
+      return false
+    }
+
+    const canHydrateIntent = currentStep.value === ONBOARDING_DEFAULT_STEP
+      && !hasPreview.value
+      && !hasAddedList.value
+      && status.value !== 'completed'
+      && firstIntent.value.trim().length === 0
+
+    if (!canHydrateIntent) {
+      return false
+    }
+
+    firstIntent.value = heroPrompt
+    return true
+  }
+
   return {
     quickPrompts,
     loading,
@@ -382,6 +406,7 @@ export const useOnboardingStore = defineStore('onboarding', () => {
     getCanResume,
     setIntent,
     setUseQuickPrompt,
+    setConsumeHeroPrompt,
     setLoadOnboardingState,
     setSubmitIntent,
     setBackToIntentStep,
