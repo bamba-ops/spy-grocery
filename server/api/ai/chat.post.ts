@@ -71,7 +71,7 @@ export default defineEventHandler(async (event) => {
 
     const runtimeConfig = useRuntimeConfig()
     const aiGatewayApiKey = runtimeConfig.aiGatewayApiKey?.toString().trim()
-    const aiGatewayModel = runtimeConfig.aiGatewayModel?.toString().trim() || 'openai/gpt-5-nano'
+    const aiGatewayModel = runtimeConfig.aiGatewayModel?.toString().trim()
 
     if (!aiGatewayApiKey) {
       throw createError({

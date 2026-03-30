@@ -214,13 +214,6 @@ useHead({
           >
             Regenerate list
           </button>
-
-          <NuxtLink
-            to="/search"
-            class="inline-flex h-11 items-center rounded-full border border-white/20 bg-white px-5 text-[10px] uppercase tracking-[0.35em] text-black transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-          >
-            Continue to search
-          </NuxtLink>
         </div>
       </section>
     </main>

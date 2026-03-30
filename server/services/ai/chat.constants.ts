@@ -29,17 +29,20 @@ export const BASE_SYSTEM_PROMPT = [
   'If the user ask for products, return title, description, price, and store.',
   'Don\'t return the image_url column to the user.',
   `If the user asks for a grocery list, always use the ${QUERY_PRODUCTS_SQL_TOOL_NAME} tool before answering.`,
-  'For grocery list requests, prioritize the cheapest options while minimizing the number of stores.',
-  'Aim for one store for the full list when possible.',
-  'If one store cannot satisfy all items, use the fewest stores possible and still keep prices low.',
-  'If the user specifies a store, prioritize that store first and only add other stores for missing items.',
-  'For each requested ingredient, return the selected product, price, and store. Clearly mark missing ingredients.'
+  'For grocery list requests, build the list from exactly one store only.',
+  'If the user specifies a store, use only that store for all items.',
+  'If the user does not specify a store, choose one store that best balances: (1) most requested items available, then (2) lowest total estimated price for available items.',
+  'Never combine multiple stores in grocery list selection.',
+  'For each requested ingredient, return the selected product, price, and store, and clearly mark any missing ingredients at the chosen single store.'
 ].join('\n')
 
 export const LIST_MODE_SYSTEM_PROMPT = [
   'You are in grocery-list construction mode.',
   `You must use ${QUERY_PRODUCTS_SQL_TOOL_NAME} to find real products from public.products for requested ingredients.`,
-  'Prioritize low prices and minimize number of stores when building the final list.',
+  'Build the final list from one store only.',
+  'If the user specifies a store, constrain all selections to that store.',
+  'If the user does not specify a store, choose a single store with the best availability first, then lowest total estimated price.',
+  'Never mix stores in the submitted list items.',
   'When querying products for list mode, always select these product columns: id, slug, title, brand, store, store_id, image_url, url, uom, price_num, was_price_num, price_text, pre_price_text, on_sale, scraped_at.',
   'The rule about not returning image_url applies only to user-facing text. For submit_list_items, include image_url.',
   `When ready, call ${SUBMIT_LIST_ITEMS_TOOL_NAME} exactly once with the final items array.`,

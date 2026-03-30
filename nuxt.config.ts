@@ -5,7 +5,7 @@ export default defineNuxtConfig({
   modules: ['@nuxtjs/tailwindcss', '@nuxtjs/supabase', 'shadcn-nuxt'],
   runtimeConfig: {
     aiGatewayApiKey: process.env.NUXT_AI_GATEWAY_API_KEY || '',
-    aiGatewayModel: process.env.NUXT_AI_GATEWAY_MODEL || 'openai/gpt-5-nano'
+    aiGatewayModel: process.env.NUXT_AI_GATEWAY_MODEL 
   },
   imports: {
     dirs: ['~/composables/**']

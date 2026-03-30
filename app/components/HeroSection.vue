@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowRight, Sparkles } from 'lucide-vue-next'
+import { ArrowRight } from 'lucide-vue-next'
 import { ONBOARDING_MAX_INTENT_LENGTH } from '#shared/utils/onboarding'
 import { useOnboardingStorage } from '~/composables/local/useOnboardingStorage'
 import { useAuthStore } from '~/stores/auth'
@@ -8,6 +8,20 @@ const authStore = useAuthStore()
 const onboardingStorage = useOnboardingStorage()
 
 const heroPrompt = ref('')
+const isPromptFocused = ref(false)
+const typewriterSuffixes = [
+  'for a week under $120',
+  'for a family of 4 this weekend',
+  'with the cheapest protein options',
+  'for gluten-free essentials only'
+]
+const typewriterPrefix = 'Describe your cart: '
+const typewriterText = ref('')
+
+let typewriterTimer: ReturnType<typeof setTimeout> | null = null
+let suffixIndex = 0
+let charIndex = 0
+let isDeleting = false
 
 const quickPrompts = [
   'Weekly groceries for 2 under $80',
@@ -18,6 +32,10 @@ const quickPrompts = [
 
 const getCanSubmitPrompt = computed(() => {
   return heroPrompt.value.trim().length > 0
+})
+
+const showTypewriterPlaceholder = computed(() => {
+  return heroPrompt.value.trim().length === 0 && !isPromptFocused.value
 })
 
 const setUseQuickPrompt = (value: string) => {
@@ -45,6 +63,61 @@ const setSubmitPrompt = async () => {
   authStore.setClearStoredLoginNextPath()
   await navigateTo('/login')
 }
+
+const setScheduleTypewriterStep = (delay: number) => {
+  if (!import.meta.client) {
+    return
+  }
+
+  if (typewriterTimer) {
+    clearTimeout(typewriterTimer)
+  }
+
+  typewriterTimer = setTimeout(() => {
+    setTypewriterStep()
+  }, delay)
+}
+
+const setTypewriterStep = () => {
+  const currentSuffix = typewriterSuffixes[suffixIndex] || ''
+
+  if (!isDeleting) {
+    charIndex = Math.min(charIndex + 1, currentSuffix.length)
+    typewriterText.value = currentSuffix.slice(0, charIndex)
+
+    if (charIndex >= currentSuffix.length) {
+      isDeleting = true
+      setScheduleTypewriterStep(900)
+      return
+    }
+
+    setScheduleTypewriterStep(45)
+    return
+  }
+
+  charIndex = Math.max(charIndex - 1, 0)
+  typewriterText.value = currentSuffix.slice(0, charIndex)
+
+  if (charIndex === 0) {
+    isDeleting = false
+    suffixIndex = (suffixIndex + 1) % typewriterSuffixes.length
+    setScheduleTypewriterStep(260)
+    return
+  }
+
+  setScheduleTypewriterStep(28)
+}
+
+onMounted(() => {
+  setScheduleTypewriterStep(220)
+})
+
+onBeforeUnmount(() => {
+  if (typewriterTimer) {
+    clearTimeout(typewriterTimer)
+    typewriterTimer = null
+  }
+})
 </script>
 
 <template>
@@ -66,17 +139,25 @@ const setSubmitPrompt = async () => {
         <form class="mt-8 max-w-4xl sm:mt-10" @submit.prevent="setSubmitPrompt">
           <div class="rounded-[28px] border border-white/15 bg-black/80 p-2 shadow-[0_30px_80px_rgba(0,0,0,0.55)] sm:flex sm:items-center sm:gap-2 sm:rounded-full">
             <div class="flex items-center gap-2 sm:flex-1">
-              <div class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white/70">
-                <Sparkles class="h-4 w-4" />
-              </div>
+              <div class="relative min-w-0 flex-1">
+                <input
+                  v-model="heroPrompt"
+                  type="text"
+                  :maxlength="ONBOARDING_MAX_INTENT_LENGTH"
+                  placeholder=""
+                  class="h-11 min-w-0 w-full bg-transparent px-2 text-sm text-white focus:outline-none sm:h-12 sm:text-base"
+                  @focus="isPromptFocused = true"
+                  @blur="isPromptFocused = false"
+                >
 
-              <input
-                v-model="heroPrompt"
-                type="text"
-                :maxlength="ONBOARDING_MAX_INTENT_LENGTH"
-                placeholder="Describe your cart: 1 week for 2 adults, budget $120, Maxi + Super C..."
-                class="h-11 min-w-0 flex-1 bg-transparent px-2 text-sm text-white placeholder:text-white/40 focus:outline-none sm:h-12 sm:text-base"
-              >
+                <div
+                  v-if="showTypewriterPlaceholder"
+                  class="pointer-events-none absolute inset-y-0 left-2 flex max-w-[calc(100%-0.5rem)] items-center text-sm text-white/40 sm:text-base"
+                >
+                  <span class="truncate">{{ typewriterPrefix }}{{ typewriterText }}</span>
+                  <span class="ml-1 h-4 w-px shrink-0 bg-white/60 animate-pulse" aria-hidden="true"></span>
+                </div>
+              </div>
             </div>
 
             <button
