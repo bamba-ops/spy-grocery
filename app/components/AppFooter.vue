@@ -7,8 +7,8 @@ const footerColumns = [
     links: ['Price Search', 'Store Map', 'Retail List']
   },
   {
-    title: 'Company',
-    links: ['About Us', 'Privacy', 'Contact']
+    title: 'Legal',
+    links: ['Terms of services', 'Privacy policy', 'Licenses']
   }
 ]
 </script>
@@ -36,16 +36,16 @@ const footerColumns = [
         </div>
 
         <div>
-          <h4 class="text-[10px] uppercase tracking-[0.35em] text-white/60">Updates</h4>
-          <p class="mt-4 text-sm text-white/70">Get early beta and price alerts.</p>
+          <h4 class="text-[10px] uppercase tracking-[0.35em] text-white/60">Basket alerts</h4>
+          <p class="mt-4 text-sm text-white/70">Subscribe to get the cheapest cart picks and weekly price drops.</p>
           <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
             <input
               type="email"
-              placeholder="Email address"
+              placeholder="Your email for cheap carts"
               class="h-11 w-full rounded-full border border-white/20 bg-transparent px-4 text-[10px] uppercase tracking-[0.25em] text-white placeholder:text-white/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
             />
             <button class="h-11 w-full rounded-full border border-white/20 px-4 text-[10px] uppercase tracking-[0.3em] text-white transition hover:border-white/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:w-auto">
-              Subscribe
+              Get alerts
             </button>
           </div>
         </div>
@@ -53,11 +53,6 @@ const footerColumns = [
 
       <div class="mt-10 flex flex-col items-start justify-between gap-3 border-t border-white/10 pt-6 text-[10px] uppercase tracking-[0.35em] text-white/40 sm:flex-row">
         <span>© {{ currentYear }} Spygrocery</span>
-        <div class="flex gap-6">
-          <a href="#" class="hover:text-white">Privacy</a>
-          <a href="#" class="hover:text-white">Terms</a>
-          <a href="#" class="hover:text-white">Security</a>
-        </div>
       </div>
     </div>
   </footer>
