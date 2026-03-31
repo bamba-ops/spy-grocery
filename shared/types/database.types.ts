@@ -262,7 +262,9 @@ export type Database = {
           source_url: string
           store: string
           store_id: string | null
+          store_slug: string | null
           title: string | null
+          title_slug: string | null
           unit_price_full: string | null
           uom: string | null
           url: string | null
@@ -305,7 +307,9 @@ export type Database = {
           source_url: string
           store: string
           store_id?: string | null
+          store_slug?: string | null
           title?: string | null
+          title_slug?: string | null
           unit_price_full?: string | null
           uom?: string | null
           url?: string | null
@@ -348,7 +352,9 @@ export type Database = {
           source_url?: string
           store?: string
           store_id?: string | null
+          store_slug?: string | null
           title?: string | null
+          title_slug?: string | null
           unit_price_full?: string | null
           uom?: string | null
           url?: string | null

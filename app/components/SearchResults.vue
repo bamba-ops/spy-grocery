@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Plus } from 'lucide-vue-next'
+import { getProductRoutePath } from '#shared/utils/productRoute'
 import { useSearchStore } from '~/stores/search'
 import { useListsStore } from '~/stores/lists'
 
@@ -55,7 +56,7 @@ const getSafeProductUrl = (url: string | null) => {
               On sale
             </div>
             <NuxtLink
-              :to="`/products/${product.slug}`"
+              :to="getProductRoutePath(product)"
               class="relative block aspect-[16/9] overflow-hidden rounded-t-2xl border-b border-white/10 bg-black transition hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:aspect-square"
             >
               <template v-if="searchStore.getProductImageDisplay(product.image_url, product.title).type === 'url'">
@@ -77,7 +78,7 @@ const getSafeProductUrl = (url: string | null) => {
           <div class="flex flex-1 flex-col p-3 sm:p-5">
             <p class="text-[9px] uppercase tracking-[0.28em] text-white/60 sm:text-[10px] sm:tracking-[0.35em]">{{ product.store }}</p>
             <NuxtLink
-              :to="`/products/${product.slug}`"
+              :to="getProductRoutePath(product)"
               class="mt-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:mt-2"
             >
               <h3

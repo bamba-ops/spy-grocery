@@ -16,7 +16,7 @@ export default defineEventHandler(async (event) => {
   const query = getQuery(event)
 
   const searchQuery = query.q?.toString().trim() || ''
-  const store = query.store?.toString().trim() || 'all'
+  const store = query.store?.toString().trim().toLowerCase() || 'all'
   const sortParam = query.sort?.toString().trim() || 'price_asc'
   const limit = Math.min(toPositiveInt(query.limit?.toString(), 50), 100)
   const offset = toPositiveInt(query.offset?.toString(), 0)

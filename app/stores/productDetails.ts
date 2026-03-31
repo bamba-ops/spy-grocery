@@ -1,12 +1,15 @@
 import { defineStore } from 'pinia'
 import type { SearchProduct } from '#shared/types'
+import { getProductRoutePath } from '#shared/utils/productRoute'
 
 export const useProductDetailsStore = defineStore('productDetails', {
   state: () => ({
     product: null as SearchProduct | null,
     otherStoreProducts: [] as SearchProduct[],
     loading: false,
-    error: null as string | null
+    error: null as string | null,
+    canonicalPath: null as string | null,
+    shouldRedirect: false
   }),
 
   getters: {
@@ -26,6 +29,8 @@ export const useProductDetailsStore = defineStore('productDetails', {
         this.product = null
         this.otherStoreProducts = []
         this.error = 'Invalid product slug.'
+        this.canonicalPath = null
+        this.shouldRedirect = false
         this.loading = false
         return
       }
@@ -39,10 +44,50 @@ export const useProductDetailsStore = defineStore('productDetails', {
 
         this.product = response.product
         this.otherStoreProducts = response.otherStoreProducts || []
+        this.canonicalPath = getProductRoutePath(response.product)
+        this.shouldRedirect = false
       } catch (error: unknown) {
         this.product = null
         this.otherStoreProducts = []
         this.error = error instanceof Error ? error.message : 'Could not load product details.'
+        this.canonicalPath = null
+        this.shouldRedirect = false
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async getProductDetailsByRoute(storeSlug: string, productSlug: string) {
+      const normalizedStoreSlug = storeSlug.trim()
+      const normalizedProductSlug = productSlug.trim()
+
+      if (!normalizedStoreSlug || !normalizedProductSlug) {
+        this.product = null
+        this.otherStoreProducts = []
+        this.error = 'Invalid product route.'
+        this.canonicalPath = null
+        this.shouldRedirect = false
+        this.loading = false
+        return
+      }
+
+      this.loading = true
+      this.error = null
+
+      try {
+        const { getByRoute } = useProducts()
+        const response = await getByRoute(normalizedStoreSlug, normalizedProductSlug)
+
+        this.product = response.product
+        this.otherStoreProducts = response.otherStoreProducts || []
+        this.canonicalPath = response.canonicalPath
+        this.shouldRedirect = response.shouldRedirect
+      } catch (error: unknown) {
+        this.product = null
+        this.otherStoreProducts = []
+        this.error = error instanceof Error ? error.message : 'Could not load product details.'
+        this.canonicalPath = null
+        this.shouldRedirect = false
       } finally {
         this.loading = false
       }

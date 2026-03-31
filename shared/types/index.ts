@@ -5,11 +5,14 @@ export type DbProductPrice = Database['public']['Tables']['product_prices']['Row
 
 export interface SearchProduct {
   id: string
+  external_id?: string | null
   slug: string
+  title_slug?: string | null
   title: string
   description?: string | null
   brand: string | null
   store: string
+  store_slug?: string | null
   store_id: string | null
   image_url: string | null
   url: string | null
@@ -31,4 +34,16 @@ export interface StoreFacet {
   name: string
   slug: string
   product_count: number
+}
+
+export interface StoreOverviewResponse {
+  store: {
+    slug: string
+    name: string
+    productCount: number
+    activeSpecialsCount: number
+    lastUpdatedAt: string | null
+  }
+  latestPromos: SearchProduct[]
+  bestProducts: SearchProduct[]
 }

@@ -50,11 +50,14 @@ interface BuildSingleStoreListRowsResult {
 
 const SELECT_FIELDS = [
   'id',
+  'external_id',
   'slug',
+  'title_slug',
   'title',
   'description',
   'brand',
   'store',
+  'store_slug',
   'store_id',
   'image_url',
   'url',
@@ -179,7 +182,7 @@ export const searchProductsRows = async (supabase: any, params: SearchProductsRo
     if (/^[0-9]+$/.test(params.store)) {
       dbQuery = dbQuery.eq('store_id', params.store)
     } else {
-      dbQuery = dbQuery.ilike('slug', `${params.store}-%`)
+      dbQuery = dbQuery.or(`store_slug.eq.${params.store},store_id.eq.${params.store}`)
     }
   }
 
@@ -213,6 +216,29 @@ export const getProductRowBySlug = async (supabase: any, slug: string): Promise<
     throw createError({
       statusCode: 500,
       message: `Failed to fetch product by slug: ${error.message}`
+    })
+  }
+
+  return (data as DbProduct | null) ?? null
+}
+
+export const getProductRowByStoreAndExternalId = async (
+  supabase: any,
+  storeSlug: string,
+  externalId: string
+): Promise<DbProduct | null> => {
+  const { data, error } = await supabase
+    .from('products')
+    .select(SELECT_FIELDS)
+    .eq('store_slug', storeSlug)
+    .eq('external_id', externalId)
+    .limit(1)
+    .maybeSingle()
+
+  if (error) {
+    throw createError({
+      statusCode: 500,
+      message: `Failed to fetch product by route: ${error.message}`
     })
   }
 

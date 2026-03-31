@@ -1,4 +1,4 @@
-import type { StoreFacet } from '#shared/types'
+import type { StoreFacet, StoreOverviewResponse } from '#shared/types'
 
 interface StoresResponse {
   stores: StoreFacet[]
@@ -10,7 +10,12 @@ export const useStores = () => {
     return response?.stores || []
   }
 
+  const fetchStoreOverview = async (storeSlug: string): Promise<StoreOverviewResponse> => {
+    return $fetch<StoreOverviewResponse>(`/api/stores/${encodeURIComponent(storeSlug)}`)
+  }
+
   return {
-    fetchStores
+    fetchStores,
+    fetchStoreOverview
   }
 }

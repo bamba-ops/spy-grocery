@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref, type ComponentPublicInstance } from 'vue'
 
 const features = [
   {
@@ -25,7 +25,10 @@ const features = [
 const videoElements = ref<Array<HTMLVideoElement | null>>([])
 let visibilityObserver: IntersectionObserver | null = null
 
-const setVideoElement = (element: Element | null, index: number) => {
+const setVideoElement = (
+  element: Element | ComponentPublicInstance | null,
+  index: number
+) => {
   videoElements.value[index] = element instanceof HTMLVideoElement ? element : null
 }
 

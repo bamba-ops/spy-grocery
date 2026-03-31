@@ -19,11 +19,14 @@ const toPagination = (offset: number, limit: number, total: number) => ({
 
 const toSearchProduct = (row: DbProduct): SearchProduct => ({
   id: row.id,
+  external_id: row.external_id,
   slug: row.slug,
+  title_slug: row.title_slug,
   title: row.title || '',
   description: row.description ?? null,
   brand: row.brand,
   store: row.store,
+  store_slug: row.store_slug,
   store_id: row.store_id,
   image_url: row.image_url,
   url: row.url,
