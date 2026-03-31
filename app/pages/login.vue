@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowRight, Chrome, Loader2, Mail } from 'lucide-vue-next'
+import { Chrome, Loader2, Mail } from 'lucide-vue-next'
 import { useAuthStore } from '~/stores/auth'
 
 const authStore = useAuthStore()
@@ -120,12 +120,12 @@ useHead({
           </button>
         </form>
 
-        <!--<p class="mt-7 text-center text-xs text-white/45 sm:mt-8">
+        <p class="mt-7 text-center text-xs text-white/45 sm:mt-8">
           By continuing, you agree to our
-          <NuxtLink to="/" class="underline underline-offset-4 transition hover:text-white">Terms of Service</NuxtLink>
+          <NuxtLink to="/terms" class="underline underline-offset-4 transition hover:text-white">Terms of Service</NuxtLink>
           and
-          <NuxtLink to="/" class="underline underline-offset-4 transition hover:text-white">Privacy Policy</NuxtLink>.
-        </p>-->
+          <NuxtLink to="/privacy" class="underline underline-offset-4 transition hover:text-white">Privacy Policy</NuxtLink>.
+        </p>
 
         <p
           v-if="authStore.loginHasAuthFailed"

@@ -4,11 +4,19 @@ const currentYear = new Date().getFullYear()
 const footerColumns = [
   {
     title: 'Tools',
-    links: ['Price Search', 'Store Map', 'Retail List']
+    links: [
+      { label: 'Price Search', to: '/search' },
+      { label: 'Store Map', to: '/search' },
+      { label: 'Retail List', to: '/lists' }
+    ]
   },
   {
     title: 'Legal',
-    links: ['Terms of services', 'Privacy policy', 'Licenses']
+    links: [
+      { label: 'Terms of services', to: '/terms' },
+      { label: 'Privacy policy', to: '/privacy' },
+      { label: 'Licenses', to: '/licenses' }
+    ]
   }
 ]
 </script>
@@ -28,27 +36,18 @@ const footerColumns = [
           <div v-for="column in footerColumns" :key="column.title">
             <h4 class="text-[10px] uppercase tracking-[0.35em] text-white/60">{{ column.title }}</h4>
             <ul class="mt-4 space-y-3 text-xs uppercase tracking-[0.25em] text-white/70">
-              <li v-for="link in column.links" :key="link">
-                <a href="#" class="transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black">{{ link }}</a>
+              <li v-for="link in column.links" :key="link.label">
+                <NuxtLink
+                  :to="link.to"
+                  class="transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                >
+                  {{ link.label }}
+                </NuxtLink>
               </li>
             </ul>
           </div>
         </div>
 
-        <div>
-          <h4 class="text-[10px] uppercase tracking-[0.35em] text-white/60">Basket alerts</h4>
-          <p class="mt-4 text-sm text-white/70">Subscribe to get the cheapest cart picks and weekly price drops.</p>
-          <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
-            <input
-              type="email"
-              placeholder="Your email for cheap carts"
-              class="h-11 w-full rounded-full border border-white/20 bg-transparent px-4 text-[10px] uppercase tracking-[0.25em] text-white placeholder:text-white/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-            />
-            <button class="h-11 w-full rounded-full border border-white/20 px-4 text-[10px] uppercase tracking-[0.3em] text-white transition hover:border-white/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:w-auto">
-              Get alerts
-            </button>
-          </div>
-        </div>
       </div>
 
       <div class="mt-10 flex flex-col items-start justify-between gap-3 border-t border-white/10 pt-6 text-[10px] uppercase tracking-[0.35em] text-white/40 sm:flex-row">
