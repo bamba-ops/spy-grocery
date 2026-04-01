@@ -145,7 +145,7 @@ onMounted(() => {
 })
 
 useHead({
-  title: 'Confirm Session — SpyGrocery',
+  title: 'Confirmation de session - SpyGrocery',
   link: [
     {
       rel: 'preconnect',

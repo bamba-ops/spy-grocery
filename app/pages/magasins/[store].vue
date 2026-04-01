@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ArrowUpRight } from 'lucide-vue-next'
+import { getRouteParam } from '#shared/utils/getRouteParam'
 import { getProductRoutePath } from '#shared/utils/productRoute'
+import { toPageError } from '#shared/utils/toPageError'
 import { useStoreOverviewStore } from '~/stores/storeOverview'
 
 definePageMeta({
@@ -9,16 +11,12 @@ definePageMeta({
 })
 
 const route = useRoute()
+const runtimeConfig = useRuntimeConfig()
+const siteUrl = (runtimeConfig.public.siteUrl || 'https://spygrocery.com').replace(/\/$/, '')
 const storeOverview = useStoreOverviewStore()
 
 const storeSlug = computed(() => {
-  const value = route.params.store
-
-  if (Array.isArray(value)) {
-    return value[0] || ''
-  }
-
-  return typeof value === 'string' ? value : ''
+  return getRouteParam(route.params.store as string | string[] | undefined)
 })
 
 const getSafeProductUrl = (url: string | null) => {
@@ -31,17 +29,141 @@ const getSafeProductUrl = (url: string | null) => {
 
 watch(
   storeSlug,
-  (nextStoreSlug) => {
+  (nextStoreSlug, previousStoreSlug) => {
+    if (nextStoreSlug === previousStoreSlug) {
+      return
+    }
+
     void storeOverview.loadStoreOverview(nextStoreSlug)
   },
-  { immediate: true }
+  { immediate: false }
 )
 
+if (!storeSlug.value) {
+  throw createError({
+    statusCode: 400,
+    message: 'Invalid store slug'
+  })
+}
+
+try {
+  await storeOverview.loadStoreOverview(storeSlug.value, { throwOnError: true })
+} catch (error: unknown) {
+  throw toPageError(error, 'Could not load store overview.')
+}
+
+if (!storeOverview.storeName) {
+  throw createError({
+    statusCode: 404,
+    message: 'Store not found'
+  })
+}
+
+const canonicalPath = computed(() => {
+  const slug = storeOverview.storeSlug || storeSlug.value
+  return `/magasins/${encodeURIComponent(slug)}`
+})
+
+const canonicalUrl = computed(() => `${siteUrl}${canonicalPath.value}`)
+
+const seoTitle = computed(() => {
+  const storeName = storeOverview.storeName || storeSlug.value
+  return `${storeName} - aubaines et meilleurs produits en epicerie | SpyGrocery`
+})
+
+const seoDescription = computed(() => {
+  const storeName = storeOverview.storeName || storeSlug.value
+  return `${storeName} propose ${storeOverview.activeSpecialsCount} aubaines actives et ${storeOverview.productCount} produits suivis sur SpyGrocery.`
+})
+
+const seoJsonLd = computed(() => {
+  const itemListElement = storeOverview.bestProducts.slice(0, 10).map((product, index) => ({
+    '@type': 'ListItem',
+    position: index + 1,
+    url: `${siteUrl}${getProductRoutePath(product)}`,
+    name: product.title
+  }))
+
+  const collectionPageSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: seoTitle.value,
+    description: seoDescription.value,
+    url: canonicalUrl.value,
+    numberOfItems: storeOverview.productCount,
+    mainEntity: {
+      '@type': 'ItemList',
+      itemListElement
+    }
+  }
+
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Accueil',
+        item: `${siteUrl}/`
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: storeOverview.storeName,
+        item: canonicalUrl.value
+      }
+    ]
+  }
+
+  return [collectionPageSchema, breadcrumbSchema]
+})
+
 useHead(() => ({
-  title: storeOverview.storeName
-    ? `${storeOverview.storeName} - Specials and top products | SpyGrocery`
-    : 'Store overview - SpyGrocery',
+  title: seoTitle.value,
+  meta: [
+    {
+      name: 'description',
+      content: seoDescription.value
+    },
+    {
+      name: 'robots',
+      content: 'index,follow'
+    },
+    {
+      property: 'og:title',
+      content: seoTitle.value
+    },
+    {
+      property: 'og:description',
+      content: seoDescription.value
+    },
+    {
+      property: 'og:type',
+      content: 'website'
+    },
+    {
+      property: 'og:url',
+      content: canonicalUrl.value
+    },
+    {
+      name: 'twitter:card',
+      content: 'summary_large_image'
+    },
+    {
+      name: 'twitter:title',
+      content: seoTitle.value
+    },
+    {
+      name: 'twitter:description',
+      content: seoDescription.value
+    }
+  ],
   link: [
+    {
+      rel: 'canonical',
+      href: canonicalUrl.value
+    },
     {
       rel: 'preconnect',
       href: 'https://fonts.googleapis.com'
@@ -55,7 +177,11 @@ useHead(() => ({
       rel: 'stylesheet',
       href: 'https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,600;0,700;1,600&family=Manrope:wght@400;500;600&display=swap'
     }
-  ]
+  ],
+  script: seoJsonLd.value.map((data) => ({
+    type: 'application/ld+json',
+    children: JSON.stringify(data)
+  }))
 }))
 </script>
 

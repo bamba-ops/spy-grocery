@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ArrowUpRight } from 'lucide-vue-next'
+import { getRouteParam } from '#shared/utils/getRouteParam'
 import { getProductRoutePath } from '#shared/utils/productRoute'
+import { toPageError } from '#shared/utils/toPageError'
 import { useProductDetailsStore } from '~/stores/productDetails'
 import { useListsStore } from '~/stores/lists'
 
@@ -10,27 +12,17 @@ definePageMeta({
 })
 
 const route = useRoute()
+const runtimeConfig = useRuntimeConfig()
+const siteUrl = (runtimeConfig.public.siteUrl || 'https://spygrocery.com').replace(/\/$/, '')
 const productDetails = useProductDetailsStore()
 const lists = useListsStore()
 
 const storeSlug = computed(() => {
-  const value = route.params.store
-
-  if (Array.isArray(value)) {
-    return value[0] || ''
-  }
-
-  return typeof value === 'string' ? value : ''
+  return getRouteParam(route.params.store as string | string[] | undefined)
 })
 
 const productSlug = computed(() => {
-  const value = route.params.product
-
-  if (Array.isArray(value)) {
-    return value[0] || ''
-  }
-
-  return typeof value === 'string' ? value : ''
+  return getRouteParam(route.params.product as string | string[] | undefined)
 })
 
 const getSafeProductUrl = (url: string | null) => {
@@ -49,6 +41,32 @@ const setAddCurrentProductToList = () => {
   lists.setProductInCurrentList(productDetails.product)
 }
 
+const loadProductPage = async (
+  nextStoreSlug: string,
+  nextProductSlug: string,
+  options: {
+    throwOnError?: boolean
+    serverRedirect?: boolean
+  } = {}
+) => {
+  const response = await productDetails.getProductDetailsByRoute(
+    nextStoreSlug,
+    nextProductSlug,
+    { throwOnError: options.throwOnError }
+  )
+
+  if (productDetails.shouldRedirect && productDetails.canonicalPath) {
+    if (options.serverRedirect && import.meta.server) {
+      await navigateTo(productDetails.canonicalPath, { redirectCode: 301 })
+      return response || null
+    }
+
+    await navigateTo(productDetails.canonicalPath, { replace: true })
+  }
+
+  return response || null
+}
+
 const storePath = computed(() => {
   const product = productDetails.product
 
@@ -65,35 +83,195 @@ const storePath = computed(() => {
   return `/magasins/${encodeURIComponent(resolvedStoreSlug)}`
 })
 
-watch(
-  [storeSlug, productSlug],
-  ([nextStoreSlug, nextProductSlug]) => {
-    void productDetails.getProductDetailsByRoute(nextStoreSlug, nextProductSlug)
-  },
-  { immediate: true }
-)
+if (!storeSlug.value || !productSlug.value) {
+  throw createError({
+    statusCode: 400,
+    message: 'Invalid product route parameters'
+  })
+}
+
+try {
+  await loadProductPage(storeSlug.value, productSlug.value, {
+    throwOnError: true,
+    serverRedirect: true
+  })
+} catch (error: unknown) {
+  throw toPageError(error, 'Could not load product details.')
+}
+
+if (!productDetails.product) {
+  throw createError({
+    statusCode: 404,
+    message: 'Product not found'
+  })
+}
+
+const canonicalPath = computed(() => {
+  if (productDetails.canonicalPath) {
+    return productDetails.canonicalPath
+  }
+
+  if (!productDetails.product) {
+    return route.path
+  }
+
+  return getProductRoutePath(productDetails.product)
+})
+
+const canonicalUrl = computed(() => {
+  const path = canonicalPath.value.startsWith('/') ? canonicalPath.value : `/${canonicalPath.value}`
+  return `${siteUrl}${path}`
+})
+
+const seoTitle = computed(() => {
+  const product = productDetails.product
+
+  if (!product) {
+    return 'Details du produit - SpyGrocery'
+  }
+
+  return `${product.title} chez ${product.store} | Comparez les prix en epicerie | SpyGrocery`
+})
+
+const seoDescription = computed(() => {
+  const product = productDetails.product
+
+  if (!product) {
+    return 'Consultez les details du produit et comparez les prix en epicerie au Quebec.'
+  }
+
+  const priceValue = productDetails.getFormattedPrice(product.price_num)
+  return `Consultez ${product.title} chez ${product.store}, prix actuel ${priceValue}$, et comparez les options dans les autres magasins.`
+})
+
+const seoJsonLd = computed(() => {
+  const product = productDetails.product
+
+  if (!product) {
+    return []
+  }
+
+  const productSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.title,
+    image: product.image_url ? [product.image_url] : undefined,
+    brand: product.brand ? { '@type': 'Brand', name: product.brand } : undefined,
+    description: product.description || undefined,
+    sku: product.external_id || undefined,
+    offers: {
+      '@type': 'Offer',
+      priceCurrency: 'CAD',
+      price: typeof product.price_num === 'number' ? product.price_num : undefined,
+      url: canonicalUrl.value,
+      availability: product.on_sale === false ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock'
+    }
+  }
+
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Accueil',
+        item: `${siteUrl}/`
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: product.store,
+        item: `${siteUrl}${storePath.value || ''}`
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: product.title,
+        item: canonicalUrl.value
+      }
+    ]
+  }
+
+  return [productSchema, breadcrumbSchema]
+})
 
 watch(
-  () => ({
-    shouldRedirect: productDetails.shouldRedirect,
-    canonicalPath: productDetails.canonicalPath,
-    currentPath: route.path
-  }),
-  ({ shouldRedirect, canonicalPath, currentPath }) => {
-    if (!shouldRedirect || !canonicalPath || canonicalPath === currentPath) {
+  [storeSlug, productSlug],
+  ([nextStoreSlug, nextProductSlug], [prevStoreSlug, prevProductSlug]) => {
+    if (nextStoreSlug === prevStoreSlug && nextProductSlug === prevProductSlug) {
       return
     }
 
-    void navigateTo(canonicalPath, { replace: true })
-  }
+    void loadProductPage(nextStoreSlug, nextProductSlug)
+  },
+  { immediate: false }
 )
 
 useHead(() => {
+  const productImage = productDetails.product?.image_url || null
+
   return {
-    title: productDetails.product
-      ? `${productDetails.product.title} - SpyGrocery`
-      : 'Product Details - SpyGrocery',
+    title: seoTitle.value,
+    meta: [
+      {
+        name: 'description',
+        content: seoDescription.value
+      },
+      {
+        name: 'robots',
+        content: 'index,follow'
+      },
+      {
+        property: 'og:title',
+        content: seoTitle.value
+      },
+      {
+        property: 'og:description',
+        content: seoDescription.value
+      },
+      {
+        property: 'og:type',
+        content: 'product'
+      },
+      {
+        property: 'og:url',
+        content: canonicalUrl.value
+      },
+      ...(productImage
+        ? [
+            {
+              property: 'og:image',
+              content: productImage
+            }
+          ]
+        : []),
+      {
+        name: 'twitter:card',
+        content: 'summary_large_image'
+      },
+      {
+        name: 'twitter:title',
+        content: seoTitle.value
+      },
+      {
+        name: 'twitter:description',
+        content: seoDescription.value
+      },
+      ...(productImage
+        ? [
+            {
+              name: 'twitter:image',
+              content: productImage
+            }
+          ]
+        : [])
+    ],
     link: [
+      {
+        rel: 'canonical',
+        href: canonicalUrl.value
+      },
       {
         rel: 'preconnect',
         href: 'https://fonts.googleapis.com'
@@ -107,7 +285,11 @@ useHead(() => {
         rel: 'stylesheet',
         href: 'https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,600;0,700;1,600&family=Manrope:wght@400;500;600&display=swap'
       }
-    ]
+    ],
+    script: seoJsonLd.value.map((data) => ({
+      type: 'application/ld+json',
+      children: JSON.stringify(data)
+    }))
   }
 })
 </script>

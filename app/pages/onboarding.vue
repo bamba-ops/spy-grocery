@@ -33,7 +33,7 @@ onMounted(async () => {
 })
 
 useHead({
-  title: 'Onboarding — SpyGrocery',
+  title: 'Parcours de demarrage - SpyGrocery',
   link: [
     {
       rel: 'preconnect',

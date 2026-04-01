@@ -2,7 +2,7 @@
 const lastUpdated = 'March 31, 2026'
 
 useHead({
-  title: 'Privacy Policy — SpyGrocery',
+  title: 'Politique de confidentialite - SpyGrocery',
   link: [
     {
       rel: 'preconnect',

@@ -12,7 +12,7 @@ const libraries = [
 ]
 
 useHead({
-  title: 'Licenses — SpyGrocery',
+  title: 'Licences - SpyGrocery',
   link: [
     {
       rel: 'preconnect',

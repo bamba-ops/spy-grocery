@@ -14,12 +14,12 @@ const getTimestamp = (value: string | null | undefined) => {
 }
 
 const getCanonicalProductPath = (row: SitemapProductRow) => {
-  if (row.store_slug && row.title_slug && row.external_id) {
-    const productSlug = `${row.title_slug}-${row.external_id}`
-    return `/produits/${encodeURIComponent(row.store_slug)}/${encodeURIComponent(productSlug)}`
+  if (!row.store_slug || !row.title_slug || !row.external_id) {
+    return null
   }
 
-  return `/products/${encodeURIComponent(row.slug)}`
+  const productSlug = `${row.title_slug}-${row.external_id}`
+  return `/produits/${encodeURIComponent(row.store_slug)}/${encodeURIComponent(productSlug)}`
 }
 
 const getGlobalLastmod = (rows: SitemapProductRow[]) => {
@@ -78,6 +78,10 @@ const getProductEntries = (rows: SitemapProductRow[]) => {
 
   rows.forEach((row) => {
     const loc = getCanonicalProductPath(row)
+    if (!loc) {
+      return
+    }
+
     const lastmod = row.scraped_at || undefined
     const existing = productMap.get(loc)
 

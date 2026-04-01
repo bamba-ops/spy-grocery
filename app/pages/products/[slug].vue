@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { Loader2 } from 'lucide-vue-next'
 import { getProductRoutePath } from '#shared/utils/productRoute'
-import { useProductDetailsStore } from '~/stores/productDetails'
+import { getRouteParam } from '#shared/utils/getRouteParam'
+import { toPageError } from '#shared/utils/toPageError'
 
 definePageMeta({
   layout: 'bottom-nav',
@@ -9,38 +10,50 @@ definePageMeta({
 })
 
 const route = useRoute()
-const productDetails = useProductDetailsStore()
+const runtimeConfig = useRuntimeConfig()
+const siteUrl = (runtimeConfig.public.siteUrl || 'https://spygrocery.com').replace(/\/$/, '')
 
-const slug = computed(() => {
-  const value = route.params.slug
+const slug = getRouteParam(route.params.slug as string | string[] | undefined).trim()
 
-  if (Array.isArray(value)) {
-    return value[0] || ''
+if (!slug) {
+  throw createError({
+    statusCode: 400,
+    message: 'Invalid product slug'
+  })
+}
+
+const { getBySlug } = useProducts()
+let canonicalPath = route.path
+
+try {
+  const response = await getBySlug(slug)
+  canonicalPath = getProductRoutePath(response.product)
+} catch (error: unknown) {
+  throw toPageError(error, 'Product not found')
+}
+
+if (canonicalPath !== route.path) {
+  if (import.meta.server) {
+    await navigateTo(canonicalPath, { redirectCode: 301 })
+  } else {
+    await navigateTo(canonicalPath, { replace: true })
   }
+}
 
-  return typeof value === 'string' ? value : ''
+const canonicalUrl = `${siteUrl}${canonicalPath.startsWith('/') ? canonicalPath : `/${canonicalPath}`}`
+
+useServerSeoMeta({
+  title: 'Redirection produit - SpyGrocery',
+  robots: 'noindex,follow'
 })
 
-watch(
-  slug,
-  async (nextSlug) => {
-    await productDetails.getProductDetailsBySlug(nextSlug)
-
-    if (!productDetails.product) {
-      return
-    }
-
-    const canonicalPath = getProductRoutePath(productDetails.product)
-
-    if (canonicalPath && canonicalPath !== route.path) {
-      await navigateTo(canonicalPath, { replace: true })
-    }
-  },
-  { immediate: true }
-)
-
 useHead({
-  title: 'Redirecting product — SpyGrocery'
+  link: [
+    {
+      rel: 'canonical',
+      href: canonicalUrl
+    }
+  ]
 })
 </script>
 
@@ -59,10 +72,6 @@ useHead({
 
         <p class="mt-5 text-sm text-white/80 sm:text-base">
           Please wait while we load the latest product route.
-        </p>
-
-        <p v-if="productDetails.error" class="mt-5 rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm text-white/80">
-          {{ productDetails.error }}
         </p>
       </section>
     </main>

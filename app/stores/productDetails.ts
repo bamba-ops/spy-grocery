@@ -1,6 +1,11 @@
 import { defineStore } from 'pinia'
 import type { SearchProduct } from '#shared/types'
 import { getProductRoutePath } from '#shared/utils/productRoute'
+import type { ProductDetailsByRouteResponse, ProductDetailsResponse } from '#shared/types/product-details'
+
+interface LoadOptions {
+  throwOnError?: boolean
+}
 
 export const useProductDetailsStore = defineStore('productDetails', {
   state: () => ({
@@ -22,7 +27,7 @@ export const useProductDetailsStore = defineStore('productDetails', {
       return formatPrice(price)
     },
 
-    async getProductDetailsBySlug(slug: string) {
+    async getProductDetailsBySlug(slug: string, options: LoadOptions = {}) {
       const normalizedSlug = slug.trim()
 
       if (!normalizedSlug) {
@@ -46,18 +51,28 @@ export const useProductDetailsStore = defineStore('productDetails', {
         this.otherStoreProducts = response.otherStoreProducts || []
         this.canonicalPath = getProductRoutePath(response.product)
         this.shouldRedirect = false
+
+        return response as ProductDetailsResponse
       } catch (error: unknown) {
         this.product = null
         this.otherStoreProducts = []
         this.error = error instanceof Error ? error.message : 'Could not load product details.'
         this.canonicalPath = null
         this.shouldRedirect = false
+
+        if (options.throwOnError) {
+          throw error
+        }
       } finally {
         this.loading = false
       }
     },
 
-    async getProductDetailsByRoute(storeSlug: string, productSlug: string) {
+    async getProductDetailsByRoute(
+      storeSlug: string,
+      productSlug: string,
+      options: LoadOptions = {}
+    ) {
       const normalizedStoreSlug = storeSlug.trim()
       const normalizedProductSlug = productSlug.trim()
 
@@ -82,12 +97,18 @@ export const useProductDetailsStore = defineStore('productDetails', {
         this.otherStoreProducts = response.otherStoreProducts || []
         this.canonicalPath = response.canonicalPath
         this.shouldRedirect = response.shouldRedirect
+
+        return response as ProductDetailsByRouteResponse
       } catch (error: unknown) {
         this.product = null
         this.otherStoreProducts = []
         this.error = error instanceof Error ? error.message : 'Could not load product details.'
         this.canonicalPath = null
         this.shouldRedirect = false
+
+        if (options.throwOnError) {
+          throw error
+        }
       } finally {
         this.loading = false
       }

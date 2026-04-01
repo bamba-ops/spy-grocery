@@ -1,6 +1,10 @@
 import { defineStore } from 'pinia'
-import type { SearchProduct } from '#shared/types'
+import type { SearchProduct, StoreOverviewResponse } from '#shared/types'
 import { toSlug } from '#shared/utils/toSlug'
+
+interface LoadOptions {
+  throwOnError?: boolean
+}
 
 export const useStoreOverviewStore = defineStore('storeOverview', {
   state: () => ({
@@ -42,7 +46,7 @@ export const useStoreOverviewStore = defineStore('storeOverview', {
       return formatPrice(price)
     },
 
-    async loadStoreOverview(storeParam: string) {
+    async loadStoreOverview(storeParam: string, options: LoadOptions = {}) {
       const normalizedStoreSlug = toSlug(storeParam)
 
       if (!normalizedStoreSlug) {
@@ -72,6 +76,8 @@ export const useStoreOverviewStore = defineStore('storeOverview', {
         this.lastUpdatedAt = response.store.lastUpdatedAt
         this.latestPromos = response.latestPromos || []
         this.bestProducts = response.bestProducts || []
+
+        return response as StoreOverviewResponse
       } catch (error: unknown) {
         this.error = error instanceof Error ? error.message : 'Could not load store overview.'
         this.storeSlug = normalizedStoreSlug
@@ -81,6 +87,10 @@ export const useStoreOverviewStore = defineStore('storeOverview', {
         this.lastUpdatedAt = null
         this.latestPromos = []
         this.bestProducts = []
+
+        if (options.throwOnError) {
+          throw error
+        }
       } finally {
         this.loading = false
       }

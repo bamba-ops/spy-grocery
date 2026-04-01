@@ -2,7 +2,7 @@
 const lastUpdated = 'March 31, 2026'
 
 useHead({
-  title: 'Terms of Service — SpyGrocery',
+  title: 'Conditions de service - SpyGrocery',
   link: [
     {
       rel: 'preconnect',

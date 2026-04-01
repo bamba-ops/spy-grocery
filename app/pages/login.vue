@@ -17,7 +17,7 @@ onBeforeUnmount(() => {
 })
 
 useHead({
-  title: 'Login — SpyGrocery',
+  title: 'Connexion - SpyGrocery',
   link: [
     {
       rel: 'preconnect',
