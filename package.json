@@ -1,0 +1,35 @@
+{
+  "name": "spygrocery",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "@ai-sdk/vue": "^3.0.134",
+    "@nuxtjs/supabase": "^2.0.3",
+    "@vueuse/core": "^14.2.0",
+    "ai": "^6.0.134",
+    "lucide-vue-next": "^0.487.0",
+    "nuxt": "^4.1.3",
+    "nuxt-lucide-icons": "^2.0.0",
+    "pinia": "^3.0.4",
+    "shadcn-nuxt": "^2.4.3",
+    "vue": "^3.5.27",
+    "vue-router": "^4.6.4",
+    "vue-sonner": "^2.0.9",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@nuxtjs/robots": "^6.0.6",
+    "@nuxtjs/sitemap": "^8.0.11",
+    "@nuxtjs/tailwindcss": "^6.14.0"
+  },
+  "overrides": {
+    "serialize-javascript": "^7.0.4"
+  }
+}

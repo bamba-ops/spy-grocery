@@ -1,0 +1,5 @@
+export const AI_CHAT_API_PATH = '/api/ai/chat'
+export const AI_CHAT_SESSIONS_API_PATH = '/api/ai/sessions'
+export const GROCERY_LIST_DATA_PART_TYPE = 'data-grocery-list'
+export const QUERY_PRODUCTS_SQL_TOOL_NAME = 'query_products_sql'
+export const SUBMIT_LIST_ITEMS_TOOL_NAME = 'submit_list_items'

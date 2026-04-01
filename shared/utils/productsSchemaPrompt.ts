@@ -1,0 +1,51 @@
+export const PRODUCTS_SCHEMA_PROMPT = `
+Database schema context (allowed table only):
+table: public.products
+
+Columns:
+- id (uuid, not null, default: extensions.gen_random_uuid())
+- source (text, not null)
+- store (text, not null)
+- source_url (text, not null)
+- scraped_at (timestamptz, not null)
+- store_id (text, nullable)
+- search_term (text, nullable)
+- search_results_count (int4, nullable)
+- external_id (text, not null)
+- article_number (text, nullable)
+- slug (text, not null, unique)
+- title (text, nullable)
+- brand (text, nullable)
+- description (text, nullable)
+- category (text, nullable)
+- uom (text, nullable)
+- url (text, nullable)
+- image_url (text, nullable)
+- image_urls (text[], not null, default: '{}')
+- price_raw (text, nullable)
+- price_num (numeric, nullable)
+- was_price_raw (text, nullable)
+- was_price_num (numeric, nullable)
+- pricing_units (text, nullable)
+- unit_price_full (text, nullable)
+- package_sizing (text, nullable)
+- on_sale (bool, nullable)
+- sale_text (text, nullable)
+- sale_type (text, nullable)
+- sale_label (text, nullable)
+- sale_expiry (timestamptz, nullable)
+- discount_amount (numeric, nullable)
+- discount_pct (numeric, nullable)
+- position (int4, nullable)
+- list_name (text, nullable)
+- is_sponsored (bool, nullable)
+- raw_payload (jsonb, nullable)
+- created_at (timestamptz, not null, default: now())
+- product_key (text, not null)
+- pre_price_text (text, nullable)
+- price_text (text, nullable)
+
+Rules:
+- Use only public.products.
+- Never query other tables.
+`.trim()
