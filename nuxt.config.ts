@@ -27,6 +27,9 @@ export default defineNuxtConfig({
     aiGatewayApiKey: process.env.NUXT_AI_GATEWAY_API_KEY,
     aiGatewayModel: process.env.NUXT_AI_GATEWAY_MODEL,
     public: {
+      posthogPublicKey: 'phc_mxowEJfSjLq2Uj7uQsZfMaKD74JooF7JxHiCK6djvPqB',
+      posthogHost: 'https://us.i.posthog.com',
+      posthogDefaults: '2026-01-30',
       siteUrl: SITE_URL
     }
   },
