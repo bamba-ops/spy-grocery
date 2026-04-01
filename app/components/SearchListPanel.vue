@@ -8,13 +8,13 @@ const lists = useListsStore()
 <template>
   <div class="rounded-2xl border border-white/10 bg-black/60">
     <div class="flex items-center justify-between border-b border-white/10 px-5 py-4">
-      <h3 class="text-xs uppercase tracking-[0.35em] text-white/70">Shopping List</h3>
-      <span class="text-xs uppercase tracking-[0.35em] text-white/70">{{ lists.itemCount }} items</span>
+      <h3 class="text-xs uppercase tracking-[0.35em] text-white/70">Liste d'epicerie</h3>
+      <span class="text-xs uppercase tracking-[0.35em] text-white/70">{{ lists.itemCount }} articles</span>
     </div>
 
     <div class="max-h-[640px] overflow-y-auto px-5 py-4">
       <div v-if="lists.productList.length === 0" class="py-12 text-center text-xs uppercase tracking-[0.35em] text-white/40">
-        No items yet
+        Aucun article pour l'instant
       </div>
 
       <div v-else class="space-y-6">
@@ -67,7 +67,7 @@ const lists = useListsStore()
                   class="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-white/60 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
                   @click="lists.deleteProductFromCurrentList(item.product.id)"
                 >
-                  <Trash2 class="h-3 w-3" /> Remove
+                  <Trash2 class="h-3 w-3" /> Retirer
                 </button>
               </div>
             </div>
@@ -79,7 +79,7 @@ const lists = useListsStore()
 
     <div class="border-t border-white/10 px-5 py-5">
       <div class="flex items-center justify-between text-sm uppercase tracking-[0.35em] text-white/70">
-        <span>Total Estimate</span>
+        <span>Total estime</span>
         <span class="font-display text-2xl font-semibold italic text-white">${{ lists.grandTotal.toFixed(2) }}</span>
       </div>
       <div class="mt-4 grid grid-cols-2 gap-3">
@@ -88,7 +88,7 @@ const lists = useListsStore()
           @click="lists.setClearConfirmModalOpen()"
           :disabled="lists.getIsCurrentListEmpty"
         >
-          Clear
+          Vider
         </button>
         <button
           :class="[
@@ -100,17 +100,17 @@ const lists = useListsStore()
           @click="lists.setSaveOrUpdateCurrentList()"
           :disabled="!lists.getCanSubmitList"
         >
-          {{ lists.justSaved ? 'Saved' : lists.getSaveActionLabel }}
+          {{ lists.justSaved ? 'Enregistree' : lists.getSaveActionLabel }}
         </button>
       </div>
     </div>
 
     <ConfirmActionModal
       :open="lists.isClearConfirmModalOpen"
-      title="Clear List"
-      message="Are you sure you want to clear the list?"
-      confirm-text="Clear"
-      cancel-text="Cancel"
+      title="Vider la liste"
+      message="Confirmez-vous que vous voulez vider la liste ?"
+      confirm-text="Vider"
+      cancel-text="Annuler"
       destructive
       @close="lists.setClearConfirmModalClosed"
       @confirm="lists.setClearCurrentList"
@@ -119,7 +119,7 @@ const lists = useListsStore()
     <SaveListModal
       :open="lists.isSaveModalOpen"
       :initial-name="lists.setNameSeed"
-      :confirm-text="lists.currentListSourceName ? 'Update' : 'Save'"
+      :confirm-text="lists.currentListSourceName ? 'Mettre a jour' : 'Enregistrer'"
       :error-text="lists.lastSaveError"
       @close="lists.setSaveListModalClosed"
       @save="lists.setSaveCurrentList"

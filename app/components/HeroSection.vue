@@ -10,12 +10,12 @@ const onboardingStorage = useOnboardingStorage()
 const heroPrompt = ref('')
 const isPromptFocused = ref(false)
 const typewriterSuffixes = [
-  'for a week under $120',
-  'for a family of 4 this weekend',
-  'with the cheapest protein options',
-  'for gluten-free essentials only'
+  'pour une semaine sous 120$',
+  'pour une famille de 4 ce week-end',
+  'avec les options proteinees les moins cheres',
+  'avec seulement les essentiels sans gluten'
 ]
-const typewriterPrefix = 'Describe your cart: '
+const typewriterPrefix = 'Decrivez votre panier : '
 const typewriterText = ref('')
 
 let typewriterTimer: ReturnType<typeof setTimeout> | null = null
@@ -24,10 +24,10 @@ let charIndex = 0
 let isDeleting = false
 
 const quickPrompts = [
-  'Weekly groceries for 2 under $80',
-  'Family cart under $150 in Quebec',
-  'Cheap high-protein week of meals',
-  'Lowest-cost gluten-free essentials'
+  'Epicerie de semaine pour 2 sous 80$',
+  'Panier familial sous 150$ au Quebec',
+  'Semaine de repas proteines a petit prix',
+  'Essentiels sans gluten au plus bas prix'
 ]
 
 const getCanSubmitPrompt = computed(() => {
@@ -128,12 +128,12 @@ onBeforeUnmount(() => {
     <div class="mx-auto max-w-6xl px-4 pb-16 pt-12 sm:px-6 sm:pb-20 sm:pt-16">
       <div class="max-w-3xl">
         <h1 class="font-display text-[clamp(2.6rem,6vw,4.8rem)] font-semibold italic leading-[0.95] tracking-tight text-white">
-          Find the cheapest grocery cart.
+          Trouvez le panier d'epicerie le moins cher.
           <br />
-          Built for Quebec stores.
+          Concu pour les magasins du Quebec.
         </h1>
         <p class="mt-4 max-w-2xl text-sm font-medium text-white/80 sm:mt-6 sm:text-base">
-          SpyGrocery compares real grocery prices across Quebec and uses AI to structure your list in seconds.
+          SpyGrocery compare les vrais prix en epicerie au Quebec et utilise l'IA pour structurer votre liste en quelques secondes.
         </p>
 
         <form class="mt-8 max-w-4xl sm:mt-10" @submit.prevent="setSubmitPrompt">
@@ -165,7 +165,7 @@ onBeforeUnmount(() => {
               class="mt-2 inline-flex h-11 w-full items-center justify-center gap-2 rounded-full border border-white/20 bg-white px-5 text-sm font-semibold text-black transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:cursor-not-allowed disabled:opacity-40 sm:mt-0 sm:h-12 sm:w-auto sm:px-6"
               :disabled="!getCanSubmitPrompt"
             >
-              See the cheapest cart
+              Voir le panier le moins cher
               <ArrowRight class="h-4 w-4" />
             </button>
           </div>

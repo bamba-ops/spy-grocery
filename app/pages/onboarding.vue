@@ -60,7 +60,7 @@ useHead({
       <span class="font-display text-4xl font-semibold italic tracking-tight text-white sm:text-5xl">SpyGrocery</span>
 
       <div class="hidden items-center gap-3 sm:flex">
-        <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Step {{ onboardingStore.currentStep }} of {{ ONBOARDING_MAX_STEP }}</p>
+        <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Etape {{ onboardingStore.currentStep }} sur {{ ONBOARDING_MAX_STEP }}</p>
         <div class="flex items-center gap-2">
           <span
             v-for="stepNumber in stepNumbers"
@@ -80,19 +80,19 @@ useHead({
           :disabled="onboardingStore.isSaving || onboardingStore.isGenerating"
           @click="onboardingStore.setSkipForNow"
         >
-          Skip for now
+          Passer pour l'instant
         </button>
       </div>
     </header>
 
     <main class="relative z-10 mx-auto flex min-h-[calc(100vh-6rem)] w-full max-w-7xl items-center px-4 pb-12 pt-8 sm:px-6 sm:pt-12">
       <section v-if="isStepOne" class="mx-auto w-full max-w-5xl text-center">
-        <p class="text-[10px] uppercase tracking-[0.35em] text-white/60 sm:hidden">Step 1 of 3</p>
+        <p class="text-[10px] uppercase tracking-[0.35em] text-white/60 sm:hidden">Etape 1 sur 3</p>
         <h1 class="mt-3 font-display text-5xl font-semibold italic tracking-tight text-white sm:mt-0 sm:text-7xl">
-          What's on your menu?
+          Qu'y a-t-il dans votre menu ?
         </h1>
         <p class="mx-auto mt-4 max-w-2xl text-base text-white/60 sm:text-xl">
-          Describe your week, your diet, or one specific craving.
+          Decrivez votre semaine, votre alimentation ou une envie precise.
         </p>
 
         <form class="mx-auto mt-8 w-full max-w-5xl" @submit.prevent="setSubmitIntent">
@@ -106,7 +106,7 @@ useHead({
               type="text"
               maxlength="2000"
               class="h-12 flex-1 bg-transparent px-2 text-sm text-white placeholder:text-white/40 focus:outline-none sm:text-lg"
-              placeholder="A healthy dinner for two, gluten-free snacks, high-protein meal prep..."
+              placeholder="Un souper sain pour deux, des collations sans gluten, des repas proteines..."
               @input="onboardingStore.setIntent(($event.target as HTMLInputElement).value)"
             >
 
@@ -115,7 +115,7 @@ useHead({
               class="inline-flex h-12 items-center gap-2 rounded-full border border-white/20 bg-white px-6 text-sm font-semibold text-black transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:cursor-not-allowed disabled:opacity-40"
               :disabled="!onboardingStore.getCanSubmitIntent"
             >
-              Go
+              Aller
               <ChevronRight class="h-4 w-4" />
             </button>
           </div>
@@ -139,19 +139,19 @@ useHead({
 
       <section v-else-if="isStepTwo" class="mx-auto w-full max-w-3xl text-center">
         <div class="text-center">
-          <p class="text-[10px] uppercase tracking-[0.35em] text-white/60 sm:hidden">Step 2 of 3</p>
+          <p class="text-[10px] uppercase tracking-[0.35em] text-white/60 sm:hidden">Etape 2 sur 3</p>
           <h1 class="mt-3 font-display text-5xl font-semibold italic tracking-tight text-white sm:mt-0 sm:text-7xl">
-            Curating your list...
+            Preparation de votre liste...
           </h1>
           <p class="mx-auto mt-4 max-w-2xl text-base text-white/60 sm:text-xl">
-            This takes a few seconds.
+            Cela prend quelques secondes.
           </p>
         </div>
 
         <div class="mx-auto mt-10 flex w-full max-w-md items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-6 py-6">
           <Loader2 class="h-5 w-5 animate-spin text-white/80" />
           <p class="text-sm text-white/80">
-            {{ onboardingStore.isGenerating ? 'Generating your first grocery list...' : 'Waiting for generation...' }}
+            {{ onboardingStore.isGenerating ? 'Generation de votre premiere liste d\'epicerie...' : 'En attente de generation...' }}
           </p>
         </div>
 
@@ -163,7 +163,7 @@ useHead({
             class="inline-flex h-11 items-center rounded-full border border-white/20 px-5 text-[10px] uppercase tracking-[0.35em] text-white/80 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:cursor-not-allowed disabled:opacity-40"
             @click="onboardingStore.setBackToIntentStep"
           >
-            Back
+            Retour
           </button>
 
           <button
@@ -171,18 +171,18 @@ useHead({
             class="inline-flex h-11 items-center rounded-full border border-white/20 bg-white px-5 text-[10px] uppercase tracking-[0.35em] text-black transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:cursor-not-allowed disabled:opacity-40"
             @click="setSubmitIntent"
           >
-            Retry
+            Reessayer
           </button>
         </div>
       </section>
 
       <section v-else-if="isStepThree" class="mx-auto w-full max-w-5xl text-center">
-        <p class="text-[10px] uppercase tracking-[0.35em] text-white/60 sm:hidden">Step 3 of 3</p>
+        <p class="text-[10px] uppercase tracking-[0.35em] text-white/60 sm:hidden">Etape 3 sur 3</p>
         <h1 class="mt-3 font-display text-5xl font-semibold italic tracking-tight text-white sm:mt-0 sm:text-7xl">
-          Your first list is ready.
+          Votre premiere liste est prete.
         </h1>
         <p class="mx-auto mt-4 max-w-3xl text-base text-white/60 sm:text-xl">
-          Review this structured list, then add it to your current list.
+          Revoyez cette liste structuree, puis ajoutez-la a votre liste courante.
         </p>
 
         <div class="mt-8 flex justify-center">
@@ -194,14 +194,14 @@ useHead({
           />
 
           <div v-else class="w-full max-w-xl rounded-2xl border border-white/10 bg-white/5 p-6 text-left">
-            <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">No preview yet</p>
-            <p class="mt-3 text-sm text-white/75">We could not recover your list preview. Generate again from step 1.</p>
+            <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Aucun apercu pour l'instant</p>
+            <p class="mt-3 text-sm text-white/75">Nous n'avons pas pu recuperer l'apercu de votre liste. Regenerez depuis l'etape 1.</p>
             <button
               type="button"
               class="mt-4 inline-flex h-11 items-center rounded-full border border-white/20 bg-white px-5 text-[10px] uppercase tracking-[0.35em] text-black transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
               @click="onboardingStore.setBackToIntentStep"
             >
-              Start again
+              Recommencer
             </button>
           </div>
         </div>
@@ -212,7 +212,7 @@ useHead({
             class="inline-flex h-11 items-center rounded-full border border-white/20 px-5 text-[10px] uppercase tracking-[0.35em] text-white/80 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
             @click="onboardingStore.setBackToIntentStep"
           >
-            Regenerate list
+            Regenerer la liste
           </button>
         </div>
       </section>

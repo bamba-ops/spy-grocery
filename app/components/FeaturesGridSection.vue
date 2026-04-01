@@ -3,22 +3,22 @@ import { onBeforeUnmount, onMounted, ref, type ComponentPublicInstance } from 'v
 
 const features = [
   {
-    title: 'Compare one cart across stores',
-    description: 'Add products once and instantly see your total by store.',
+    title: 'Comparez un meme panier entre magasins',
+    description: 'Ajoutez vos produits une fois et voyez instantanement le total par magasin.',
     mediaSrc: 'https://pub-2720bf762ca74cc39c0ad1d4c3819cf4.r2.dev/landing/feature1.mp4',
-    mediaAlt: 'SpyGrocery compare list showing the same cart across Quebec stores.'
+    mediaAlt: 'Liste de comparaison SpyGrocery montrant le meme panier dans les magasins du Quebec.'
   },
   {
-    title: 'Real Quebec products and prices',
-    description: 'Every match comes from real grocery products available in Quebec stores.',
+    title: 'Vrais produits et prix du Quebec',
+    description: 'Chaque resultat provient de vrais produits d\'epicerie disponibles au Quebec.',
     mediaSrc: 'https://pub-2720bf762ca74cc39c0ad1d4c3819cf4.r2.dev/landing/feature2.mp4',
-    mediaAlt: 'SpyGrocery search results with real grocery products and prices from local stores.'
+    mediaAlt: 'Resultats de recherche SpyGrocery avec produits et prix reels de magasins locaux.'
   },
   {
-    title: 'Start with AI, finish with a usable list',
-    description: 'Describe your needs, get a structured list, then add it to your compare cart.',
+    title: 'Commencez avec l\'IA, terminez avec une vraie liste',
+    description: 'Decrivez vos besoins, obtenez une liste structuree, puis ajoutez-la au panier compare.',
     mediaSrc: 'https://pub-2720bf762ca74cc39c0ad1d4c3819cf4.r2.dev/landing/feature3.mp4',
-    mediaAlt: 'SpyGrocery onboarding flow generating and adding a structured grocery list.'
+    mediaAlt: 'Parcours de demarrage SpyGrocery qui genere et ajoute une liste d\'epicerie structuree.'
   }
 ]
 
@@ -111,15 +111,15 @@ onBeforeUnmount(() => {
         </div>
 
         <div class="rounded-2xl border border-white/10 bg-white p-8 text-black">
-          <h3 class="text-lg font-semibold italic">Ready to compare your first cart?</h3>
+          <h3 class="text-lg font-semibold italic">Pret a comparer votre premier panier ?</h3>
           <p class="mt-3 text-sm text-black/70">
-            See where your full grocery cart costs less and start saving on your next Quebec run.
+            Voyez ou votre panier complet coute moins cher et economisez des votre prochaine epicerie.
           </p>
           <NuxtLink
             to="/search"
             class="mt-8 inline-flex w-full justify-center rounded-full border border-black/20 bg-white px-5 py-3 text-[10px] font-semibold uppercase tracking-[0.35em] text-black transition hover:bg-black hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white sm:w-auto"
           >
-            Compare my cart now
+            Comparer mon panier maintenant
           </NuxtLink>
         </div>
       </div>

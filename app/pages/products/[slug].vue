@@ -18,7 +18,7 @@ const slug = getRouteParam(route.params.slug as string | string[] | undefined).t
 if (!slug) {
   throw createError({
     statusCode: 400,
-    message: 'Invalid product slug'
+    message: 'Slug produit invalide'
   })
 }
 
@@ -29,7 +29,7 @@ try {
   const response = await getBySlug(slug)
   canonicalPath = getProductRoutePath(response.product)
 } catch (error: unknown) {
-  throw toPageError(error, 'Product not found')
+  throw toPageError(error, 'Produit introuvable')
 }
 
 if (canonicalPath !== route.path) {
@@ -61,9 +61,9 @@ useHead({
   <div class="min-h-screen bg-black font-sans text-white">
     <main class="mx-auto flex min-h-screen w-full max-w-3xl items-center justify-center px-4 py-12 sm:px-6">
       <section class="w-full rounded-[32px] border border-white/10 bg-white/5 p-8 text-center shadow-[0_30px_80px_rgba(0,0,0,0.55)] sm:p-10">
-        <p class="text-[10px] uppercase tracking-[0.35em] text-white/55">Product route</p>
+        <p class="text-[10px] uppercase tracking-[0.35em] text-white/55">Route produit</p>
         <h1 class="mt-3 font-display text-4xl font-semibold italic tracking-tight text-white sm:text-5xl">
-          Redirecting to canonical page.
+          Redirection vers la page canonique.
         </h1>
 
         <div class="mt-8 inline-flex h-14 w-14 items-center justify-center rounded-full border border-white/20 bg-white/5">
@@ -71,7 +71,7 @@ useHead({
         </div>
 
         <p class="mt-5 text-sm text-white/80 sm:text-base">
-          Please wait while we load the latest product route.
+          Veuillez patienter pendant le chargement de la route produit la plus recente.
         </p>
       </section>
     </main>

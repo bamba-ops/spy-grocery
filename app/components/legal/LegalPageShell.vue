@@ -23,13 +23,13 @@ defineProps<{
           to="/"
           class="rounded-full border border-white/20 px-4 py-2 text-[10px] uppercase tracking-[0.3em] text-white/80 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
         >
-          Back home
+          Retour a l'accueil
         </NuxtLink>
       </div>
     </header>
 
     <main class="relative z-10 mx-auto w-full max-w-4xl px-4 pb-16 pt-12 sm:px-6 sm:pt-14">
-      <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Legal</p>
+      <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Mentions legales</p>
       <h1 class="mt-4 font-display text-5xl font-semibold italic tracking-tight text-white sm:text-6xl">
         {{ title }}
       </h1>
@@ -37,7 +37,7 @@ defineProps<{
         {{ intro }}
       </p>
       <p class="mt-4 text-[10px] uppercase tracking-[0.3em] text-white/45">
-        Last updated {{ lastUpdated }}
+        Derniere mise a jour {{ lastUpdated }}
       </p>
 
       <div class="mt-10 space-y-9 rounded-2xl border border-white/10 bg-white/[0.03] p-6 sm:p-8">

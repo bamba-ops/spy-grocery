@@ -86,7 +86,7 @@ const storePath = computed(() => {
 if (!storeSlug.value || !productSlug.value) {
   throw createError({
     statusCode: 400,
-    message: 'Invalid product route parameters'
+    message: 'Parametres de route produit invalides'
   })
 }
 
@@ -96,13 +96,13 @@ try {
     serverRedirect: true
   })
 } catch (error: unknown) {
-  throw toPageError(error, 'Could not load product details.')
+  throw toPageError(error, 'Impossible de charger les details du produit.')
 }
 
 if (!productDetails.product) {
   throw createError({
     statusCode: 404,
-    message: 'Product not found'
+    message: 'Produit introuvable'
   })
 }
 
@@ -301,7 +301,7 @@ useHead(() => {
         to="/search"
         class="inline-flex h-10 items-center rounded-full border border-white/20 px-4 text-[10px] uppercase tracking-[0.35em] text-white/80 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
       >
-        Back to search
+        Retour a la recherche
       </NuxtLink>
 
       <div v-if="productDetails.loading" class="mt-6 grid gap-4 sm:gap-6 lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)]">
@@ -334,13 +334,13 @@ useHead(() => {
                 class="h-full w-full object-contain"
                 loading="lazy"
               >
-              <div v-else class="flex h-full w-full items-center justify-center text-sm uppercase tracking-[0.3em] text-white/60">No image</div>
+              <div v-else class="flex h-full w-full items-center justify-center text-sm uppercase tracking-[0.3em] text-white/60">Aucune image</div>
               <div class="pointer-events-none absolute inset-0 bg-black/35"></div>
             </div>
           </div>
 
           <div class="flex flex-col">
-            <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Product details</p>
+            <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Details du produit</p>
             <h1 class="mt-2 font-display text-4xl font-semibold italic tracking-tight text-white sm:text-5xl">
               {{ productDetails.product.title }}
             </h1>
@@ -365,7 +365,7 @@ useHead(() => {
             </p>
 
             <div class="mt-6">
-              <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Current price</p>
+              <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Prix actuel</p>
               <p class="mt-2 font-display text-4xl font-semibold italic tracking-tight text-white sm:text-5xl">
                 ${{ productDetails.getFormattedPrice(productDetails.product.price_num) }}
               </p>
@@ -381,7 +381,7 @@ useHead(() => {
               v-if="productDetails.product.description"
               class="mt-6 rounded-2xl border border-white/10 bg-black/40 p-4"
             >
-              <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Product profile</p>
+              <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Profil du produit</p>
               <p class="mt-2 text-sm leading-relaxed text-white/80 sm:text-base">
                 {{ productDetails.product.description }}
               </p>
@@ -393,7 +393,7 @@ useHead(() => {
                 class="inline-flex h-11 items-center justify-center rounded-full border border-white/20 bg-white px-6 text-[10px] uppercase tracking-[0.35em] text-black transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
                 @click="setAddCurrentProductToList"
               >
-                Add to list
+                Ajouter a la liste
               </button>
 
               <a
@@ -403,7 +403,7 @@ useHead(() => {
                 rel="noopener noreferrer"
                 class="inline-flex h-11 items-center justify-center rounded-full border border-white/20 px-6 text-[10px] uppercase tracking-[0.35em] text-white/80 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
               >
-                View on store
+                Voir en magasin
               </a>
             </div>
           </div>
@@ -415,10 +415,10 @@ useHead(() => {
         >
           <div class="flex items-center justify-between gap-4">
             <h2 class="font-display text-3xl font-semibold italic tracking-tight text-white sm:text-4xl">
-              Available in other stores
+              Disponible dans d'autres magasins
             </h2>
             <span class="text-[10px] uppercase tracking-[0.35em] text-white/60">
-              {{ productDetails.otherStoreProducts.length }} stores
+              {{ productDetails.otherStoreProducts.length }} magasins
             </span>
           </div>
 
@@ -431,7 +431,7 @@ useHead(() => {
               <NuxtLink
                 :to="getProductRoutePath(otherProduct)"
                 class="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/20 text-white/70 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-                :aria-label="`Open ${otherProduct.title}`"
+                :aria-label="`Ouvrir ${otherProduct.title}`"
               >
                 <ArrowUpRight class="h-4 w-4" />
               </NuxtLink>
@@ -460,9 +460,9 @@ useHead(() => {
         </section>
 
         <section v-else class="rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-5">
-          <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Other stores</p>
+          <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Autres magasins</p>
           <p class="mt-2 text-sm text-white/80 sm:text-base">
-            This product is not currently available in other stores.
+            Ce produit n'est pas disponible dans d'autres magasins pour le moment.
           </p>
         </section>
       </section>

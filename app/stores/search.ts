@@ -34,7 +34,7 @@ export const useSearchStore = defineStore('search', {
     getHeroHasResults: (state) => state.heroSearchResults.length > 0,
     getIsLoading: (state) => state.loading,
     getHasError: (state) => Boolean(state.error),
-    getActiveQuery: (state) => state.query || 'Organic Avocado',
+    getActiveQuery: (state) => state.query || 'Avocat biologique',
     getCanPrev: (state) => state.page > 1,
     getCanNext: (state) => state.page < Math.ceil(state.total / state.limit),
     hasResults: (state) => state.results.length > 0,
@@ -71,7 +71,7 @@ export const useSearchStore = defineStore('search', {
 
         this.heroSearchResults = response?.items || []
       } catch (error: unknown) {
-        this.heroSearchError = error instanceof Error ? error.message : 'Search failed'
+        this.heroSearchError = error instanceof Error ? error.message : 'La recherche a echoue'
         this.heroSearchResults = []
       } finally {
         this.heroSearchLoading = false
@@ -113,7 +113,7 @@ export const useSearchStore = defineStore('search', {
         this.results = response?.items || []
         this.total = response?.total || 0
       } catch (error: unknown) {
-        this.error = error instanceof Error ? error.message : 'Search failed'
+        this.error = error instanceof Error ? error.message : 'La recherche a echoue'
         this.results = []
         this.total = 0
       } finally {

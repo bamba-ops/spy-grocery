@@ -28,10 +28,10 @@ const setOpenLists = async () => {
   }
 
   authStore.setOpenAuthPrompt({
-    title: 'Your lists, saved for later',
-    description: 'Create an account to keep all your lists in one place and access them anytime.',
+    title: 'Vos listes, enregistrees pour plus tard',
+    description: 'Creez un compte pour garder toutes vos listes au meme endroit et y acceder a tout moment.',
     nextPath: '/lists',
-    ctaLabel: 'Sign in to continue'
+    ctaLabel: 'Connexion pour continuer'
   })
 }
 </script>
@@ -49,7 +49,7 @@ const setOpenLists = async () => {
             'inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:h-11 sm:w-11',
             isHome ? 'bg-white text-black' : 'text-white/80'
           ]"
-          aria-label="Home"
+          aria-label="Accueil"
         >
           <Home class="h-5 w-5" />
         </NuxtLink>
@@ -60,7 +60,7 @@ const setOpenLists = async () => {
             'inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:h-11 sm:w-11',
             isSearch ? 'bg-white text-black' : 'text-white/80 bg-transparent hover:bg-white/10'
           ]"
-          aria-label="Search"
+          aria-label="Recherche"
         >
           <Search class="h-5 w-5" />
         </NuxtLink>
@@ -72,7 +72,7 @@ const setOpenLists = async () => {
             isLists ? 'bg-white text-black' : 'text-white/80'
           ]"
           :disabled="authStore.isLoading"
-          aria-label="Lists"
+          aria-label="Listes"
           @click="setOpenLists"
         >
           <List class="h-5 w-5" />
@@ -83,7 +83,7 @@ const setOpenLists = async () => {
             'inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black active:scale-95 sm:h-11 sm:w-11',
             isAiChatOpen ? 'bg-white text-black' : 'text-white/80 hover:text-white'
           ]"
-          aria-label="Spy AI"
+          aria-label="Assistant Spy AI"
           @click="setToggleAiChatPanel"
         >
           <Bot class="h-5 w-5" />
@@ -92,7 +92,7 @@ const setOpenLists = async () => {
         <button
           class="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 text-white/80 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:h-11 sm:w-11"
           @click="lists.setToggleShoppingListDrawer()"
-          aria-label="Compare list"
+          aria-label="Liste de comparaison"
         >
           <ShoppingBag class="h-5 w-5" />
           <span

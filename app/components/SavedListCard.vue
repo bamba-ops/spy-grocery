@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Trash2 } from 'lucide-vue-next'
 import type { ListsProduct } from '#shared/types/lists'
-import { useListsStore } from '~/stores/lists';
+import { useListsStore } from '~/stores/lists'
 
 const listsStore = useListsStore()
 
@@ -39,10 +39,13 @@ const totalValue = computed(() => {
 
 const lastEditedLabel = computed(() => {
   const d = new Date(props.list.updatedAt)
-  if (Number.isNaN(d.getTime())) return 'LAST EDITED'
-  const month = d.toLocaleString('en-US', { month: 'short' }).toUpperCase()
-  const day = String(d.getDate()).padStart(2, '0')
-  return `LAST EDITED ${month} ${day}`
+  if (Number.isNaN(d.getTime())) return 'DERNIERE MODIFICATION'
+  const formattedDate = d.toLocaleDateString('fr-CA', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  })
+  return `MODIFIEE LE ${formattedDate}`
 })
 
 const avatarUrls = computed(() => {
@@ -63,7 +66,7 @@ const avatarUrls = computed(() => {
 
 const visibleAvatars = computed(() => avatarUrls.value.slice(0, 2))
 const overflowCount = computed(() => Math.max(0, avatarUrls.value.length - visibleAvatars.value.length))
-const deleteMessage = computed(() => `This will permanently delete "${props.list.name}".`)
+const deleteMessage = computed(() => `Cette action supprimera definitivement "${props.list.name}".`)
 </script>
 
 <template>
@@ -79,7 +82,7 @@ const deleteMessage = computed(() => `This will permanently delete "${props.list
     <button
       type="button"
       class="absolute right-5 top-5 z-20 inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-black/40 text-white/60 opacity-0 transition hover:text-white focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black group-hover:opacity-100"
-      aria-label="Delete list"
+      aria-label="Supprimer la liste"
       @click.stop="listsStore.isDeleteConfirmOpen = true"
     >
       <Trash2 class="h-4 w-4" />
@@ -91,7 +94,7 @@ const deleteMessage = computed(() => `This will permanently delete "${props.list
         {{ list.name }}
       </h3>
       <div class="mt-4 inline-flex rounded-full border border-white/10 bg-black/30 px-3 py-1 text-[10px] uppercase tracking-[0.35em] text-white/70">
-        {{ itemCount }} items
+        {{ itemCount }} articles
       </div>
     </div>
 
@@ -113,12 +116,12 @@ const deleteMessage = computed(() => `This will permanently delete "${props.list
           >
             +{{ overflowCount }}
           </div>
-          <div v-if="visibleAvatars.length === 0" class="text-[10px] uppercase tracking-[0.3em] text-white/50">No images</div>
+          <div v-if="visibleAvatars.length === 0" class="text-[10px] uppercase tracking-[0.3em] text-white/50">Aucune image</div>
         </div>
       </div>
 
       <div class="text-right">
-        <div class="text-[10px] uppercase tracking-[0.35em] text-white/40">Est. total</div>
+        <div class="text-[10px] uppercase tracking-[0.35em] text-white/40">Total estime</div>
         <div class="mt-2 font-display text-4xl font-semibold italic tracking-tight">
           ${{ totalValue.toFixed(2) }}
         </div>
@@ -128,11 +131,11 @@ const deleteMessage = computed(() => `This will permanently delete "${props.list
 
   <ConfirmActionModal
     :open="listsStore.isDeleteConfirmOpen"
-    eyebrow="Delete list"
-    title="Delete this list?"
+    eyebrow="Supprimer la liste"
+    title="Supprimer cette liste ?"
     :message="deleteMessage"
-    confirm-text="Delete"
-    cancel-text="Cancel"
+    confirm-text="Supprimer"
+    cancel-text="Annuler"
     :destructive="true"
     @close="listsStore.isDeleteConfirmOpen = false"
     @confirm="emit('delete', props.list.name); listsStore.isDeleteConfirmOpen = false"

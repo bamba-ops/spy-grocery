@@ -6,9 +6,9 @@ const isOpen = ref(false)
 const authStore = useAuthStore()
 
 const navItems = [
-  { label: 'Process', href: '#process' },
-  { label: 'Features', href: '#features' },
-  { label: 'About', href: '#about' }
+  { label: 'Processus', href: '#process' },
+  { label: 'Fonctionnalites', href: '#features' },
+  { label: 'A propos', href: '#about' }
 ]
 
 const toggleMenu = () => {
@@ -58,7 +58,7 @@ const setSignOut = async () => {
           class="hidden items-center gap-2 rounded-full border border-white/20 bg-white px-4 py-2 font-sans text-xs font-semibold text-black transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:inline-flex"
         >
           <LogIn class="h-4 w-4" />
-          Log in
+          Connexion
         </NuxtLink>
 
         <button
@@ -69,7 +69,7 @@ const setSignOut = async () => {
           @click="setSignOut"
         >
           <LogOut class="h-4 w-4" />
-          Log out
+          Deconnexion
         </button>
 
         <button
@@ -77,7 +77,7 @@ const setSignOut = async () => {
           type="button"
           :aria-expanded="isOpen"
           aria-controls="mobile-menu"
-          aria-label="Toggle menu"
+          aria-label="Afficher le menu"
           @click="toggleMenu"
         >
           <Menu v-if="!isOpen" class="h-4 w-4" />
@@ -105,7 +105,7 @@ const setSignOut = async () => {
           @click="closeMenu"
         >
           <LogIn class="h-4 w-4" />
-          Log in
+          Connexion
         </NuxtLink>
 
         <button
@@ -116,7 +116,7 @@ const setSignOut = async () => {
           @click="setSignOut"
         >
           <LogOut class="h-4 w-4" />
-          Log out
+          Deconnexion
         </button>
       </div>
     </div>

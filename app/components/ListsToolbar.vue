@@ -39,7 +39,7 @@ const pillBase = 'inline-flex h-10 items-center justify-center rounded-full bord
           ]"
           @click="setSort('recent')"
         >
-          Recent
+          Recentes
         </button>
         <button
           type="button"
@@ -51,7 +51,7 @@ const pillBase = 'inline-flex h-10 items-center justify-center rounded-full bord
           ]"
           @click="setSort('name')"
         >
-          Name
+          Nom
         </button>
         <button
           type="button"
@@ -63,7 +63,7 @@ const pillBase = 'inline-flex h-10 items-center justify-center rounded-full bord
           ]"
           @click="setSort('total')"
         >
-          Total Value
+          Valeur totale
         </button>
       </div>
 
@@ -72,7 +72,7 @@ const pillBase = 'inline-flex h-10 items-center justify-center rounded-full bord
         <input
           :value="modelValue.query"
           type="text"
-          placeholder="Search saved lists..."
+          placeholder="Rechercher des listes enregistrees..."
           class="h-10 w-full rounded-full border border-white/15 bg-white/5 pl-11 pr-4 text-sm text-white placeholder:text-white/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
           @input="setQuery(($event.target as HTMLInputElement).value)"
         />

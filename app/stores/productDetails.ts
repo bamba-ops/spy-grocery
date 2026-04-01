@@ -33,7 +33,7 @@ export const useProductDetailsStore = defineStore('productDetails', {
       if (!normalizedSlug) {
         this.product = null
         this.otherStoreProducts = []
-        this.error = 'Invalid product slug.'
+        this.error = 'Slug produit invalide.'
         this.canonicalPath = null
         this.shouldRedirect = false
         this.loading = false
@@ -56,7 +56,7 @@ export const useProductDetailsStore = defineStore('productDetails', {
       } catch (error: unknown) {
         this.product = null
         this.otherStoreProducts = []
-        this.error = error instanceof Error ? error.message : 'Could not load product details.'
+        this.error = error instanceof Error ? error.message : 'Impossible de charger les details du produit.'
         this.canonicalPath = null
         this.shouldRedirect = false
 
@@ -79,7 +79,7 @@ export const useProductDetailsStore = defineStore('productDetails', {
       if (!normalizedStoreSlug || !normalizedProductSlug) {
         this.product = null
         this.otherStoreProducts = []
-        this.error = 'Invalid product route.'
+        this.error = 'Route produit invalide.'
         this.canonicalPath = null
         this.shouldRedirect = false
         this.loading = false
@@ -102,7 +102,7 @@ export const useProductDetailsStore = defineStore('productDetails', {
       } catch (error: unknown) {
         this.product = null
         this.otherStoreProducts = []
-        this.error = error instanceof Error ? error.message : 'Could not load product details.'
+        this.error = error instanceof Error ? error.message : 'Impossible de charger les details du produit.'
         this.canonicalPath = null
         this.shouldRedirect = false
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const lastUpdated = 'March 31, 2026'
+const lastUpdated = '31 mars 2026'
 
 const libraries = [
   { name: 'Nuxt', license: 'MIT', url: 'https://github.com/nuxt/nuxt' },
@@ -33,14 +33,14 @@ useHead({
 
 <template>
   <LegalPageShell
-    title="Licenses"
-    intro="SpyGrocery depends on open-source software. This page lists key libraries used in the product."
+    title="Licences"
+    intro="SpyGrocery repose sur des logiciels open source. Cette page liste les bibliotheques principales utilisees dans le produit."
     :last-updated="lastUpdated"
   >
     <section>
-      <h2 class="font-display text-3xl font-semibold italic tracking-tight text-white">Open-source dependencies</h2>
+      <h2 class="font-display text-3xl font-semibold italic tracking-tight text-white">Dependances open source</h2>
       <p class="mt-4 text-sm text-white/75 sm:text-base">
-        The tools below are part of our current stack. Each project keeps its own official license terms.
+        Les outils ci-dessous font partie de notre pile actuelle. Chaque projet conserve ses propres conditions de licence.
       </p>
 
       <div class="mt-6 divide-y divide-white/10 rounded-2xl border border-white/10 bg-black/40">
@@ -58,7 +58,7 @@ useHead({
               rel="noopener noreferrer"
               class="text-[10px] uppercase tracking-[0.25em] text-white/70 underline underline-offset-4 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
             >
-              Project
+              Projet
             </a>
           </div>
         </div>
@@ -66,9 +66,9 @@ useHead({
     </section>
 
     <section>
-      <h2 class="font-display text-3xl font-semibold italic tracking-tight text-white">Additional notices</h2>
+      <h2 class="font-display text-3xl font-semibold italic tracking-tight text-white">Avis supplementaires</h2>
       <p class="mt-4 text-sm text-white/75 sm:text-base">
-        If you need full third-party notices for compliance review, contact:
+        Si vous avez besoin des avis tiers complets pour une verification de conformite, contactez :
         <a
           href="mailto:legal@spygrocery.com"
           class="ml-1 underline underline-offset-4 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"

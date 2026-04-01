@@ -3,12 +3,12 @@ import { defineStore } from 'pinia'
 import { toast } from 'vue-sonner'
 import { useAuth } from '~/composables/supabase/useAuth'
 
-const DEFAULT_ERROR_MESSAGE = 'Something went wrong. Please try again.'
+const DEFAULT_ERROR_MESSAGE = 'Une erreur est survenue. Veuillez reessayer.'
 const DEFAULT_NEXT_PATH = '/search'
 const LOGIN_NEXT_STORAGE_KEY = 'spygrocery:auth:next-path'
-const DEFAULT_AUTH_PROMPT_TITLE = 'Sign in to continue'
-const DEFAULT_AUTH_PROMPT_DESCRIPTION = 'Create an account to unlock this feature.'
-const DEFAULT_AUTH_PROMPT_CTA_LABEL = 'Continue to login'
+const DEFAULT_AUTH_PROMPT_TITLE = 'Connexion requise'
+const DEFAULT_AUTH_PROMPT_DESCRIPTION = 'Creez un compte pour debloquer cette fonctionnalite.'
+const DEFAULT_AUTH_PROMPT_CTA_LABEL = 'Aller a la connexion'
 
 const setStoredNextPath = (value: string) => {
   if (!import.meta.client) {
@@ -83,8 +83,8 @@ const setSignedOutToast = () => {
     return
   }
 
-  toast.success('Logged out', {
-    description: 'You are now signed out.'
+  toast.success('Deconnexion', {
+    description: 'Vous etes maintenant deconnecte.'
   })
 }
 
@@ -216,7 +216,7 @@ export const useAuthStore = defineStore('auth', () => {
         return true
       }
 
-      setErrorMessage(getUserError.message, 'Could not fetch your account session.')
+      setErrorMessage(getUserError.message, 'Impossible de recuperer votre session de compte.')
       user.value = null
       return false
     }
@@ -245,7 +245,7 @@ export const useAuthStore = defineStore('auth', () => {
     const normalizedEmail = email.trim().toLowerCase()
 
     if (!normalizedEmail) {
-      error.value = 'Please enter your email address.'
+      error.value = 'Veuillez entrer votre adresse courriel.'
       return false
     }
 
@@ -256,7 +256,7 @@ export const useAuthStore = defineStore('auth', () => {
       const { error: signInError } = await sendMagicLink(normalizedEmail, nextPath)
 
       if (signInError) {
-        setErrorMessage(signInError.message, 'Could not send magic link.')
+        setErrorMessage(signInError.message, 'Impossible d\'envoyer le lien magique.')
         return false
       }
 
@@ -274,7 +274,7 @@ export const useAuthStore = defineStore('auth', () => {
       const { error: signInError } = await signInWithGoogle(nextPath)
 
       if (signInError) {
-        setErrorMessage(signInError.message, 'Google sign-in failed.')
+        setErrorMessage(signInError.message, 'Echec de connexion avec Google.')
         return false
       }
 
@@ -310,7 +310,7 @@ export const useAuthStore = defineStore('auth', () => {
       const { error: signOutError } = await signOut()
 
       if (signOutError) {
-        setErrorMessage(signOutError.message, 'Could not sign out.')
+        setErrorMessage(signOutError.message, 'Impossible de vous deconnecter.')
         return false
       }
 

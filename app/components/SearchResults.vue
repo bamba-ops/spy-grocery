@@ -21,13 +21,13 @@ const getSafeProductUrl = (url: string | null) => {
     <div class="border-b border-white/10 pb-6">
       <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Currently comparing</p>
+          <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Comparaison en cours</p>
           <h1 class="font-display text-4xl font-semibold italic tracking-tight sm:text-5xl">
             {{ searchStore.getActiveQuery }}
           </h1>
         </div>
         <div class="text-[10px] uppercase tracking-[0.35em] text-white/60">
-          {{ searchStore.total }} results
+          {{ searchStore.total }} resultats
         </div>
       </div>
 
@@ -53,7 +53,7 @@ const getSafeProductUrl = (url: string | null) => {
         >
           <div class="relative">
             <div v-if="product.on_sale" class="absolute left-4 top-4 z-10 rounded-full border border-white/20 bg-black/80 px-3 py-1 text-[10px] uppercase tracking-[0.3em] text-white/80">
-              On sale
+              En promo
             </div>
             <NuxtLink
               :to="getProductRoutePath(product)"
@@ -91,7 +91,7 @@ const getSafeProductUrl = (url: string | null) => {
 
             <div class="mt-2 flex flex-wrap items-center gap-2 text-[9px] uppercase tracking-[0.24em] text-white/70 sm:mt-3 sm:text-[10px] sm:tracking-[0.3em]">
               <span v-if="product.uom" class="rounded-full border border-white/15 px-2 py-1">{{ product.uom }}</span>
-              <span class="rounded-full border border-white/15 px-2 py-1">{{ product.price_text || '$/unit' }}</span>
+              <span class="rounded-full border border-white/15 px-2 py-1">{{ product.price_text || '$/unite' }}</span>
             </div>
             <div class="mt-auto flex items-end justify-between pt-4 sm:pt-6">
               <div class="flex flex-col items-start">
@@ -106,7 +106,7 @@ const getSafeProductUrl = (url: string | null) => {
                     rel="noopener noreferrer"
                     class="inline-flex rounded-full border border-white/20 px-3 py-1 text-[9px] uppercase tracking-[0.28em] text-white/80 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:text-[10px] sm:tracking-[0.32em]"
                   >
-                    View on store
+                    Voir en magasin
                   </a>
                 </div>
               </div>
@@ -116,7 +116,7 @@ const getSafeProductUrl = (url: string | null) => {
                   lists.lastAddedProductId === product.id ? 'scale-110 ring-2 ring-white/40' : 'scale-100'
                 ]"
                 @click="lists.setProductInCurrentList(product)"
-                aria-label="Add to list"
+                aria-label="Ajouter a la liste"
               >
                 <Plus class="h-7 w-7" />
               </button>
@@ -127,7 +127,7 @@ const getSafeProductUrl = (url: string | null) => {
 
       <div v-if="searchStore.totalPages > 1" class="mt-10 flex flex-col gap-4 border-t border-white/10 pt-6 sm:flex-row sm:items-center sm:justify-between">
         <div class="text-[10px] uppercase tracking-[0.35em] text-white/60">
-          Page {{ searchStore.page }} of {{ searchStore.totalPages }}
+          Page {{ searchStore.page }} sur {{ searchStore.totalPages }}
         </div>
 
         <div class="flex items-center justify-between gap-3 sm:justify-end">
@@ -136,14 +136,14 @@ const getSafeProductUrl = (url: string | null) => {
             :disabled="!searchStore.getCanPrev"
             @click="searchStore.setPrevPageWithScroll()"
           >
-            Prev
+            Prec
           </button>
           <button
             class="inline-flex h-11 items-center justify-center rounded-full border border-white/20 px-5 text-[10px] uppercase tracking-[0.35em] text-white/80 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:cursor-not-allowed disabled:opacity-40"
             :disabled="!searchStore.getCanNext"
             @click="searchStore.setNextPageWithScroll()"
           >
-            Next
+            Suivant
           </button>
         </div>
       </div>

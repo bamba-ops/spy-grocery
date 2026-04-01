@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const lastUpdated = 'March 31, 2026'
+const lastUpdated = '31 mars 2026'
 
 useHead({
   title: 'Conditions de service - SpyGrocery',
@@ -23,65 +23,66 @@ useHead({
 
 <template>
   <LegalPageShell
-    title="Terms of service"
-    intro="These terms describe the rules for using SpyGrocery and the limits of what the product guarantees."
+    title="Conditions de service"
+    intro="Ces conditions decrivent les regles d'utilisation de SpyGrocery et les limites des garanties du produit."
     :last-updated="lastUpdated"
   >
     <section>
-      <h2 class="font-display text-3xl font-semibold italic tracking-tight text-white">Service scope</h2>
+      <h2 class="font-display text-3xl font-semibold italic tracking-tight text-white">Portee du service</h2>
       <p class="mt-4 text-sm text-white/75 sm:text-base">
-        SpyGrocery helps users compare grocery products and build lists using search and AI-assisted tools. The
-        service is provided as a comparison and planning tool, not as a checkout platform.
+        SpyGrocery aide les utilisateurs a comparer des produits d'epicerie et a creer des listes avec la recherche
+        et des outils assistes par l'IA. Le service est fourni comme outil de comparaison et de planification,
+        et non comme plateforme de paiement.
       </p>
     </section>
 
     <section>
-      <h2 class="font-display text-3xl font-semibold italic tracking-tight text-white">Accounts and acceptable use</h2>
+      <h2 class="font-display text-3xl font-semibold italic tracking-tight text-white">Comptes et usage acceptable</h2>
       <ul class="mt-4 list-disc space-y-2 pl-5 text-sm text-white/75 sm:text-base">
-        <li>You are responsible for activity performed through your account.</li>
-        <li>Do not misuse the service, automate abusive traffic, or interfere with platform availability.</li>
-        <li>Do not attempt unauthorized access to data, accounts, or infrastructure.</li>
+        <li>Vous etes responsable des activites effectuees avec votre compte.</li>
+        <li>N'abusez pas du service, n'automatisez pas un trafic abusif et n'interrompez pas la disponibilite.</li>
+        <li>Ne tentez aucun acces non autorise aux donnees, comptes ou infrastructures.</li>
       </ul>
     </section>
 
     <section>
-      <h2 class="font-display text-3xl font-semibold italic tracking-tight text-white">Price and availability disclaimer</h2>
+      <h2 class="font-display text-3xl font-semibold italic tracking-tight text-white">Avis sur les prix et la disponibilite</h2>
       <p class="mt-4 text-sm text-white/75 sm:text-base">
-        Prices, stock, promotions, and product availability may change at any time. SpyGrocery does not guarantee
-        that every value shown in the app is current at the moment of purchase. The retailer source remains
-        authoritative for final checkout details.
+        Les prix, stocks, promotions et disponibilites peuvent changer a tout moment. SpyGrocery ne garantit pas que
+        chaque valeur affichee dans l'application soit a jour au moment de l'achat. La source du detaillant reste
+        la reference pour les details finaux de paiement.
       </p>
     </section>
 
     <section>
-      <h2 class="font-display text-3xl font-semibold italic tracking-tight text-white">Suspension and termination</h2>
+      <h2 class="font-display text-3xl font-semibold italic tracking-tight text-white">Suspension et resiliation</h2>
       <p class="mt-4 text-sm text-white/75 sm:text-base">
-        We may suspend or terminate access when needed to protect users, enforce these terms, investigate abuse, or
-        comply with legal obligations.
+        Nous pouvons suspendre ou resilier l'acces lorsque c'est necessaire pour proteger les utilisateurs, faire
+        respecter ces conditions, enqueter sur des abus ou respecter des obligations legales.
       </p>
     </section>
 
     <section>
-      <h2 class="font-display text-3xl font-semibold italic tracking-tight text-white">Liability limits</h2>
+      <h2 class="font-display text-3xl font-semibold italic tracking-tight text-white">Limites de responsabilite</h2>
       <p class="mt-4 text-sm text-white/75 sm:text-base">
-        SpyGrocery is provided on an as-available basis. To the extent permitted by law, we are not liable for
-        indirect or consequential losses resulting from use of the service, including retailer pricing differences
-        or unavailable products.
+        SpyGrocery est fourni selon disponibilite. Dans les limites autorisees par la loi, nous ne sommes pas
+        responsables des pertes indirectes ou consecutives liees a l'utilisation du service, y compris les
+        differences de prix chez les detaillants ou les produits indisponibles.
       </p>
     </section>
 
     <section>
-      <h2 class="font-display text-3xl font-semibold italic tracking-tight text-white">Updates to these terms</h2>
+      <h2 class="font-display text-3xl font-semibold italic tracking-tight text-white">Mises a jour des conditions</h2>
       <p class="mt-4 text-sm text-white/75 sm:text-base">
-        We may revise these terms as the product evolves. Material updates will be reflected by updating the date on
-        this page.
+        Nous pouvons mettre a jour ces conditions au fil de l'evolution du produit. Les changements importants seront
+        indiques en mettant a jour la date de cette page.
       </p>
     </section>
 
     <section>
       <h2 class="font-display text-3xl font-semibold italic tracking-tight text-white">Contact</h2>
       <p class="mt-4 text-sm text-white/75 sm:text-base">
-        Questions about these terms can be sent to:
+        Les questions sur ces conditions peuvent etre envoyees a :
         <a
           href="mailto:legal@spygrocery.com"
           class="ml-1 underline underline-offset-4 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"

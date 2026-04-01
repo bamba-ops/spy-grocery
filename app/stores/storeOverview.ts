@@ -50,7 +50,7 @@ export const useStoreOverviewStore = defineStore('storeOverview', {
       const normalizedStoreSlug = toSlug(storeParam)
 
       if (!normalizedStoreSlug) {
-        this.error = 'Invalid store route.'
+        this.error = 'Route magasin invalide.'
         this.storeSlug = ''
         this.storeName = ''
         this.productCount = 0
@@ -79,7 +79,7 @@ export const useStoreOverviewStore = defineStore('storeOverview', {
 
         return response as StoreOverviewResponse
       } catch (error: unknown) {
-        this.error = error instanceof Error ? error.message : 'Could not load store overview.'
+        this.error = error instanceof Error ? error.message : 'Impossible de charger la page du magasin.'
         this.storeSlug = normalizedStoreSlug
         this.storeName = ''
         this.productCount = 0

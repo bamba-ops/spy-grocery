@@ -16,7 +16,7 @@ const QUICK_PROMPTS = [
 ]
 
 const DEFAULT_CHAT_LOGIN_NEXT_PATH = '/search'
-const DEFAULT_CHAT_SESSIONS_ERROR_MESSAGE = 'Could not load conversations.'
+const DEFAULT_CHAT_SESSIONS_ERROR_MESSAGE = 'Impossible de charger les conversations.'
 
 const isUnsafeAssistantText = (text: string) => {
   const trimmed = text.trim()
@@ -227,10 +227,10 @@ export const useChatStore = defineStore('chat', () => {
 
     if (!authStore.user) {
       authStore.setOpenAuthPrompt({
-        title: 'Unlock Spy AI',
-        description: 'Sign in to save your conversations and build smarter grocery lists with AI.',
+        title: 'Debloquer Spy AI',
+        description: 'Connectez-vous pour enregistrer vos conversations et creer des listes d\'epicerie plus intelligentes avec l\'IA.',
         nextPath: DEFAULT_CHAT_LOGIN_NEXT_PATH,
-        ctaLabel: 'Sign in to use AI'
+        ctaLabel: 'Connexion pour utiliser l\'IA'
       })
       return null
     }
@@ -268,10 +268,10 @@ export const useChatStore = defineStore('chat', () => {
 
     if (!authStore.user) {
       authStore.setOpenAuthPrompt({
-        title: 'Unlock Spy AI',
-        description: 'Sign in to save your conversations and build smarter grocery lists with AI.',
+        title: 'Debloquer Spy AI',
+        description: 'Connectez-vous pour enregistrer vos conversations et creer des listes d\'epicerie plus intelligentes avec l\'IA.',
         nextPath: DEFAULT_CHAT_LOGIN_NEXT_PATH,
-        ctaLabel: 'Sign in to use AI'
+        ctaLabel: 'Connexion pour utiliser l\'IA'
       })
       return false
     }
@@ -288,7 +288,7 @@ export const useChatStore = defineStore('chat', () => {
       return true
     } catch (error) {
       console.error('[ai-list] open chat session failed:', error)
-      sessionsError.value = 'Could not open this conversation.'
+      sessionsError.value = 'Impossible d\'ouvrir cette conversation.'
       return false
     } finally {
       isHydratingSession.value = false
@@ -314,7 +314,7 @@ export const useChatStore = defineStore('chat', () => {
       return true
     } catch (error) {
       console.error('[ai-list] delete chat session failed:', error)
-      sessionsError.value = 'Could not delete this conversation.'
+      sessionsError.value = 'Impossible de supprimer cette conversation.'
       return false
     }
   }

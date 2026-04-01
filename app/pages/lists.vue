@@ -33,7 +33,7 @@ onMounted(() => {
     <main class="relative mx-auto max-w-7xl px-4 pb-28 pt-16 sm:px-6">
       <div class="flex flex-col gap-10">
         <div class="flex items-end justify-between gap-6">
-          <h1 class="font-display text-6xl font-semibold italic tracking-tight sm:text-7xl">My Lists</h1>
+          <h1 class="font-display text-6xl font-semibold italic tracking-tight sm:text-7xl">Mes listes</h1>
         </div>
 
         <ListsToolbar :model-value="listsStore.listsControls" @update:modelValue="listsStore.setListsControls" />

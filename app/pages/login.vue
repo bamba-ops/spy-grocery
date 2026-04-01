@@ -51,10 +51,10 @@ useHead({
       </NuxtLink>
 
       <h1 class="mt-8 text-center font-display text-5xl font-semibold italic leading-[0.95] tracking-tight text-white sm:mt-10 sm:text-7xl">
-        Welcome back
+        Bon retour
       </h1>
       <p class="mt-4 max-w-xl text-center text-sm text-white/70 sm:text-lg">
-        Your curated kitchen, precisely managed.
+        Votre cuisine organisee, avec precision.
       </p>
 
       <section class="mt-8 w-full max-w-[560px] rounded-[36px] border border-white/10 bg-black/60 p-4 shadow-[0_30px_80px_rgba(0,0,0,0.55)] backdrop-blur-sm sm:mt-10 sm:p-6">
@@ -62,12 +62,12 @@ useHead({
           v-if="authStore.loginMagicLinkSent"
           class="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-6 text-center sm:px-6 sm:py-8"
         >
-          <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Email sent</p>
+          <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Courriel envoye</p>
           <h2 class="mt-3 font-display text-3xl font-semibold italic tracking-tight text-white sm:text-4xl">
-            Check your inbox.
+            Verifiez votre boite de reception.
           </h2>
           <p class="mt-3 text-sm text-white/70 sm:text-base">
-            We sent a magic link to
+            Nous avons envoye un lien magique a
             <span class="break-all font-semibold text-white">{{ authStore.loginEmail.trim() }}</span>.
           </p>
           <button
@@ -75,13 +75,13 @@ useHead({
             class="mt-6 inline-flex rounded-full border border-white/20 px-5 py-2 text-[10px] uppercase tracking-[0.35em] text-white/75 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
             @click="authStore.setResetLoginMagicLinkState"
           >
-            Use another email
+            Utiliser un autre courriel
           </button>
         </div>
 
         <form v-else class="space-y-4 sm:space-y-5" @submit.prevent="authStore.setSubmitLoginMagicLink">
           <label class="block">
-            <span class="text-[10px] uppercase tracking-[0.35em] text-white/60">Account Identifier</span>
+            <span class="text-[10px] uppercase tracking-[0.35em] text-white/60">Identifiant du compte</span>
             <div class="mt-2 flex h-12 items-center gap-3 rounded-full border border-white/15 bg-black px-4 focus-within:ring-2 focus-within:ring-white/70 focus-within:ring-offset-2 focus-within:ring-offset-black sm:h-14 sm:px-5">
               <Mail class="h-4 w-4 shrink-0 text-white/45" />
               <input
@@ -100,12 +100,12 @@ useHead({
             class="inline-flex h-12 w-full items-center justify-center gap-2 rounded-full border border-white/20 bg-white px-6 text-sm font-medium text-black transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:cursor-not-allowed disabled:opacity-40 sm:h-14 sm:text-base"
           >
             <Loader2 v-if="authStore.isLoading" class="h-4 w-4 animate-spin" />
-            <template v-else>Continue with Email</template>
+            <template v-else>Continuer avec courriel</template>
           </button>
 
           <div class="mt-8 flex items-center gap-4">
             <span class="h-px flex-1 bg-white/10" />
-            <span class="text-[10px] uppercase tracking-[0.35em] text-white/40">Or navigate via</span>
+            <span class="text-[10px] uppercase tracking-[0.35em] text-white/40">Ou continuer avec</span>
             <span class="h-px flex-1 bg-white/10" />
           </div>
 
@@ -116,22 +116,22 @@ useHead({
             @click="authStore.setContinueLoginWithGoogle"
           >
             <Chrome class="h-5 w-5" />
-            Continue with Google
+            Continuer avec Google
           </button>
         </form>
 
         <p class="mt-7 text-center text-xs text-white/45 sm:mt-8">
-          By continuing, you agree to our
-          <NuxtLink to="/terms" class="underline underline-offset-4 transition hover:text-white">Terms of Service</NuxtLink>
-          and
-          <NuxtLink to="/privacy" class="underline underline-offset-4 transition hover:text-white">Privacy Policy</NuxtLink>.
+          En continuant, vous acceptez nos
+          <NuxtLink to="/terms" class="underline underline-offset-4 transition hover:text-white">conditions de service</NuxtLink>
+          et notre
+          <NuxtLink to="/privacy" class="underline underline-offset-4 transition hover:text-white">politique de confidentialite</NuxtLink>.
         </p>
 
         <p
           v-if="authStore.loginHasAuthFailed"
           class="mt-6 rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-sm text-white/80"
         >
-          We could not confirm your session. Please try again.
+          Nous n'avons pas pu confirmer votre session. Veuillez reessayer.
         </p>
 
         <p

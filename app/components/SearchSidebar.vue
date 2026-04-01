@@ -13,7 +13,7 @@ const searchStore = useSearchStore()
         <input
           :value="searchStore.searchInput"
           type="text"
-          placeholder="Search"
+          placeholder="Rechercher"
           class="h-full w-full bg-transparent text-[10px] uppercase tracking-[0.3em] text-white placeholder:text-white/40 focus:outline-none"
           @input="searchStore.setSearchInput(($event.target as HTMLInputElement).value)"
         />
@@ -23,10 +23,10 @@ const searchStore = useSearchStore()
         class="h-10 rounded-full border border-white/15 bg-black px-3 text-[10px] uppercase tracking-[0.3em] text-white/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
         @change="searchStore.setSortBy(($event.target as HTMLSelectElement).value as 'price_asc' | 'price_desc' | 'title_asc' | 'recent')"
       >
-        <option value="price_asc">Price: Lowest</option>
-        <option value="price_desc">Price: Highest</option>
-        <option value="title_asc">Title: A-Z</option>
-        <option value="recent">Most Recent</option>
+        <option value="price_asc">Prix : plus bas</option>
+        <option value="price_desc">Prix : plus haut</option>
+        <option value="title_asc">Titre : A-Z</option>
+        <option value="recent">Plus recent</option>
       </select>
 
       <select
@@ -34,7 +34,7 @@ const searchStore = useSearchStore()
         class="h-10 rounded-full border border-white/15 bg-black px-3 text-[10px] uppercase tracking-[0.3em] text-white/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
         @change="searchStore.setStoreFilter(($event.target as HTMLSelectElement).value)"
       >
-        <option value="all">Store: All</option>
+        <option value="all">Magasin : tous</option>
         <option v-for="store in searchStore.stores" :key="store.id" :value="store.id">
           {{ store.name }}
         </option>
@@ -46,7 +46,7 @@ const searchStore = useSearchStore()
         class="ml-2 text-white/70 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
         @click="searchStore.setFiltersCleared()"
       >
-        Clear all
+        Effacer tout
       </button>
     </div>
   </div>

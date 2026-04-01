@@ -68,8 +68,8 @@ onMounted(() => {
     <div v-if="showResumeOnboarding" class="mx-auto max-w-7xl px-4 pt-6 sm:px-6">
       <section class="flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Onboarding paused</p>
-          <p class="mt-2 text-sm text-white/80 sm:text-base">Resume your AI guided first list whenever you are ready.</p>
+          <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Parcours en pause</p>
+          <p class="mt-2 text-sm text-white/80 sm:text-base">Reprenez votre premiere liste guidee par l'IA quand vous voulez.</p>
         </div>
 
         <button
@@ -77,7 +77,7 @@ onMounted(() => {
           class="inline-flex h-11 items-center justify-center rounded-full border border-white/20 bg-white px-5 text-[10px] uppercase tracking-[0.35em] text-black transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
           @click="onboardingStore.setResumeOnboarding"
         >
-          Resume onboarding
+          Reprendre le parcours
         </button>
       </section>
     </div>

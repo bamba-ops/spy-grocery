@@ -30,9 +30,9 @@ export const useOnboardingStore = defineStore('onboarding', () => {
   const listsStore = useListsStore()
 
   const quickPrompts = [
-    'A healthy dinner for two under $40',
-    'High-protein meal prep for the week',
-    'Gluten-free road trip snacks'
+    'Un souper sain pour deux sous 40$',
+    'Preparation de repas proteines pour la semaine',
+    'Collations sans gluten pour la route'
   ]
 
   const loading = ref(false)
@@ -97,7 +97,7 @@ export const useOnboardingStore = defineStore('onboarding', () => {
       return nextState
     } catch (persistError) {
       console.error('[onboarding] save failed:', persistError)
-      error.value = 'Could not save onboarding progress.'
+      error.value = 'Impossible d\'enregistrer la progression du parcours de demarrage.'
       return null
     }
   }
@@ -153,7 +153,7 @@ export const useOnboardingStore = defineStore('onboarding', () => {
       await setHydratePreviewFromSession()
     } catch (loadError) {
       console.error('[onboarding] load failed:', loadError)
-      error.value = 'Could not load onboarding.'
+      error.value = 'Impossible de charger le parcours de demarrage.'
     } finally {
       loading.value = false
       isReady.value = true
@@ -178,7 +178,7 @@ export const useOnboardingStore = defineStore('onboarding', () => {
       return session.id
     } catch (sessionError) {
       console.error('[onboarding] chat session creation failed:', sessionError)
-      error.value = 'Could not start onboarding chat session.'
+      error.value = 'Impossible de demarrer la session de clavardage du parcours de demarrage.'
       return null
     }
   }
@@ -191,7 +191,7 @@ export const useOnboardingStore = defineStore('onboarding', () => {
     }
 
     if (intent.length > ONBOARDING_MAX_INTENT_LENGTH) {
-      error.value = `Please keep your request under ${ONBOARDING_MAX_INTENT_LENGTH} characters.`
+      error.value = `Veuillez garder votre demande sous ${ONBOARDING_MAX_INTENT_LENGTH} caracteres.`
       return false
     }
 
@@ -233,7 +233,7 @@ export const useOnboardingStore = defineStore('onboarding', () => {
       const latestPayload = getLatestAssistantListPayload(chat.messages)
 
       if (!latestPayload || latestPayload.items.length === 0 || latestPayload.key === previousPayloadKey) {
-        throw new Error('No grocery list payload found.')
+        throw new Error('Aucune liste d\'epicerie trouvee dans la reponse.')
       }
 
       generatedItems.value = latestPayload.items
@@ -253,7 +253,7 @@ export const useOnboardingStore = defineStore('onboarding', () => {
       generatedItems.value = []
       hasPreview.value = false
       currentStep.value = 2
-      error.value = 'Could not generate your first list. Try again.'
+      error.value = 'Impossible de generer votre premiere liste. Reessayez.'
 
       await setPersistOnboardingPatch({
         status: 'in_progress',

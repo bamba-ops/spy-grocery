@@ -12,7 +12,7 @@ const isAuthenticated = computed(() => {
 })
 
 const authLabel = computed(() => {
-  return isAuthenticated.value ? 'Log out' : 'Log in'
+  return isAuthenticated.value ? 'Deconnexion' : 'Connexion'
 })
 
 const getSafeNextPath = (value: string) => {

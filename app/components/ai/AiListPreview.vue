@@ -12,7 +12,7 @@ defineEmits<{
 
 const groupedItems = computed(() => {
   return props.items.reduce((groups, item) => {
-    const storeName = item.product.store || 'Unknown store'
+    const storeName = item.product.store || 'Magasin inconnu'
     if (!groups[storeName]) {
       groups[storeName] = []
     }
@@ -42,7 +42,7 @@ const grandTotal = computed(() => {
 
 <template>
   <div class="w-full max-w-[92%] rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/90 sm:text-base">
-    <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Suggested list</p>
+    <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Liste suggeree</p>
 
     <div class="mt-3 space-y-6">
       <div
@@ -75,9 +75,9 @@ const grandTotal = computed(() => {
           <div class="min-w-0 flex-1">
             <p class="text-sm font-semibold italic text-white">{{ item.product.title }}</p>
             <p class="mt-1 text-[10px] uppercase tracking-[0.3em] text-white/60">
-              ${{ item.product.price_num?.toFixed(2) ?? 'N/A' }}
+              ${{ item.product.price_num?.toFixed(2) ?? 'N/D' }}
             </p>
-            <p class="mt-2 text-xs uppercase tracking-[0.3em] text-white/70">Qty {{ item.quantity }}</p>
+            <p class="mt-2 text-xs uppercase tracking-[0.3em] text-white/70">Qte {{ item.quantity }}</p>
           </div>
         </div>
       </div>
@@ -85,7 +85,7 @@ const grandTotal = computed(() => {
 
     <div class="mt-4 border-t border-white/10 pt-4">
       <div class="flex items-center justify-between text-sm uppercase tracking-[0.35em] text-white/70">
-        <span>Total Estimate</span>
+        <span>Total estime</span>
         <span class="font-display text-2xl font-semibold italic text-white">${{ grandTotal.toFixed(2) }}</span>
       </div>
     </div>
@@ -96,14 +96,14 @@ const grandTotal = computed(() => {
         class="rounded-full border border-white/20 bg-white px-3 py-2 text-[10px] uppercase tracking-[0.3em] text-black transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
         @click="$emit('add')"
       >
-        Add to list
+        Ajouter a la liste
       </button>
       <button
         type="button"
         class="rounded-full border border-white/20 bg-transparent px-3 py-2 text-[10px] uppercase tracking-[0.3em] text-white/80 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
         @click="$emit('dismiss')"
       >
-        Dismiss
+        Ignorer
       </button>
     </div>
   </div>

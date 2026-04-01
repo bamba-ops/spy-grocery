@@ -44,7 +44,7 @@ const onClose = () => {
 const onSave = () => {
   const trimmed = name.value.trim()
   if (!trimmed) {
-    error.value = 'Please enter a list name.'
+    error.value = 'Veuillez entrer un nom de liste.'
     inputRef.value?.focus()
     return
   }
@@ -67,16 +67,16 @@ const onSave = () => {
 
       <div class="relative mx-auto flex min-h-full max-w-lg items-center justify-center px-4">
         <div class="w-full rounded-2xl border border-white/10 bg-black p-5 shadow-[0_30px_80px_rgba(0,0,0,0.55)]">
-          <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">{{ props.eyebrow ?? 'Save shopping list' }}</p>
-          <h3 class="mt-2 font-display text-2xl font-semibold italic">{{ props.title ?? 'Name your list' }}</h3>
+          <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">{{ props.eyebrow ?? "Enregistrer la liste d'epicerie" }}</p>
+          <h3 class="mt-2 font-display text-2xl font-semibold italic">{{ props.title ?? 'Nommer votre liste' }}</h3>
 
           <div class="mt-5">
-            <label class="block text-[10px] uppercase tracking-[0.35em] text-white/60">{{ props.label ?? 'List name' }}</label>
+            <label class="block text-[10px] uppercase tracking-[0.35em] text-white/60">{{ props.label ?? 'Nom de la liste' }}</label>
             <input
               ref="inputRef"
               v-model="name"
               type="text"
-              :placeholder="props.placeholder ?? 'e.g. Weekend groceries'"
+              :placeholder="props.placeholder ?? 'ex. Epicerie du week-end'"
               class="mt-2 w-full rounded-full border border-white/15 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
               @keydown.enter.prevent="onSave"
             />
@@ -88,13 +88,13 @@ const onSave = () => {
               class="inline-flex h-11 items-center justify-center rounded-full border border-white/20 px-5 text-[10px] uppercase tracking-[0.35em] text-white/80 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
               @click="onClose"
             >
-              {{ props.cancelText ?? 'Cancel' }}
+              {{ props.cancelText ?? 'Annuler' }}
             </button>
             <button
               class="inline-flex h-11 items-center justify-center rounded-full bg-white px-5 text-[10px] uppercase tracking-[0.35em] text-black transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
               @click="onSave"
             >
-              {{ props.confirmText ?? 'Save' }}
+              {{ props.confirmText ?? 'Enregistrer' }}
             </button>
           </div>
         </div>

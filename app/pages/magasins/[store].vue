@@ -42,20 +42,20 @@ watch(
 if (!storeSlug.value) {
   throw createError({
     statusCode: 400,
-    message: 'Invalid store slug'
+    message: 'Slug de magasin invalide'
   })
 }
 
 try {
   await storeOverview.loadStoreOverview(storeSlug.value, { throwOnError: true })
 } catch (error: unknown) {
-  throw toPageError(error, 'Could not load store overview.')
+  throw toPageError(error, 'Impossible de charger la page du magasin.')
 }
 
 if (!storeOverview.storeName) {
   throw createError({
     statusCode: 404,
-    message: 'Store not found'
+    message: 'Magasin introuvable'
   })
 }
 
@@ -192,24 +192,24 @@ useHead(() => ({
         to="/search"
         class="inline-flex h-10 items-center rounded-full border border-white/20 px-4 text-[10px] uppercase tracking-[0.35em] text-white/80 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
       >
-        Back to search
+        Retour a la recherche
       </NuxtLink>
 
       <header class="mt-6 border-b border-white/10 pb-6">
-        <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Store page</p>
+        <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Page magasin</p>
         <h1 class="mt-2 font-display text-4xl font-semibold italic tracking-tight text-white sm:text-5xl">
           {{ storeOverview.storeName || storeSlug }}
         </h1>
 
         <div class="mt-4 flex flex-wrap gap-3 text-[10px] uppercase tracking-[0.3em] text-white/65">
           <span class="rounded-full border border-white/15 px-3 py-2">
-            {{ storeOverview.activeSpecialsCount }} active specials
+            {{ storeOverview.activeSpecialsCount }} aubaines actives
           </span>
           <span class="rounded-full border border-white/15 px-3 py-2">
-            {{ storeOverview.productCount }} total products
+            {{ storeOverview.productCount }} produits au total
           </span>
           <span v-if="storeOverview.formattedLastUpdated" class="rounded-full border border-white/15 px-3 py-2">
-            Updated {{ storeOverview.formattedLastUpdated }}
+            Mis a jour {{ storeOverview.formattedLastUpdated }}
           </span>
         </div>
       </header>
@@ -226,10 +226,10 @@ useHead(() => ({
         <section class="rounded-2xl border border-white/10 bg-black/60 p-5 sm:p-6">
           <div class="flex items-center justify-between gap-4">
             <h2 class="font-display text-3xl font-semibold italic tracking-tight text-white sm:text-4xl">
-              Latest specials
+              Dernieres aubaines
             </h2>
             <span class="text-[10px] uppercase tracking-[0.35em] text-white/60">
-              {{ storeOverview.latestPromos.length }} items
+              {{ storeOverview.latestPromos.length }} articles
             </span>
           </div>
 
@@ -251,7 +251,7 @@ useHead(() => ({
                     class="h-full w-full object-contain"
                     loading="lazy"
                   >
-                  <div v-else class="flex h-full w-full items-center justify-center text-sm uppercase tracking-[0.3em] text-white/60">No image</div>
+                  <div v-else class="flex h-full w-full items-center justify-center text-sm uppercase tracking-[0.3em] text-white/60">Aucune image</div>
                   <div class="pointer-events-none absolute inset-0 bg-black/30"></div>
                 </div>
               </NuxtLink>
@@ -276,21 +276,21 @@ useHead(() => ({
                 rel="noopener noreferrer"
                 class="mt-3 inline-flex rounded-full border border-white/20 px-3 py-1 text-[10px] uppercase tracking-[0.28em] text-white/80 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
               >
-                View on store
+                Voir en magasin
               </a>
             </article>
           </div>
 
-          <p v-else class="mt-4 text-sm text-white/70">No recent specials available right now.</p>
+          <p v-else class="mt-4 text-sm text-white/70">Aucune aubaine recente disponible pour le moment.</p>
         </section>
 
         <section class="rounded-2xl border border-white/10 bg-white/5 p-5 sm:p-6">
           <div class="flex items-center justify-between gap-4">
             <h2 class="font-display text-3xl font-semibold italic tracking-tight text-white sm:text-4xl">
-              Best product pages
+              Meilleurs produits
             </h2>
             <span class="text-[10px] uppercase tracking-[0.35em] text-white/60">
-              {{ storeOverview.bestProducts.length }} picks
+              {{ storeOverview.bestProducts.length }} choix
             </span>
           </div>
 
@@ -315,7 +315,7 @@ useHead(() => ({
             </NuxtLink>
           </div>
 
-          <p v-else class="mt-4 text-sm text-white/70">No product links available right now.</p>
+          <p v-else class="mt-4 text-sm text-white/70">Aucun lien produit disponible pour le moment.</p>
         </section>
       </section>
     </main>

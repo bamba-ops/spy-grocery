@@ -153,7 +153,7 @@ export const useListsStore = defineStore('lists', {
     },
 
     getSaveActionLabel: (state) => {
-      return state.currentListSourceName ? 'Update list' : 'Save list'
+      return state.currentListSourceName ? 'Mettre a jour la liste' : 'Enregistrer la liste'
     },
 
     getCanSubmitList: (state) => {
@@ -209,22 +209,22 @@ export const useListsStore = defineStore('lists', {
       const parts: string[] = []
 
       if (created > 0) {
-        parts.push(`${created} created`)
+        parts.push(`${created} creees`)
       }
 
       if (updated > 0) {
-        parts.push(`${updated} updated`)
+        parts.push(`${updated} mises a jour`)
       }
 
       if (deleted > 0) {
-        parts.push(`${deleted} deleted`)
+        parts.push(`${deleted} supprimees`)
       }
 
       if (parts.length === 0) {
         return
       }
 
-      toast.success('Lists synced', {
+      toast.success('Listes synchronisees', {
         description: parts.join(', ')
       })
     },
@@ -234,8 +234,8 @@ export const useListsStore = defineStore('lists', {
         return
       }
 
-      toast.error('Could not sync local lists', {
-        description: 'Your local changes are kept and will retry later.'
+      toast.error('Impossible de synchroniser les listes locales', {
+        description: 'Vos changements locaux sont conserves et seront reessayes plus tard.'
       })
     },
 
@@ -328,7 +328,7 @@ export const useListsStore = defineStore('lists', {
 
         return true
       } catch (error) {
-        this.error = getApiErrorMessage(error, 'Could not sync local lists.')
+        this.error = getApiErrorMessage(error, 'Impossible de synchroniser les listes locales.')
         this.setLoadListsFromLocalStorage()
         this.setSyncCurrentListSourceWithSavedLists()
 
@@ -364,7 +364,7 @@ export const useListsStore = defineStore('lists', {
       if (!import.meta.client) return
 
       toast.success(product.title, {
-        description: `${product.store} - added to your list.`
+        description: `${product.store} - ajoute a votre liste.`
       })
     },
 
@@ -372,15 +372,15 @@ export const useListsStore = defineStore('lists', {
       if (!import.meta.client) return
 
       toast.success(name, {
-        description: 'List saved successfully.'
+        description: 'Liste enregistree avec succes.'
       })
     },
 
     setListClearedToast() {
       if (!import.meta.client) return
 
-      toast.success('List cleared', {
-        description: 'Your current list is now empty.'
+      toast.success('Liste videe', {
+        description: 'Votre liste courante est maintenant vide.'
       })
     },
 
@@ -388,7 +388,7 @@ export const useListsStore = defineStore('lists', {
       if (!import.meta.client) return
 
       toast.success(name, {
-        description: 'List deleted successfully.'
+        description: 'Liste supprimee avec succes.'
       })
     },
 
@@ -396,7 +396,7 @@ export const useListsStore = defineStore('lists', {
       if (!import.meta.client) return
 
       toast.success(name, {
-        description: 'List updated successfully.'
+        description: 'Liste mise a jour avec succes.'
       })
     },
 
@@ -449,10 +449,10 @@ export const useListsStore = defineStore('lists', {
         const authStore = useAuthStore()
 
         authStore.setOpenAuthPrompt({
-          title: 'Save your grocery lists',
-          description: 'Sign in to keep your lists synced, reusable, and ready whenever you come back.',
+          title: 'Enregistrez vos listes d\'epicerie',
+          description: 'Connectez-vous pour garder vos listes synchronisees, reutilisables et pretes a votre retour.',
           nextPath: '/lists',
-          ctaLabel: 'Sign in to save'
+          ctaLabel: 'Connexion pour enregistrer'
         })
 
         return false
@@ -513,7 +513,7 @@ export const useListsStore = defineStore('lists', {
     async setSaveCurrentList(name: string) {
       const trimmed = name.trim()
       if (!trimmed) {
-        this.lastSaveError = 'Please enter a list name.'
+        this.lastSaveError = 'Veuillez entrer un nom de liste.'
         return false
       }
 
@@ -577,7 +577,7 @@ export const useListsStore = defineStore('lists', {
 
         this.setLoadListsFromLocalStorage()
       } catch {
-        this.error = 'Could not load lists storage.'
+        this.error = 'Impossible de charger le stockage des listes.'
       } finally {
         this.loading = false
       }
@@ -589,8 +589,8 @@ export const useListsStore = defineStore('lists', {
 
       if (!result.ok) {
         this.lastSaveError = result.error === 'duplicate_name'
-          ? 'A list with that name already exists.'
-          : 'Could not save the list.'
+          ? 'Une liste avec ce nom existe deja.'
+          : 'Impossible d\'enregistrer la liste.'
         return false
       }
 
@@ -613,7 +613,7 @@ export const useListsStore = defineStore('lists', {
       const items = this.productList.map((item) => ({ product: item.product, quantity: item.quantity }))
       const result = this.listsStorage.setUpdatedListStorageItemByName(name, items as unknown[])
       if (!result.ok) {
-        this.lastSaveError = 'Could not save the list.'
+        this.lastSaveError = 'Impossible d\'enregistrer la liste.'
         return false
       }
 
@@ -635,7 +635,7 @@ export const useListsStore = defineStore('lists', {
     async deleteListsStorageByName(name: string) {
       const ok = this.listsStorage.deleteListStorageItemByName(name)
       if (!ok) {
-        this.error = 'Could not delete this list.'
+        this.error = 'Impossible de supprimer cette liste.'
         return false
       }
 

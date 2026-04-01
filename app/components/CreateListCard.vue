@@ -14,7 +14,7 @@ const props = defineProps<{
       <div class="mx-auto inline-flex h-16 w-16 items-center justify-center rounded-full border border-white/15 bg-white/5 text-2xl text-white/70 transition group-hover:text-white">
         +
       </div>
-      <div class="mt-6 text-[10px] uppercase tracking-[0.35em] text-white/50">Go to search</div>
+      <div class="mt-6 text-[10px] uppercase tracking-[0.35em] text-white/50">Aller a la recherche</div>
     </div>
   </NuxtLink>
 </template>

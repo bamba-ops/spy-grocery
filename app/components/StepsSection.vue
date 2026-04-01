@@ -2,18 +2,18 @@
 const steps = [
   {
     number: '01.',
-    title: 'Describe your cart',
-    description: 'Tell Spy AI what you need: meals, budget, quantities, or dietary constraints.'
+    title: 'Decrivez votre panier',
+    description: 'Indiquez a Spy AI ce qu\'il vous faut : repas, budget, quantites ou contraintes alimentaires.'
   },
   {
     number: '02.',
-    title: 'Match real products',
-    description: 'We match your request to real products and prices from Quebec grocery stores.'
+    title: 'Associez des produits reels',
+    description: 'Nous relions votre demande a de vrais produits et prix des magasins du Quebec.'
   },
   {
     number: '03.',
-    title: 'Build the cheapest cart',
-    description: 'Review your structured list, add it to your compare list, then save and update anytime.'
+    title: 'Construisez le panier le moins cher',
+    description: 'Revoyez votre liste structuree, ajoutez-la a votre liste de comparaison, puis enregistrez-la.'
   }
 ]
 </script>
@@ -23,12 +23,12 @@ const steps = [
     <div class="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
       <div class="grid gap-10 md:grid-cols-[1.2fr_1fr]">
         <h2 class="font-display text-4xl font-semibold italic leading-tight sm:text-5xl">
-          How SpyGrocery
+          Comment SpyGrocery
           <br />
-          actually works.
+          fonctionne vraiment.
         </h2>
         <p class="max-w-md text-sm font-medium text-black/70 sm:text-base">
-          Three clear steps from request to savings, built for real grocery shopping in Quebec.
+          Trois etapes claires, de la demande aux economies, pour l'epicerie reelle au Quebec.
         </p>
       </div>
 

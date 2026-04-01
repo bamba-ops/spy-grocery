@@ -37,16 +37,16 @@ const onConfirm = () => {
 
       <div class="relative mx-auto flex min-h-full max-w-lg items-center justify-center px-4">
         <div class="w-full rounded-2xl border border-white/10 bg-black p-5 shadow-[0_30px_80px_rgba(0,0,0,0.55)]">
-          <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">{{ props.eyebrow ?? 'Confirm action' }}</p>
-          <h3 class="mt-2 font-display text-2xl font-semibold italic">{{ props.title ?? 'Are you sure?' }}</h3>
-          <p class="mt-3 text-sm text-white/75">{{ props.message ?? 'Please confirm this action.' }}</p>
+          <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">{{ props.eyebrow ?? 'Confirmer l\'action' }}</p>
+          <h3 class="mt-2 font-display text-2xl font-semibold italic">{{ props.title ?? 'Confirmez-vous cette action ?' }}</h3>
+          <p class="mt-3 text-sm text-white/75">{{ props.message ?? 'Veuillez confirmer cette action.' }}</p>
 
           <div class="mt-6 flex items-center justify-end gap-3">
             <button
               class="inline-flex h-11 items-center justify-center rounded-full border border-white/20 px-5 text-[10px] uppercase tracking-[0.35em] text-white/80 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
               @click="onClose"
             >
-              {{ props.cancelText ?? 'Cancel' }}
+              {{ props.cancelText ?? 'Annuler' }}
             </button>
             <button
               :class="[
@@ -55,7 +55,7 @@ const onConfirm = () => {
               ]"
               @click="onConfirm"
             >
-              {{ props.confirmText ?? 'Confirm' }}
+              {{ props.confirmText ?? 'Confirmer' }}
             </button>
           </div>
         </div>

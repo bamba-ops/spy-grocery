@@ -15,7 +15,7 @@ const onboardingApi = useOnboarding()
 const route = useRoute()
 const supabase = useSupabaseClient()
 
-const statusMessage = ref('Signing you in...')
+const statusMessage = ref('Connexion en cours...')
 
 const getSingleQueryValue = (value: string | string[] | undefined) => {
   if (Array.isArray(value)) {
@@ -127,7 +127,7 @@ const setFinalizeAuth = async () => {
     await authStore.refreshUser()
 
     if (authStore.user) {
-      statusMessage.value = 'Session restored. Redirecting...'
+      statusMessage.value = 'Session restauree. Redirection en cours...'
       const destinationPath = await getPostLoginPath()
       clearStoredNextPath()
       await navigateTo(destinationPath, { replace: true })
@@ -168,9 +168,9 @@ useHead({
   <div class="min-h-screen bg-black font-sans text-white">
     <main class="mx-auto flex min-h-screen w-full max-w-3xl items-center justify-center px-4 py-12 sm:px-6">
       <section class="w-full rounded-[32px] border border-white/10 bg-white/5 p-8 text-center shadow-[0_30px_80px_rgba(0,0,0,0.55)] sm:p-10">
-        <p class="text-[10px] uppercase tracking-[0.35em] text-white/55">SpyGrocery Auth</p>
+        <p class="text-[10px] uppercase tracking-[0.35em] text-white/55">Authentification SpyGrocery</p>
         <h1 class="mt-3 font-display text-4xl font-semibold italic tracking-tight text-white sm:text-5xl">
-          Finalizing sign-in.
+          Finalisation de la connexion.
         </h1>
 
         <div class="mt-8 inline-flex h-14 w-14 items-center justify-center rounded-full border border-white/20 bg-white/5">

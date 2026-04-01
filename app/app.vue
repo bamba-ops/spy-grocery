@@ -33,11 +33,11 @@ onMounted(() => {
     <Sonner />
     <ConfirmActionModal
       :open="authStore.authPromptOpen"
-      eyebrow="Account required"
+      eyebrow="Compte requis"
       :title="authStore.authPromptTitle"
       :message="authStore.authPromptDescription"
       :confirm-text="authStore.authPromptCtaLabel"
-      cancel-text="Not now"
+      cancel-text="Plus tard"
       @close="authStore.setCloseAuthPrompt"
       @confirm="authStore.setContinueAuthPromptToLogin"
     />

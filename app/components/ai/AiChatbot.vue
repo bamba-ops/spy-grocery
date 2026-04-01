@@ -46,14 +46,14 @@ const panelTitle = computed(() => {
 
 const pendingDeleteChatTitle = computed(() => {
   if (!pendingDeleteChatId.value) {
-    return 'this conversation'
+    return 'cette conversation'
   }
 
   const session = chatStore.sessions.find((entry) => entry.id === pendingDeleteChatId.value)
   const title = session?.title?.trim()
 
   if (!title) {
-    return 'this conversation'
+    return 'cette conversation'
   }
 
   return `"${title}"`
@@ -245,7 +245,7 @@ watch(
     >
       <section
         class="flex h-[min(78vh,640px)] w-full flex-col overflow-hidden rounded-[32px] border border-white/15 bg-black/90 shadow-[0_40px_100px_rgba(0,0,0,0.65)] backdrop-blur-md"
-        aria-label="Spy AI"
+        aria-label="Assistant Spy AI"
       >
       <header class="flex items-center justify-between border-b border-white/10 px-5 py-4 sm:px-6">
         <div class="flex min-w-0 items-center gap-3">
@@ -253,7 +253,7 @@ watch(
             v-if="panelView === 'chat'"
             type="button"
             class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 text-white/80 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-            aria-label="Back to conversations"
+            aria-label="Retour aux conversations"
             @click="setBackToSessions"
           >
             <ArrowLeft class="h-4 w-4" />
@@ -267,7 +267,7 @@ watch(
 
         <button
           class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 text-white/80 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-          aria-label="Close AI chat"
+          aria-label="Fermer le chat IA"
           @click="setClosePanel"
         >
           <X class="h-4 w-4" />
@@ -323,7 +323,7 @@ watch(
             ]"
           >
             <p class="mb-2 text-[10px] uppercase tracking-[0.35em] text-white/55">
-              {{ message.role === 'user' ? 'You' : 'Spy AI' }}
+              {{ message.role === 'user' ? 'Vous' : 'Spy AI' }}
             </p>
 
             <div
@@ -349,7 +349,7 @@ watch(
                 <span
                   class="bg-[linear-gradient(110deg,rgba(255,255,255,0.35)_20%,rgba(255,255,255,0.95)_45%,rgba(255,255,255,0.35)_70%)] bg-[length:220%_100%] bg-clip-text text-transparent animate-shimmer"
                 >
-                  Thinking...
+                  Reflexion...
                 </span>
               </div>
             </div>
@@ -358,7 +358,7 @@ watch(
           <div v-if="chatStore.showSanitizedLeakNotice" class="flex flex-col items-start">
             <p class="mb-2 text-[10px] uppercase tracking-[0.35em] text-white/55">Spy AI</p>
             <div class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/80 sm:text-base">
-              I could not format that answer correctly. Please try again.
+              Je n'ai pas pu formater cette reponse correctement. Veuillez reessayer.
             </div>
           </div>
 
@@ -366,7 +366,7 @@ watch(
             v-if="chatStore.error"
             class="rounded-2xl border border-white/20 bg-white/5 px-4 py-3 text-sm text-white/80"
           >
-            Something went wrong.
+            Une erreur est survenue.
           </div>
 
           <div v-if="chatStore.aiListItems.length > 0" class="flex flex-col items-start">
@@ -410,7 +410,7 @@ watch(
               v-model="input"
               type="text"
               class="h-10 flex-1 bg-transparent px-2 text-sm text-white placeholder:text-white/35 focus:outline-none sm:text-base"
-              placeholder="Ask Spy AI..."
+              placeholder="Demandez a Spy AI..."
               :disabled="chatStore.isBusy || chatStore.isHydratingSession"
             >
 
@@ -418,7 +418,7 @@ watch(
               type="submit"
               class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-white text-black transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:cursor-not-allowed disabled:opacity-40"
               :disabled="!canSend"
-              aria-label="Send message"
+              aria-label="Envoyer le message"
             >
               <Loader2 v-if="chatStore.isBusy" class="h-4 w-4 animate-spin" />
               <Send v-else class="h-4 w-4" />
@@ -429,11 +429,11 @@ watch(
 
         <ConfirmActionModal
           :open="isDeleteConfirmOpen"
-          eyebrow="Delete conversation"
-          title="Remove chat"
-          :message="`Are you sure you want to delete ${pendingDeleteChatTitle}?`"
-          confirm-text="Delete"
-          cancel-text="Cancel"
+          eyebrow="Supprimer la conversation"
+          title="Retirer le chat"
+          :message="`Confirmez-vous la suppression de ${pendingDeleteChatTitle} ?`"
+          confirm-text="Supprimer"
+          cancel-text="Annuler"
           destructive
           @close="setCloseDeleteConfirm"
           @confirm="setConfirmDeleteChatSession"
