@@ -6,6 +6,8 @@ import { useOnboardingStore } from '~/stores/onboarding'
 const searchStore = useSearchStore()
 const authStore = useAuthStore()
 const onboardingStore = useOnboardingStore()
+const runtimeConfig = useRuntimeConfig()
+const siteUrl = (runtimeConfig.public.siteUrl || 'https://spygrocery.com').replace(/\/$/, '')
 
 const showResumeOnboarding = computed(() => {
   return Boolean(authStore.user) && onboardingStore.getCanResume
@@ -16,9 +18,18 @@ definePageMeta({
   middleware: 'onboarding'
 })
 
-useHead({
+useServerSeoMeta({
   title: 'Search Products — SpyGrocery',
+  description: 'Search products and compare grocery prices across Quebec stores.',
+  robots: 'noindex,follow'
+})
+
+useHead({
   link: [
+    {
+      rel: 'canonical',
+      href: `${siteUrl}/search`
+    },
     {
       rel: 'preconnect',
       href: 'https://fonts.googleapis.com'

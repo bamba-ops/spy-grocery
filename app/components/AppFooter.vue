@@ -1,5 +1,26 @@
 <script setup lang="ts">
 const currentYear = new Date().getFullYear()
+const { fetchStores } = useStores()
+
+const { data: storeLinksData } = await useAsyncData('footer-store-links', async () => {
+  const stores = await fetchStores()
+
+  return stores
+    .sort((a, b) => {
+      if (a.product_count !== b.product_count) {
+        return b.product_count - a.product_count
+      }
+
+      return a.name.localeCompare(b.name)
+    })
+    .slice(0, 10)
+    .map((store) => ({
+      label: store.name,
+      to: `/magasins/${encodeURIComponent(store.slug)}`
+    }))
+})
+
+const storeLinks = computed(() => storeLinksData.value || [])
 
 const footerColumns = [
   {
@@ -46,6 +67,23 @@ const footerColumns = [
               </li>
             </ul>
           </div>
+        </div>
+
+        <div>
+          <h4 class="text-[10px] uppercase tracking-[0.35em] text-white/60">Stores</h4>
+          <ul class="mt-4 space-y-3 text-xs uppercase tracking-[0.25em] text-white/70">
+            <li v-for="store in storeLinks" :key="store.to">
+              <NuxtLink
+                :to="store.to"
+                class="transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+              >
+                {{ store.label }}
+              </NuxtLink>
+            </li>
+          </ul>
+          <p v-if="storeLinks.length === 0" class="mt-4 text-sm text-white/60">
+            Store pages are loading.
+          </p>
         </div>
 
       </div>
