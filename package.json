@@ -9,6 +9,9 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare"
   },
+  "engines": {
+    "node": ">=20.19.0"
+  },
   "dependencies": {
     "@ai-sdk/vue": "^3.0.134",
     "@nuxtjs/supabase": "^2.0.3",
