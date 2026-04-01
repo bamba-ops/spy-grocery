@@ -23,6 +23,15 @@ Current runtime data model (important):
 - Store list for UI is derived from `products` rows (`store`, `store_id`) in backend.
 - Current operational dataset in `products` is treated as specials-only.
 
+## Language Policy
+- The project language is **French first**.
+- Default for user-facing content is French:
+  - UI labels and copy
+  - toasts and error messages
+  - SEO metadata
+  - product-facing documentation
+- English is acceptable only for technical identifiers (API/type/library names) or when explicitly requested.
+
 ## Cursor / Copilot Rules
 - Checked and currently not present:
   - `.cursor/rules/**`

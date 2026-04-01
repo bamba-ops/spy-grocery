@@ -5,6 +5,12 @@ Ce document definit une structure cible et des regles simples (non negociables) 
 
 Voir aussi: `docs/SUPABASE_DB.md` (etat DB + contrats API actifs).
 
+## Regle de langue (obligatoire)
+
+- La langue du projet est le **francais en premier lieu**.
+- Par defaut, tout contenu visible utilisateur doit etre en francais (UI, messages, SEO, docs produit).
+- L'anglais est reserve aux termes techniques ou aux demandes explicites.
+
 ## TL;DR (regles principales)
 
 - Les composants Vue = UI uniquement (pas de requetes DB, pas de logique metier).
