@@ -8,7 +8,7 @@ const authStore = useAuthStore()
 const navItems = [
   { label: 'Processus', href: '#process' },
   { label: 'Fonctionnalites', href: '#features' },
-  { label: 'A propos', href: '#about' }
+  { label: 'Temoignage', href: '#temoignage' }
 ]
 
 const toggleMenu = () => {

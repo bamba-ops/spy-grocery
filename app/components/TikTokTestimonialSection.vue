@@ -38,7 +38,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <section class="bg-black text-white">
+  <section id="temoignage" class="bg-black text-white">
     <div class="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
       <div class="max-w-3xl">
         <p class="text-[10px] uppercase tracking-[0.4em] text-white/60">Temoignage</p>
