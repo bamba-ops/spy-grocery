@@ -119,7 +119,7 @@ Rules:
 Query params:
 - `q?: string`
 - `store?: string` (`all` or one store id/slug)
-- `sort?: 'price_asc' | 'price_desc' | 'title_asc' | 'recent'`
+- `sort?: 'relevance' | 'price_asc' | 'price_desc' | 'title_asc' | 'recent'`
 - `limit?: number` (default 50, max 100)
 - `offset?: number` (default 0)
 

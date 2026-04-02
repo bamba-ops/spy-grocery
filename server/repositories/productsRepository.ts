@@ -1,5 +1,6 @@
 import type { DbProduct } from '#shared/types'
 import type { SearchSort } from '#shared/types/search'
+import { toSlug } from '#shared/utils/toSlug'
 
 interface SearchProductsRowsParams {
   searchQuery: string
@@ -48,6 +49,19 @@ interface BuildSingleStoreListRowsResult {
   coverage: number
 }
 
+type NonRelevanceSort = Exclude<SearchSort, 'relevance'>
+
+interface RankedSearchRow {
+  row: DbProduct
+  score: number
+}
+
+interface SearchFilterParams {
+  rawSearchQuery: string
+  normalizedSearchQuery: string
+  searchQuerySlug: string
+}
+
 const SELECT_FIELDS = [
   'id',
   'external_id',
@@ -70,8 +84,102 @@ const SELECT_FIELDS = [
   'scraped_at'
 ].join(',')
 
-const applySort = (query: any, sortBy: SearchSort) => {
+const MIN_RELEVANCE_QUERY_LENGTH = 2
+const MIN_CANDIDATE_ROWS = 250
+const MAX_CANDIDATE_ROWS = 1500
+const CANDIDATE_ROW_MULTIPLIER = 6
+
+const normalizeSearchText = (value: string | null | undefined) => {
+  if (!value) {
+    return ''
+  }
+
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+}
+
+const tokenizeSearchText = (value: string) => {
+  return value
+    .split(/[^a-z0-9]+/)
+    .map((token) => token.trim())
+    .filter((token, index, array) => token.length >= 2 && array.indexOf(token) === index)
+}
+
+const sanitizeFilterValue = (value: string) => {
+  return value
+    .replace(/[,%()'"`]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+const getTimestampOrZero = (value: string | null | undefined) => {
+  if (!value) {
+    return 0
+  }
+
+  const parsed = Date.parse(value)
+  return Number.isNaN(parsed) ? 0 : parsed
+}
+
+const getTitleSlug = (row: DbProduct) => {
+  const explicitSlug = (row.title_slug || '').trim().toLowerCase()
+  if (explicitSlug) {
+    return explicitSlug
+  }
+
+  return toSlug(row.title || '')
+}
+
+const getResolvedDbSort = (sortBy: SearchSort): NonRelevanceSort => {
+  if (sortBy === 'relevance') {
+    return 'price_asc'
+  }
+
+  return sortBy
+}
+
+const compareRowsBySort = (a: DbProduct, b: DbProduct, sortBy: NonRelevanceSort) => {
   switch (sortBy) {
+    case 'price_asc': {
+      const aPrice = typeof a.price_num === 'number' ? a.price_num : Number.POSITIVE_INFINITY
+      const bPrice = typeof b.price_num === 'number' ? b.price_num : Number.POSITIVE_INFINITY
+
+      if (aPrice !== bPrice) {
+        return aPrice - bPrice
+      }
+
+      return (a.title || '').localeCompare(b.title || '')
+    }
+    case 'price_desc': {
+      const aPrice = typeof a.price_num === 'number' ? a.price_num : Number.NEGATIVE_INFINITY
+      const bPrice = typeof b.price_num === 'number' ? b.price_num : Number.NEGATIVE_INFINITY
+
+      if (aPrice !== bPrice) {
+        return bPrice - aPrice
+      }
+
+      return (a.title || '').localeCompare(b.title || '')
+    }
+    case 'recent': {
+      const byRecent = getTimestampOrZero(b.scraped_at) - getTimestampOrZero(a.scraped_at)
+
+      if (byRecent !== 0) {
+        return byRecent
+      }
+
+      return (a.title || '').localeCompare(b.title || '')
+    }
+    case 'title_asc':
+    default:
+      return (a.title || '').localeCompare(b.title || '')
+  }
+}
+
+const applySort = (query: any, sortBy: SearchSort) => {
+  switch (getResolvedDbSort(sortBy)) {
     case 'price_asc':
       return query.order('price_num', { ascending: true, nullsFirst: false }).order('title', { ascending: true })
     case 'price_desc':
@@ -82,6 +190,225 @@ const applySort = (query: any, sortBy: SearchSort) => {
     default:
       return query.order('title', { ascending: true })
   }
+}
+
+const applyStoreFilter = (dbQuery: any, store: string) => {
+  if (!store || store === 'all') {
+    return dbQuery
+  }
+
+  if (getIsStoreIdQuery(store)) {
+    return dbQuery.eq('store_id', store)
+  }
+
+  const normalizedStore = store.trim().toLowerCase()
+
+  if (toSlug(normalizedStore) === normalizedStore) {
+    return dbQuery.eq('store_slug', normalizedStore)
+  }
+
+  return dbQuery.eq('store_id', store)
+}
+
+const applySearchFilter = (dbQuery: any, params: SearchFilterParams) => {
+  const conditions: string[] = []
+  const safeRawQuery = sanitizeFilterValue(params.rawSearchQuery)
+  const safeNormalizedQuery = sanitizeFilterValue(params.normalizedSearchQuery)
+
+  if (params.searchQuerySlug) {
+    conditions.push(`title_slug.ilike.%${params.searchQuerySlug}%`)
+  }
+
+  const titleAndBrandQuery = safeRawQuery || safeNormalizedQuery
+
+  if (titleAndBrandQuery) {
+    conditions.push(`title.ilike.%${titleAndBrandQuery}%`)
+    conditions.push(`brand.ilike.%${titleAndBrandQuery}%`)
+  }
+
+  if (conditions.length === 0) {
+    return dbQuery
+  }
+
+  return dbQuery.or(conditions.join(','))
+}
+
+const getContainsFullSlugToken = (titleSlug: string, token: string) => {
+  return (
+    titleSlug === token
+    || titleSlug.startsWith(`${token}-`)
+    || titleSlug.endsWith(`-${token}`)
+    || titleSlug.includes(`-${token}-`)
+  )
+}
+
+const getContainsSlugTokenPrefix = (titleSlug: string, token: string) => {
+  const escapedToken = token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const tokenPrefixPattern = new RegExp(`(^|-)${escapedToken}[a-z0-9]+(-|$)`, 'i')
+
+  return tokenPrefixPattern.test(titleSlug)
+}
+
+const getRelevanceScore = (row: DbProduct, normalizedSearchQuery: string, searchQuerySlug: string, searchTokens: string[]) => {
+  const normalizedTitle = normalizeSearchText(row.title)
+  const normalizedBrand = normalizeSearchText(row.brand)
+  const titleSlug = getTitleSlug(row)
+  let score = 0
+
+  if (searchQuerySlug && titleSlug === searchQuerySlug) {
+    score += 2400
+  }
+
+  if (normalizedSearchQuery && normalizedTitle === normalizedSearchQuery) {
+    score += 2200
+  }
+
+  if (searchQuerySlug && titleSlug.startsWith(`${searchQuerySlug}-`)) {
+    score += 1700
+  }
+
+  if (searchQuerySlug && (titleSlug.endsWith(`-${searchQuerySlug}`) || titleSlug.includes(`-${searchQuerySlug}-`))) {
+    score += 1500
+  }
+
+  if (normalizedSearchQuery && normalizedTitle.startsWith(`${normalizedSearchQuery} `)) {
+    score += 1200
+  }
+
+  if (normalizedSearchQuery && normalizedTitle.includes(normalizedSearchQuery)) {
+    score += 700
+  }
+
+  let exactTokenMatches = 0
+  let tokenPrefixMatches = 0
+
+  for (const token of searchTokens) {
+    if (getContainsFullSlugToken(titleSlug, token)) {
+      exactTokenMatches += 1
+      score += 320
+      continue
+    }
+
+    if (getContainsSlugTokenPrefix(titleSlug, token)) {
+      tokenPrefixMatches += 1
+      score += 90
+    }
+  }
+
+  if (searchTokens.length > 0 && exactTokenMatches === searchTokens.length) {
+    score += 400
+  }
+
+  if (normalizedSearchQuery && normalizedBrand === normalizedSearchQuery) {
+    score += 260
+  } else if (normalizedSearchQuery && normalizedBrand.startsWith(normalizedSearchQuery)) {
+    score += 170
+  } else if (normalizedSearchQuery && normalizedBrand.includes(normalizedSearchQuery)) {
+    score += 90
+  }
+
+  const hasTitleHit = normalizedSearchQuery ? normalizedTitle.includes(normalizedSearchQuery) : false
+  const hasBrandHit = normalizedSearchQuery ? normalizedBrand.includes(normalizedSearchQuery) : false
+
+  if (!hasTitleHit && hasBrandHit) {
+    score -= 220
+  }
+
+  if (tokenPrefixMatches > 0 && exactTokenMatches === 0) {
+    score -= 40
+  }
+
+  return score
+}
+
+const getRankedSearchRows = (
+  rows: DbProduct[],
+  normalizedSearchQuery: string,
+  searchQuerySlug: string,
+  sortBy: SearchSort
+) => {
+  const searchTokens = tokenizeSearchText(searchQuerySlug)
+  const tieBreakSort = getResolvedDbSort(sortBy)
+
+  const rankedRows: RankedSearchRow[] = rows.map((row) => ({
+    row,
+    score: getRelevanceScore(row, normalizedSearchQuery, searchQuerySlug, searchTokens)
+  }))
+
+  rankedRows.sort((a, b) => {
+    if (a.score !== b.score) {
+      return b.score - a.score
+    }
+
+    const sortComparison = compareRowsBySort(a.row, b.row, tieBreakSort)
+
+    if (sortComparison !== 0) {
+      return sortComparison
+    }
+
+    return a.row.id.localeCompare(b.row.id)
+  })
+
+  return rankedRows.map((entry) => entry.row)
+}
+
+const getSearchCandidateLimit = (offset: number, limit: number) => {
+  const requestedWindow = offset + (limit * CANDIDATE_ROW_MULTIPLIER)
+
+  return Math.min(Math.max(requestedWindow, MIN_CANDIDATE_ROWS), MAX_CANDIDATE_ROWS)
+}
+
+const getSearchCount = async (
+  supabase: any,
+  params: SearchFilterParams,
+  store: string
+) => {
+  let countQuery = supabase
+    .from('products')
+    .select('id', { count: 'exact', head: true })
+
+  countQuery = applySearchFilter(countQuery, params)
+  countQuery = applyStoreFilter(countQuery, store)
+
+  const { error, count } = await countQuery
+
+  if (error) {
+    throw createError({
+      statusCode: 500,
+      message: `Search count failed: ${error.message}`
+    })
+  }
+
+  return count || 0
+}
+
+const getSearchCandidateRows = async (
+  supabase: any,
+  params: SearchFilterParams,
+  store: string,
+  limit: number
+) => {
+  let dbQuery = supabase
+    .from('products')
+    .select(SELECT_FIELDS)
+
+  dbQuery = applySearchFilter(dbQuery, params)
+  dbQuery = applyStoreFilter(dbQuery, store)
+  dbQuery = dbQuery
+    .order('scraped_at', { ascending: false })
+    .order('title', { ascending: true })
+    .limit(limit)
+
+  const { data, error } = await dbQuery
+
+  if (error) {
+    throw createError({
+      statusCode: 500,
+      message: `Search failed: ${error.message}`
+    })
+  }
+
+  return (data || []) as DbProduct[]
 }
 
 const normalizeRequestedItems = (items: string[]) => {
@@ -136,11 +463,19 @@ const getRowsByRequestedItem = async (
   perItemLimit: number,
   preferredStore?: string | null
 ): Promise<DbProduct[]> => {
+  const normalizedRequestedItem = normalizeSearchText(requestedItem)
+  const requestedItemSearchParams: SearchFilterParams = {
+    rawSearchQuery: requestedItem,
+    normalizedSearchQuery: normalizedRequestedItem,
+    searchQuerySlug: toSlug(normalizedRequestedItem)
+  }
+
   let dbQuery = supabase
     .from('products')
     .select(SELECT_FIELDS)
-    .or(`title.ilike.%${requestedItem}%,brand.ilike.%${requestedItem}%`)
     .not('price_num', 'is', null)
+
+  dbQuery = applySearchFilter(dbQuery, requestedItemSearchParams)
 
   const normalizedPreferredStore = preferredStore?.trim() || ''
 
@@ -170,21 +505,52 @@ const getRowsByRequestedItem = async (
 }
 
 export const searchProductsRows = async (supabase: any, params: SearchProductsRowsParams) => {
+  const normalizedSearchQuery = normalizeSearchText(params.searchQuery)
+  const searchParams: SearchFilterParams = {
+    rawSearchQuery: params.searchQuery,
+    normalizedSearchQuery,
+    searchQuerySlug: toSlug(normalizedSearchQuery)
+  }
+
+  const hasSearchQuery = searchParams.normalizedSearchQuery.length > 0
+  const canUseRelevanceRanking = hasSearchQuery
+    && searchParams.normalizedSearchQuery.length >= MIN_RELEVANCE_QUERY_LENGTH
+    && (params.offset + params.limit) <= MAX_CANDIDATE_ROWS
+
+  if (canUseRelevanceRanking) {
+    const count = await getSearchCount(supabase, searchParams, params.store)
+
+    if (count === 0) {
+      return {
+        rows: [],
+        count: 0
+      }
+    }
+
+    const candidateLimit = Math.min(getSearchCandidateLimit(params.offset, params.limit), count)
+    const candidateRows = await getSearchCandidateRows(supabase, searchParams, params.store, candidateLimit)
+    const rankedRows = getRankedSearchRows(
+      candidateRows,
+      searchParams.normalizedSearchQuery,
+      searchParams.searchQuerySlug,
+      params.sortBy
+    )
+
+    return {
+      rows: rankedRows.slice(params.offset, params.offset + params.limit),
+      count
+    }
+  }
+
   let dbQuery = supabase
     .from('products')
     .select(SELECT_FIELDS, { count: 'exact' })
 
-  if (params.searchQuery) {
-    dbQuery = dbQuery.or(`title.ilike.%${params.searchQuery}%,brand.ilike.%${params.searchQuery}%`)
+  if (hasSearchQuery) {
+    dbQuery = applySearchFilter(dbQuery, searchParams)
   }
 
-  if (params.store && params.store !== 'all') {
-    if (/^[0-9]+$/.test(params.store)) {
-      dbQuery = dbQuery.eq('store_id', params.store)
-    } else {
-      dbQuery = dbQuery.or(`store_slug.eq.${params.store},store_id.eq.${params.store}`)
-    }
-  }
+  dbQuery = applyStoreFilter(dbQuery, params.store)
 
   dbQuery = applySort(dbQuery, params.sortBy)
   dbQuery = dbQuery.range(params.offset, params.offset + params.limit - 1)
@@ -304,8 +670,24 @@ export const getBroadSimilarProductsRows = async (supabase: any, params: BroadSi
     dbQuery = dbQuery.neq('store', params.excludeStoreName)
   }
 
-  const titleFilters = terms.map((term) => `title.ilike.%${term}%`)
-  dbQuery = dbQuery.or(titleFilters.join(','))
+  const broadFilters = terms.flatMap((term) => {
+    const safeTerm = sanitizeFilterValue(term)
+
+    if (!safeTerm) {
+      return []
+    }
+
+    return [
+      `title.ilike.%${safeTerm}%`,
+      `title_slug.ilike.%${toSlug(safeTerm)}%`
+    ]
+  })
+
+  if (broadFilters.length === 0) {
+    return []
+  }
+
+  dbQuery = dbQuery.or(broadFilters.join(','))
 
   dbQuery = dbQuery
     .order('price_num', { ascending: true, nullsFirst: false })

@@ -21,8 +21,9 @@ const searchStore = useSearchStore()
       <select
         :value="searchStore.sortBy"
         class="h-10 rounded-full border border-white/15 bg-black px-3 text-[10px] uppercase tracking-[0.3em] text-white/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-        @change="searchStore.setSortBy(($event.target as HTMLSelectElement).value as 'price_asc' | 'price_desc' | 'title_asc' | 'recent')"
+        @change="searchStore.setSortBy(($event.target as HTMLSelectElement).value as 'relevance' | 'price_asc' | 'price_desc' | 'title_asc' | 'recent')"
       >
+        <option value="relevance">Pertinence</option>
         <option value="price_asc">Prix : plus bas</option>
         <option value="price_desc">Prix : plus haut</option>
         <option value="title_asc">Titre : A-Z</option>

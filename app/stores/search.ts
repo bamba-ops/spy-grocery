@@ -21,7 +21,7 @@ export const useSearchStore = defineStore('search', {
     total: 0,
     page: 1,
     limit: 50,
-    sortBy: 'price_asc' as SearchSort,
+    sortBy: 'relevance' as SearchSort,
     loading: false,
     error: null as string | null,
     selectedStoreId: 'all',
@@ -65,7 +65,7 @@ export const useSearchStore = defineStore('search', {
           q: query,
           limit: this.HERO_SEARCH_LIMIT,
           offset: 0,
-          sort: 'price_asc',
+          sort: 'relevance',
           store: 'all'
         })
 
@@ -188,7 +188,7 @@ export const useSearchStore = defineStore('search', {
       this.searchInput = ''
       this.query = ''
       this.selectedStoreId = 'all'
-      this.sortBy = 'price_asc'
+      this.sortBy = 'relevance'
       this.page = 1
 
       void this.getSearchResults()

@@ -2,7 +2,7 @@ import { serverSupabaseClient } from '#supabase/server'
 import type { SearchSort } from '#shared/types/search'
 import { searchProducts } from '../../services/products/searchProducts'
 
-const ALLOWED_SORTS: SearchSort[] = ['price_asc', 'price_desc', 'title_asc', 'recent']
+const ALLOWED_SORTS: SearchSort[] = ['relevance', 'price_asc', 'price_desc', 'title_asc', 'recent']
 
 const toPositiveInt = (value: string | undefined, fallback: number) => {
   if (!value) return fallback
@@ -17,7 +17,7 @@ export default defineEventHandler(async (event) => {
 
   const searchQuery = query.q?.toString().trim() || ''
   const store = query.store?.toString().trim().toLowerCase() || 'all'
-  const sortParam = query.sort?.toString().trim() || 'price_asc'
+  const sortParam = query.sort?.toString().trim() || (searchQuery ? 'relevance' : 'price_asc')
   const limit = Math.min(toPositiveInt(query.limit?.toString(), 50), 100)
   const offset = toPositiveInt(query.offset?.toString(), 0)
 

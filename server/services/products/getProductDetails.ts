@@ -1,5 +1,6 @@
 import type { DbProduct, SearchProduct } from '#shared/types'
 import type { ProductDetailsResponse } from '#shared/types/product-details'
+import { toSlug } from '#shared/utils/toSlug'
 import { getBroadSimilarProductsRows, getProductRowBySlug, getSimilarProductsRows } from '../../repositories/productsRepository'
 
 interface GetProductDetailsParams {
@@ -14,7 +15,8 @@ interface ScoredRow {
 
 const MIN_RESULTS_BEFORE_BROAD_MATCH = 2
 const BROAD_MATCH_LIMIT = 220
-const MIN_SIMILARITY_SCORE = 0.35
+const MIN_RELEVANCE_SCORE_SINGLE_TOKEN = 900
+const MIN_RELEVANCE_SCORE_MULTI_TOKEN = 620
 
 const toNullableTrimmed = (value: string | null) => {
   if (!value) {
@@ -47,7 +49,11 @@ const toSearchProduct = (row: DbProduct): SearchProduct => ({
   scraped_at: row.scraped_at || null
 })
 
-const normalizeText = (value: string) => {
+const normalizeSearchText = (value: string | null | undefined) => {
+  if (!value) {
+    return ''
+  }
+
   return value
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
@@ -55,9 +61,112 @@ const normalizeText = (value: string) => {
     .trim()
 }
 
+const tokenizeSearchText = (value: string) => {
+  return value
+    .split(/[^a-z0-9]+/)
+    .map((token) => token.trim())
+    .filter((token, index, array) => token.length >= 2 && array.indexOf(token) === index)
+}
+
+const getTitleSlug = (row: DbProduct) => {
+  const explicitSlug = (row.title_slug || '').trim().toLowerCase()
+  if (explicitSlug) {
+    return explicitSlug
+  }
+
+  return toSlug(row.title || '')
+}
+
+const getContainsFullSlugToken = (titleSlug: string, token: string) => {
+  return (
+    titleSlug === token
+    || titleSlug.startsWith(`${token}-`)
+    || titleSlug.endsWith(`-${token}`)
+    || titleSlug.includes(`-${token}-`)
+  )
+}
+
+const getContainsSlugTokenPrefix = (titleSlug: string, token: string) => {
+  const escapedToken = token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const tokenPrefixPattern = new RegExp(`(^|-)${escapedToken}[a-z0-9]+(-|$)`, 'i')
+
+  return tokenPrefixPattern.test(titleSlug)
+}
+
+const getRelevanceScore = (row: DbProduct, normalizedSearchQuery: string, searchQuerySlug: string, searchTokens: string[]) => {
+  const normalizedTitle = normalizeSearchText(row.title)
+  const normalizedBrand = normalizeSearchText(row.brand)
+  const titleSlug = getTitleSlug(row)
+  let score = 0
+
+  if (searchQuerySlug && titleSlug === searchQuerySlug) {
+    score += 2400
+  }
+
+  if (normalizedSearchQuery && normalizedTitle === normalizedSearchQuery) {
+    score += 2200
+  }
+
+  if (searchQuerySlug && titleSlug.startsWith(`${searchQuerySlug}-`)) {
+    score += 1700
+  }
+
+  if (searchQuerySlug && (titleSlug.endsWith(`-${searchQuerySlug}`) || titleSlug.includes(`-${searchQuerySlug}-`))) {
+    score += 1500
+  }
+
+  if (normalizedSearchQuery && normalizedTitle.startsWith(`${normalizedSearchQuery} `)) {
+    score += 1200
+  }
+
+  if (normalizedSearchQuery && normalizedTitle.includes(normalizedSearchQuery)) {
+    score += 700
+  }
+
+  let exactTokenMatches = 0
+  let tokenPrefixMatches = 0
+
+  for (const token of searchTokens) {
+    if (getContainsFullSlugToken(titleSlug, token)) {
+      exactTokenMatches += 1
+      score += 320
+      continue
+    }
+
+    if (getContainsSlugTokenPrefix(titleSlug, token)) {
+      tokenPrefixMatches += 1
+      score += 90
+    }
+  }
+
+  if (searchTokens.length > 0 && exactTokenMatches === searchTokens.length) {
+    score += 400
+  }
+
+  if (normalizedSearchQuery && normalizedBrand === normalizedSearchQuery) {
+    score += 260
+  } else if (normalizedSearchQuery && normalizedBrand.startsWith(normalizedSearchQuery)) {
+    score += 170
+  } else if (normalizedSearchQuery && normalizedBrand.includes(normalizedSearchQuery)) {
+    score += 90
+  }
+
+  const hasTitleHit = normalizedSearchQuery ? normalizedTitle.includes(normalizedSearchQuery) : false
+  const hasBrandHit = normalizedSearchQuery ? normalizedBrand.includes(normalizedSearchQuery) : false
+
+  if (!hasTitleHit && hasBrandHit) {
+    score -= 220
+  }
+
+  if (tokenPrefixMatches > 0 && exactTokenMatches === 0) {
+    score -= 40
+  }
+
+  return score
+}
+
 const getWordTokens = (value: string) => {
-  const normalized = normalizeText(value)
-  return normalized.match(/[a-z0-9]+/g) || []
+  return tokenizeSearchText(normalizeSearchText(value))
 }
 
 const getSearchTerms = (title: string) => {
@@ -85,32 +194,59 @@ const getSearchTerms = (title: string) => {
   return Array.from(terms)
 }
 
-const getSimilarityScore = (baseTitle: string, baseTerms: string[], row: DbProduct) => {
-  const candidateTitle = row.title ? normalizeText(row.title) : ''
-  if (!candidateTitle) {
+const getMinimumRelevanceScore = (searchTokens: string[]) => {
+  if (searchTokens.length === 0) {
     return 0
   }
 
-  let score = 0
-
-  if (candidateTitle === baseTitle) {
-    score += 5
+  if (searchTokens.length === 1) {
+    return MIN_RELEVANCE_SCORE_SINGLE_TOKEN
   }
 
-  if (candidateTitle.includes(baseTitle)) {
-    score += 2.5
+  return MIN_RELEVANCE_SCORE_MULTI_TOKEN
+}
+
+const getCandidateSimilarityScore = (
+  row: DbProduct,
+  normalizedTitle: string,
+  titleSlug: string,
+  titleTokens: string[],
+  brand: string | null,
+  uom: string | null
+) => {
+  let score = getRelevanceScore(row, normalizedTitle, titleSlug, titleTokens)
+
+  const normalizedBrand = normalizeSearchText(brand)
+  const normalizedCandidateBrand = normalizeSearchText(row.brand)
+
+  if (normalizedBrand && normalizedCandidateBrand) {
+    if (normalizedBrand === normalizedCandidateBrand) {
+      score += 220
+    } else if (
+      normalizedCandidateBrand.includes(normalizedBrand)
+      || normalizedBrand.includes(normalizedCandidateBrand)
+    ) {
+      score += 110
+    }
   }
 
-  const baseTokens = getWordTokens(baseTitle)
-  const candidateTokens = new Set(getWordTokens(candidateTitle))
-  const sharedTokensCount = baseTokens.filter((token) => candidateTokens.has(token)).length
+  const normalizedUom = normalizeSearchText(uom)
+  const normalizedCandidateUom = normalizeSearchText(row.uom)
 
-  score += sharedTokensCount / Math.max(1, baseTokens.length)
-
-  const matchingTermsCount = baseTerms.filter((term) => candidateTitle.includes(term)).length
-  score += matchingTermsCount / Math.max(1, baseTerms.length)
+  if (normalizedUom && normalizedCandidateUom && normalizedUom === normalizedCandidateUom) {
+    score += 120
+  }
 
   return score
+}
+
+const getTimestampOrZero = (value: string | null | undefined) => {
+  if (!value) {
+    return 0
+  }
+
+  const parsed = Date.parse(value)
+  return Number.isNaN(parsed) ? 0 : parsed
 }
 
 const compareNumbersNullLast = (a: number | null, b: number | null) => {
@@ -126,8 +262,8 @@ const compareRows = (a: DbProduct, b: DbProduct) => {
     return priceOrder
   }
 
-  const aScrapedAt = a.scraped_at ? new Date(a.scraped_at).getTime() : 0
-  const bScrapedAt = b.scraped_at ? new Date(b.scraped_at).getTime() : 0
+  const aScrapedAt = getTimestampOrZero(a.scraped_at)
+  const bScrapedAt = getTimestampOrZero(b.scraped_at)
 
   if (aScrapedAt !== bScrapedAt) {
     return bScrapedAt - aScrapedAt
@@ -153,25 +289,35 @@ const getStoreKey = (row: DbProduct) => {
   return row.store.trim().toLowerCase()
 }
 
-const getDedupedRowsByStore = (rows: DbProduct[], baseTitle: string, baseTerms: string[]) => {
+const getDedupedRowsByStore = (
+  rows: DbProduct[],
+  normalizedTitle: string,
+  titleSlug: string,
+  titleTokens: string[],
+  brand: string | null,
+  uom: string | null
+) => {
   const byStore = new Map<string, ScoredRow>()
+  const minimumRelevanceScore = getMinimumRelevanceScore(titleTokens)
 
   for (const row of rows) {
     const key = getStoreKey(row)
-    const score = getSimilarityScore(baseTitle, baseTerms, row)
-    if (score < MIN_SIMILARITY_SCORE) {
+    const score = getCandidateSimilarityScore(row, normalizedTitle, titleSlug, titleTokens, brand, uom)
+
+    if (score < minimumRelevanceScore) {
       continue
     }
 
+    const candidate = { row, score }
     const existing = byStore.get(key)
 
-    if (!existing || compareScoredRows({ row, score }, existing) < 0) {
-      byStore.set(key, { row, score })
+    if (!existing || compareScoredRows(candidate, existing) < 0) {
+      byStore.set(key, candidate)
     }
   }
 
   return Array.from(byStore.values())
-    .sort((a, b) => compareRows(a.row, b.row))
+    .sort(compareScoredRows)
     .map((entry) => entry.row)
 }
 
@@ -195,7 +341,9 @@ export const getProductDetails = async ({ supabase, slug }: GetProductDetailsPar
 
   const brand = toNullableTrimmed(productRow.brand)
   const uom = toNullableTrimmed(productRow.uom)
-  const normalizedTitle = normalizeText(title)
+  const normalizedTitle = normalizeSearchText(title)
+  const titleSlug = toSlug(normalizedTitle)
+  const titleTokens = tokenizeSearchText(titleSlug)
   const searchTerms = getSearchTerms(title)
 
   const strictRows = await getSimilarProductsRows(supabase, {
@@ -239,7 +387,7 @@ export const getProductDetails = async ({ supabase, slug }: GetProductDetailsPar
   }
 
   const uniqueRows = Array.from(new Map(candidateRows.map((row) => [row.id, row])).values())
-  const dedupedRows = getDedupedRowsByStore(uniqueRows, normalizedTitle, searchTerms)
+  const dedupedRows = getDedupedRowsByStore(uniqueRows, normalizedTitle, titleSlug, titleTokens, brand, uom)
 
   return {
     product: toSearchProduct(productRow),

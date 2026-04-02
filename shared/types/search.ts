@@ -1,6 +1,6 @@
 import type { SearchProduct } from './index'
 
-export type SearchSort = 'price_asc' | 'price_desc' | 'title_asc' | 'recent'
+export type SearchSort = 'relevance' | 'price_asc' | 'price_desc' | 'title_asc' | 'recent'
 
 export interface ProductsQueryParams {
   q?: string
