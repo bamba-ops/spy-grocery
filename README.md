@@ -85,7 +85,7 @@ npm run generate
 
 ## Statut du projet
 
-Projet actif en evolution continue.
+Projet actif et en evolution continue.
 
 - Le depot est public pour visibilite.
 - Le projet n'est pas ouvert aux contributions externes pour le moment.
