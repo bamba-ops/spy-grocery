@@ -636,39 +636,54 @@ const getRowsByRequestedItem = async (
   preferredStore?: string | null
 ): Promise<DbProduct[]> => {
   const requestedItemSearchParams = buildSearchFilterParams(requestedItem)
-
-  let dbQuery = supabase
-    .from('products')
-    .select(SELECT_FIELDS)
-    .not('price_num', 'is', null)
-
-  dbQuery = applySearchFilter(dbQuery, requestedItemSearchParams)
-
   const normalizedPreferredStore = preferredStore?.trim() || ''
 
-  if (normalizedPreferredStore) {
-    if (getIsStoreIdQuery(normalizedPreferredStore)) {
-      dbQuery = dbQuery.eq('store_id', normalizedPreferredStore)
-    } else {
-      dbQuery = dbQuery.ilike('store', `%${normalizedPreferredStore}%`)
+  const getRowsForMode = async (mode: SearchFilterMode): Promise<DbProduct[]> => {
+    let dbQuery = supabase
+      .from('products')
+      .select(SELECT_FIELDS)
+      .not('price_num', 'is', null)
+
+    dbQuery = applySearchFilter(dbQuery, requestedItemSearchParams, mode)
+
+    if (normalizedPreferredStore) {
+      if (getIsStoreIdQuery(normalizedPreferredStore)) {
+        dbQuery = dbQuery.eq('store_id', normalizedPreferredStore)
+      } else {
+        dbQuery = dbQuery.ilike('store', `%${normalizedPreferredStore}%`)
+      }
     }
+
+    dbQuery = dbQuery
+      .order('price_num', { ascending: true, nullsFirst: false })
+      .order('scraped_at', { ascending: false })
+      .limit(perItemLimit)
+
+    const { data, error } = await dbQuery
+
+    if (error) {
+      throw createError({
+        statusCode: 500,
+        message: `Failed to fetch list candidates: ${error.message}`
+      })
+    }
+
+    return (data || []) as DbProduct[]
   }
 
-  dbQuery = dbQuery
-    .order('price_num', { ascending: true, nullsFirst: false })
-    .order('scraped_at', { ascending: false })
-    .limit(perItemLimit)
+  const strictRows = await getRowsForMode('strict')
 
-  const { data, error } = await dbQuery
-
-  if (error) {
-    throw createError({
-      statusCode: 500,
-      message: `Failed to fetch list candidates: ${error.message}`
-    })
+  if (strictRows.length > 0) {
+    return strictRows
   }
 
-  return (data || []) as DbProduct[]
+  const canUseExpandedSearch = requestedItemSearchParams.expandedSearchTokens.length > requestedItemSearchParams.searchTokens.length
+
+  if (!canUseExpandedSearch) {
+    return strictRows
+  }
+
+  return getRowsForMode('expanded')
 }
 
 export const searchProductsRows = async (supabase: any, params: SearchProductsRowsParams) => {

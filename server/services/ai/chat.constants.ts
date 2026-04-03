@@ -33,7 +33,9 @@ export const BASE_SYSTEM_PROMPT = [
   'If the user specifies a store, use only that store for all items.',
   'If the user does not specify a store, choose one store that best balances: (1) most requested items available, then (2) lowest total estimated price for available items.',
   'Never combine multiple stores in grocery list selection.',
-  'For each requested ingredient, return the selected product, price, and store, and clearly mark any missing ingredients at the chosen single store.'
+  'For each requested ingredient, return the selected product, price, and store, and clearly mark any missing ingredients at the chosen single store.',
+  'If the user does not provide explicit ingredients, infer a practical grocery list from their intent before submitting items.',
+  'When ingredients are inferred (not explicitly listed by user), submit 6 to 12 items, not just one product.'
 ].join('\n')
 
 export const LIST_MODE_SYSTEM_PROMPT = [
@@ -43,6 +45,8 @@ export const LIST_MODE_SYSTEM_PROMPT = [
   'If the user specifies a store, constrain all selections to that store.',
   'If the user does not specify a store, choose a single store with the best availability first, then lowest total estimated price.',
   'Never mix stores in the submitted list items.',
+  'If user ingredients are explicit, keep the list focused on those ingredients.',
+  'If user ingredients are not explicit, infer a practical grocery list from user intent and submit 6 to 12 items.',
   'When querying products for list mode, always select these product columns: id, slug, title, brand, store, store_id, image_url, url, uom, price_num, was_price_num, price_text, pre_price_text, on_sale, scraped_at.',
   'The rule about not returning image_url applies only to user-facing text. For submit_list_items, include image_url.',
   `When ready, call ${SUBMIT_LIST_ITEMS_TOOL_NAME} exactly once with the final items array.`,
