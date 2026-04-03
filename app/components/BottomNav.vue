@@ -2,19 +2,31 @@
 import { Bot, Home, Search, ShoppingBag, List } from 'lucide-vue-next'
 import { useListsStore } from '~/stores/lists'
 import { useAuthStore } from '~/stores/auth'
+import { useChatStore } from '~/stores/chat'
+import { useSearchStore } from '~/stores/search'
 import AiChatbot from '~/components/ai/AiChatbot.vue'
 
 const lists = useListsStore()
 const authStore = useAuthStore()
-const isAiChatOpen = ref(false)
+const chatStore = useChatStore()
+const searchStore = useSearchStore()
 
 const route = useRoute()
 const isHome = computed(() => route.path === '/')
 const isSearch = computed(() => route.path.startsWith('/search') || route.path.startsWith('/products'))
 const isLists = computed(() => route.path.startsWith('/lists'))
 
+const shouldHighlightAi = computed(() => {
+  return isSearch.value
+    && searchStore.query.trim().length > 0
+    && !searchStore.loading
+    && !searchStore.error
+    && searchStore.results.length === 0
+    && !chatStore.isChatPanelOpen
+})
+
 const setToggleAiChatPanel = () => {
-  isAiChatOpen.value = !isAiChatOpen.value
+  chatStore.setToggleChatPanelOpen()
 }
 
 const setOpenLists = async () => {
@@ -81,7 +93,11 @@ const setOpenLists = async () => {
         <button
           :class="[
             'inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black active:scale-95 sm:h-11 sm:w-11',
-            isAiChatOpen ? 'bg-white text-black' : 'text-white/80 hover:text-white'
+            chatStore.isChatPanelOpen
+              ? 'bg-white text-black'
+              : shouldHighlightAi
+                ? 'text-black bg-white shadow-[0_0_22px_rgba(255,255,255,0.45)] motion-safe:animate-pulse'
+                : 'text-white/80 hover:text-white'
           ]"
           aria-label="Assistant Spy AI"
           @click="setToggleAiChatPanel"
@@ -105,6 +121,6 @@ const setOpenLists = async () => {
       </nav>
     </div>
 
-    <AiChatbot v-model:open="isAiChatOpen" />
+    <AiChatbot v-model:open="chatStore.isChatPanelOpen" />
   </div>
 </template>

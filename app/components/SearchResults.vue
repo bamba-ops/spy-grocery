@@ -2,9 +2,11 @@
 import { Plus } from 'lucide-vue-next'
 import { getProductRoutePath } from '#shared/utils/productRoute'
 import { useSearchStore } from '~/stores/search'
+import { useChatStore } from '~/stores/chat'
 import { useListsStore } from '~/stores/lists'
 
 const searchStore = useSearchStore()
+const chatStore = useChatStore()
 const lists = useListsStore()
 
 const getSafeProductUrl = (url: string | null) => {
@@ -13,6 +15,10 @@ const getSafeProductUrl = (url: string | null) => {
   if (!trimmed) return null
   if (!/^https?:\/\//i.test(trimmed)) return null
   return trimmed
+}
+
+const setOpenAiAssistant = () => {
+  chatStore.setChatPanelOpen(true)
 }
 </script>
 
@@ -40,12 +46,43 @@ const getSafeProductUrl = (url: string | null) => {
       {{ searchStore.error }}
     </div>
 
-    <div v-else-if="searchStore.getIsLoading" class="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    <div
+      v-else-if="searchStore.getIsLoading || (!searchStore.hasFetchedSearchResults && searchStore.getProducts.length === 0)"
+      class="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+    >
       <div v-for="i in 6" :key="i" class="h-80 animate-pulse rounded-2xl border border-white/10 bg-white/5"></div>
     </div>
 
     <div v-else class="mt-6">
-      <div class="mt-6 grid gap-4 sm:mt-8 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <div
+        v-if="searchStore.hasFetchedSearchResults && searchStore.getProducts.length === 0"
+        class="border-t border-white/10 pt-6 sm:pt-8"
+      >
+        <div class="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
+          <div class="max-w-2xl">
+            <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Aucun resultat</p>
+            <p class="mt-2 font-display text-2xl font-semibold italic tracking-tight text-white sm:text-3xl">
+              On n'a rien trouve pour "{{ searchStore.query || 'votre recherche' }}"
+            </p>
+            <p class="mt-2 text-sm leading-relaxed text-white/80 sm:text-base">
+              Ouvrez Spy AI pour lancer une recherche plus large et verifier si le produit existe dans nos donnees, meme avec un nom different.
+            </p>
+            <p class="mt-3 text-[10px] uppercase tracking-[0.3em] text-white/55">
+              Astuce: l'icone AI pulse dans la barre du bas
+            </p>
+          </div>
+
+          <button
+            type="button"
+            class="inline-flex h-11 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white px-6 text-[10px] uppercase tracking-[0.35em] text-black transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+            @click="setOpenAiAssistant"
+          >
+            Ouvrir Spy AI
+          </button>
+        </div>
+      </div>
+
+      <div v-else class="mt-6 grid gap-4 sm:mt-8 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
         <div
           v-for="product in searchStore.getProducts"
           :key="product.id"
@@ -125,7 +162,10 @@ const getSafeProductUrl = (url: string | null) => {
         </div>
       </div>
 
-      <div v-if="searchStore.totalPages > 1" class="mt-10 flex flex-col gap-4 border-t border-white/10 pt-6 sm:flex-row sm:items-center sm:justify-between">
+      <div
+        v-if="searchStore.totalPages > 1 && searchStore.getProducts.length > 0"
+        class="mt-10 flex flex-col gap-4 border-t border-white/10 pt-6 sm:flex-row sm:items-center sm:justify-between"
+      >
         <div class="text-[10px] uppercase tracking-[0.35em] text-white/60">
           Page {{ searchStore.page }} sur {{ searchStore.totalPages }}
         </div>

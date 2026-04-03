@@ -18,6 +18,7 @@ export const useSearchStore = defineStore('search', {
     searchInput: '',
     query: '',
     results: [] as SearchProduct[],
+    hasFetchedSearchResults: false,
     total: 0,
     page: 1,
     limit: 50,
@@ -117,6 +118,7 @@ export const useSearchStore = defineStore('search', {
         this.results = []
         this.total = 0
       } finally {
+        this.hasFetchedSearchResults = true
         this.loading = false
       }
     },

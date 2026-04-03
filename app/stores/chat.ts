@@ -65,6 +65,7 @@ export const useChatStore = defineStore('chat', () => {
   const { chat, sendMessage, getLatestAssistantListPayload } = useChat()
   const chatSessionsApi = useChatSessions()
   const authStore = useAuthStore()
+  const isChatPanelOpen = ref(false)
   const isCreateListMode = ref(false)
   const dismissedAiListKey = ref<string | null>(null)
   const currentChatId = ref<string | null>(null)
@@ -174,6 +175,14 @@ export const useChatStore = defineStore('chat', () => {
 
     isCreateListMode.value = !isCreateListMode.value
     console.log('[ai-list] toggle createListMode:', isCreateListMode.value)
+  }
+
+  const setChatPanelOpen = (value: boolean) => {
+    isChatPanelOpen.value = value
+  }
+
+  const setToggleChatPanelOpen = () => {
+    isChatPanelOpen.value = !isChatPanelOpen.value
   }
 
   const setHydrateCurrentChatFromSession = (session: ChatSession) => {
@@ -401,6 +410,7 @@ export const useChatStore = defineStore('chat', () => {
 
   return {
     quickPrompts,
+    isChatPanelOpen,
     isCreateListMode,
     sessions,
     sessionsLoading,
@@ -417,6 +427,8 @@ export const useChatStore = defineStore('chat', () => {
     showSanitizedLeakNotice,
     aiListItems,
     getIsUnsafeAssistantText: isUnsafeAssistantText,
+    setChatPanelOpen,
+    setToggleChatPanelOpen,
     setToggleCreateListMode,
     setLoadChatSessions,
     setHydrateCurrentChatFromSession,
