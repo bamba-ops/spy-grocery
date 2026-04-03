@@ -1,6 +1,6 @@
 # Supabase DB Overview (SpyGrocery)
 
-This document reflects the current production-like Supabase state inspected via MCP on **March 27, 2026**.
+This document reflects the current production-like Supabase state inspected via MCP on **April 3, 2026**.
 
 ## Quick Summary
 
@@ -16,10 +16,10 @@ This document reflects the current production-like Supabase state inspected via 
 
 Current row counts:
 - `products`: `5,362`
-- `product_prices`: `5,311`
+- `product_prices`: `5,362`
 - `lists`: `0`
-- `ai_chat_sessions`: `0`
-- `onboarding`: `0`
+- `ai_chat_sessions`: `3`
+- `onboarding`: `1`
 
 ## Data Model
 
@@ -74,7 +74,7 @@ Key columns used by web:
 - `scraped_at timestamptz`
 
 Other notable columns:
-- `source`, `source_url`, `external_id`, `product_key`, `raw_payload`, `search_term`, `search_results_count`, `image_urls`, etc.
+- `source`, `source_url`, `external_id`, `product_key`, `raw_payload`, `search_term`, `search_results_count`, `image_urls`, `store_slug`, `title_slug`, etc.
 
 Important indexes:
 - `products_pkey` (PK on `id`)
@@ -83,7 +83,13 @@ Important indexes:
 - `products_store_idx` (`store`)
 - `products_scraped_at_idx` (`scraped_at desc`)
 - `products_external_id_idx` (`external_id`)
+- `products_store_external_id_idx` (`store_slug`, `external_id`)
+- `products_store_slug_idx` (`store_slug`)
+- `products_title_slug_idx` (`title_slug`)
 - `products_created_at_price_idx` partial (`created_at desc` where `price_raw is not null`)
+
+Triggers:
+- `set_products_seo_fields` (`BEFORE INSERT/UPDATE`) -> maintains `store_slug` and `title_slug`.
 
 ### `public.product_prices`
 
@@ -186,7 +192,10 @@ Important indexes:
 
 - `public` views: none.
 - `public` functions:
+  - `execute_sql()`
   - `set_lists_updated_at()` (trigger helper for `public.lists.updated_at`)
+  - `to_slug()`
+  - `set_products_seo_fields()` (trigger helper for `public.products` SEO fields)
 
 ## RLS / Security Status
 
@@ -196,6 +205,8 @@ Supabase advisors currently report:
   - `public.product_prices`
 - `Function Search Path Mutable` on:
   - `public.set_lists_updated_at`
+  - `public.to_slug`
+  - `public.set_products_seo_fields`
 
 Current `public.lists` RLS status:
 - RLS: enabled
@@ -228,8 +239,7 @@ Performance advisory currently reported:
 - `auth_rls_initplan` on `public.lists` policy `lists_owner_all`
 - `auth_rls_initplan` on `public.ai_chat_sessions` policies (`select/insert/update/delete`)
 - `auth_rls_initplan` on `public.onboarding` policy `onboarding_owner_all`
-- `unused_index` on `onboarding_first_chat_session_id_idx`
-- `unused_index` on `onboarding_updated_at_idx`
+- `unused_index` on `products_title_slug_idx`
 - `unused_index` on `products_created_at_price_idx`
 
 Reference:
@@ -256,6 +266,8 @@ Applied migrations currently visible:
 - `20260321203210 recreate_execute_sql_fn_after_drop`
 - `20260327214906 create_onboarding_table`
 - `20260327220732 add_onboarding_first_chat_session_index`
+- `20260331220237 add_products_seo_slugs_and_categories`
+- `20260331224001 remove_products_category_slug_heuristics`
 
 Note:
 - `public.lists` and `public.ai_chat_sessions` were created directly via SQL (MCP execute SQL), so they may not appear in `supabase_migrations.schema_migrations` history yet.
@@ -382,6 +394,7 @@ Operational note:
 - Do not assume `stores`, `prices`, or `latest_price` exist.
 - For current price display, use `products.price_num`.
 - Keep `product_prices` for analytics/history workflows.
+- `products.product_key` is unique, but do not assume it is equivalent to Flipp `external_id` over time.
 - Lists cloud persistence uses `public.lists`; frontend remains local-first with sync on authenticated sessions.
 - AI conversation persistence uses `public.ai_chat_sessions` (`messages_json` snapshots).
 - Onboarding progression persistence uses `public.onboarding`.

@@ -17,6 +17,7 @@ const MIN_RESULTS_BEFORE_BROAD_MATCH = 2
 const BROAD_MATCH_LIMIT = 220
 const MIN_RELEVANCE_SCORE_SINGLE_TOKEN = 900
 const MIN_RELEVANCE_SCORE_MULTI_TOKEN = 620
+const OFF_TOPIC_PRIMARY_TOKEN_PENALTY = 450
 
 const toNullableTrimmed = (value: string | null) => {
   if (!value) {
@@ -66,6 +67,44 @@ const tokenizeSearchText = (value: string) => {
     .split(/[^a-z0-9]+/)
     .map((token) => token.trim())
     .filter((token, index, array) => token.length >= 2 && array.indexOf(token) === index)
+}
+
+const getTokenVariants = (token: string) => {
+  const variants = new Set<string>([token])
+
+  if (token.length > 4 && token.endsWith('es')) {
+    variants.add(token.slice(0, -2))
+  }
+
+  if (token.length > 3 && token.endsWith('s')) {
+    variants.add(token.slice(0, -1))
+  }
+
+  if (token.length > 4 && token.endsWith('e')) {
+    variants.add(token.slice(0, -1))
+  }
+
+  if (token.length > 4 && token.endsWith('a')) {
+    variants.add(token.slice(0, -1))
+  }
+
+  return Array.from(variants)
+}
+
+const getTokenRoot = (token: string) => {
+  const normalizedToken = token.trim().toLowerCase()
+  if (!normalizedToken) {
+    return ''
+  }
+
+  const shortestVariant = getTokenVariants(normalizedToken).sort((a, b) => a.length - b.length)[0]
+  return (shortestVariant || normalizedToken).trim()
+}
+
+const getTokenRoots = (tokens: string[]) => {
+  return tokens
+    .map((token) => getTokenRoot(token))
+    .filter((token, index, array) => token.length >= 3 && array.indexOf(token) === index)
 }
 
 const getTitleSlug = (row: DbProduct) => {
@@ -127,15 +166,20 @@ const getRelevanceScore = (row: DbProduct, normalizedSearchQuery: string, search
   let tokenPrefixMatches = 0
 
   for (const token of searchTokens) {
-    if (getContainsFullSlugToken(titleSlug, token)) {
+    const tokenVariants = getTokenVariants(token)
+    const hasFullVariantMatch = tokenVariants.some((variant) => getContainsFullSlugToken(titleSlug, variant))
+
+    if (hasFullVariantMatch) {
       exactTokenMatches += 1
       score += 320
       continue
     }
 
-    if (getContainsSlugTokenPrefix(titleSlug, token)) {
+    const hasPrefixVariantMatch = tokenVariants.some((variant) => getContainsSlugTokenPrefix(titleSlug, variant))
+
+    if (hasPrefixVariantMatch) {
       tokenPrefixMatches += 1
-      score += 90
+      score += 170
     }
   }
 
@@ -215,6 +259,38 @@ const getCandidateSimilarityScore = (
   uom: string | null
 ) => {
   let score = getRelevanceScore(row, normalizedTitle, titleSlug, titleTokens)
+
+  const candidateTitleSlug = getTitleSlug(row)
+  const searchTokenRoots = getTokenRoots(titleTokens)
+  const candidateTokens = tokenizeSearchText(candidateTitleSlug)
+  const candidateTokenRoots = getTokenRoots(candidateTokens)
+
+  if (searchTokenRoots.length > 0 && candidateTokenRoots.length > 0) {
+    const overlappingRoots = searchTokenRoots.filter((tokenRoot) => candidateTokenRoots.includes(tokenRoot))
+
+    if (overlappingRoots.length > 0) {
+      const overlapCoverage = overlappingRoots.length / searchTokenRoots.length
+      const overlapPrecision = overlappingRoots.length / candidateTokenRoots.length
+
+      score += Math.round(
+        (overlappingRoots.length * 160)
+        + (overlapCoverage * 260)
+        + (overlapPrecision * 140)
+      )
+
+      const primarySearchRoot = searchTokenRoots[0] || ''
+      const primaryCandidateRoot = candidateTokenRoots[0] || ''
+
+      if (
+        primarySearchRoot
+        && primaryCandidateRoot
+        && primarySearchRoot !== primaryCandidateRoot
+        && candidateTokenRoots.length > searchTokenRoots.length
+      ) {
+        score -= OFF_TOPIC_PRIMARY_TOKEN_PENALTY
+      }
+    }
+  }
 
   const normalizedBrand = normalizeSearchText(brand)
   const normalizedCandidateBrand = normalizeSearchText(row.brand)
