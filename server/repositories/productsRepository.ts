@@ -60,7 +60,11 @@ interface SearchFilterParams {
   rawSearchQuery: string
   normalizedSearchQuery: string
   searchQuerySlug: string
+  searchTokens: string[]
+  expandedSearchTokens: string[]
 }
+
+type SearchFilterMode = 'strict' | 'expanded'
 
 const SELECT_FIELDS = [
   'id',
@@ -88,6 +92,45 @@ const MIN_RELEVANCE_QUERY_LENGTH = 2
 const MIN_CANDIDATE_ROWS = 250
 const MAX_CANDIDATE_ROWS = 1500
 const CANDIDATE_ROW_MULTIPLIER = 6
+const MAX_EXPANDED_SEARCH_TOKENS = 14
+
+const SEARCH_STOP_WORDS = new Set([
+  'a',
+  'au',
+  'aux',
+  'avec',
+  'de',
+  'des',
+  'du',
+  'en',
+  'et',
+  'la',
+  'le',
+  'les',
+  'ou',
+  'pour',
+  'sans',
+  'sur',
+  'the',
+  'and',
+  'for',
+  'with',
+  'from'
+])
+
+const SEARCH_TOKEN_SYNONYMS: Record<string, string[]> = {
+  viande: ['boeuf', 'beef', 'porc', 'pork', 'poulet', 'chicken', 'dinde', 'turkey', 'veau', 'veal', 'agneau', 'lamb'],
+  boeuf: ['beef', 'viande', 'bourguignon', 'bourguignonne'],
+  beef: ['boeuf', 'viande'],
+  fondue: ['chinoise', 'bourguignon', 'bourguignonne', 'raclette'],
+  chinoise: ['fondue'],
+  bourguignon: ['fondue', 'boeuf'],
+  bourguignonne: ['fondue', 'boeuf'],
+  surgele: ['surgelee', 'congele', 'congelee', 'frozen'],
+  surgelee: ['surgele', 'congele', 'congelee', 'frozen'],
+  congele: ['congelee', 'surgele', 'surgelee', 'frozen'],
+  congelee: ['congele', 'surgele', 'surgelee', 'frozen']
+}
 
 const normalizeSearchText = (value: string | null | undefined) => {
   if (!value) {
@@ -106,6 +149,64 @@ const tokenizeSearchText = (value: string) => {
     .split(/[^a-z0-9]+/)
     .map((token) => token.trim())
     .filter((token, index, array) => token.length >= 2 && array.indexOf(token) === index)
+}
+
+const getMeaningfulSearchTokens = (tokens: string[]) => {
+  return tokens.filter((token) => token.length >= 2 && !SEARCH_STOP_WORDS.has(token))
+}
+
+const getTokenVariants = (token: string) => {
+  const variants = new Set<string>([token])
+
+  if (token.length > 4 && token.endsWith('es')) {
+    variants.add(token.slice(0, -2))
+  }
+
+  if (token.length > 3 && token.endsWith('s')) {
+    variants.add(token.slice(0, -1))
+  }
+
+  return Array.from(variants)
+}
+
+const getExpandedSearchTokens = (searchTokens: string[]) => {
+  const expanded = new Set<string>()
+
+  for (const token of searchTokens) {
+    const variants = getTokenVariants(token)
+
+    for (const variant of variants) {
+      if (variant.length >= 2) {
+        expanded.add(variant)
+      }
+
+      const synonyms = SEARCH_TOKEN_SYNONYMS[variant] || []
+
+      for (const synonym of synonyms) {
+        const normalizedSynonym = normalizeSearchText(synonym)
+        if (normalizedSynonym.length >= 2) {
+          expanded.add(normalizedSynonym)
+        }
+      }
+    }
+  }
+
+  return Array.from(expanded).slice(0, MAX_EXPANDED_SEARCH_TOKENS)
+}
+
+const buildSearchFilterParams = (searchQuery: string): SearchFilterParams => {
+  const normalizedSearchQuery = normalizeSearchText(searchQuery)
+  const searchQuerySlug = toSlug(normalizedSearchQuery)
+  const searchTokens = getMeaningfulSearchTokens(tokenizeSearchText(searchQuerySlug))
+  const expandedSearchTokens = getExpandedSearchTokens(searchTokens)
+
+  return {
+    rawSearchQuery: searchQuery,
+    normalizedSearchQuery,
+    searchQuerySlug,
+    searchTokens,
+    expandedSearchTokens
+  }
 }
 
 const sanitizeFilterValue = (value: string) => {
@@ -210,7 +311,28 @@ const applyStoreFilter = (dbQuery: any, store: string) => {
   return dbQuery.eq('store_id', store)
 }
 
-const applySearchFilter = (dbQuery: any, params: SearchFilterParams) => {
+const getTokenSearchConditions = (tokens: string[]) => {
+  const conditions: string[] = []
+
+  for (const token of tokens) {
+    const safeToken = sanitizeFilterValue(token)
+
+    if (!safeToken) {
+      continue
+    }
+
+    conditions.push(`title_slug.ilike.%${toSlug(safeToken)}%`)
+    conditions.push(`title.ilike.%${safeToken}%`)
+    conditions.push(`brand.ilike.%${safeToken}%`)
+    conditions.push(`description.ilike.%${safeToken}%`)
+    conditions.push(`category.ilike.%${safeToken}%`)
+    conditions.push(`search_term.ilike.%${safeToken}%`)
+  }
+
+  return conditions
+}
+
+const applySearchFilter = (dbQuery: any, params: SearchFilterParams, mode: SearchFilterMode = 'strict') => {
   const conditions: string[] = []
   const safeRawQuery = sanitizeFilterValue(params.rawSearchQuery)
   const safeNormalizedQuery = sanitizeFilterValue(params.normalizedSearchQuery)
@@ -226,11 +348,17 @@ const applySearchFilter = (dbQuery: any, params: SearchFilterParams) => {
     conditions.push(`brand.ilike.%${titleAndBrandQuery}%`)
   }
 
-  if (conditions.length === 0) {
+  if (mode === 'expanded') {
+    conditions.push(...getTokenSearchConditions(params.expandedSearchTokens))
+  }
+
+  const uniqueConditions = Array.from(new Set(conditions))
+
+  if (uniqueConditions.length === 0) {
     return dbQuery
   }
 
-  return dbQuery.or(conditions.join(','))
+  return dbQuery.or(uniqueConditions.join(','))
 }
 
 const getContainsFullSlugToken = (titleSlug: string, token: string) => {
@@ -249,10 +377,25 @@ const getContainsSlugTokenPrefix = (titleSlug: string, token: string) => {
   return tokenPrefixPattern.test(titleSlug)
 }
 
-const getRelevanceScore = (row: DbProduct, normalizedSearchQuery: string, searchQuerySlug: string, searchTokens: string[]) => {
+const getContainsFullTextToken = (value: string, token: string) => {
+  const escapedToken = token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const fullWordPattern = new RegExp(`(^|[^a-z0-9])${escapedToken}([^a-z0-9]|$)`, 'i')
+
+  return fullWordPattern.test(value)
+}
+
+const getRelevanceScore = (
+  row: DbProduct,
+  normalizedSearchQuery: string,
+  searchQuerySlug: string,
+  primarySearchTokens: string[],
+  scoringTokens: string[]
+) => {
   const normalizedTitle = normalizeSearchText(row.title)
   const normalizedBrand = normalizeSearchText(row.brand)
+  const normalizedDescription = normalizeSearchText(row.description)
   const titleSlug = getTitleSlug(row)
+  const primarySearchTokenSet = new Set(primarySearchTokens)
   let score = 0
 
   if (searchQuerySlug && titleSlug === searchQuerySlug) {
@@ -279,24 +422,49 @@ const getRelevanceScore = (row: DbProduct, normalizedSearchQuery: string, search
     score += 700
   }
 
-  let exactTokenMatches = 0
+  let exactPrimaryTokenMatches = 0
   let tokenPrefixMatches = 0
+  let descriptionTokenMatches = 0
 
-  for (const token of searchTokens) {
+  for (const token of scoringTokens) {
+    const isPrimaryToken = primarySearchTokenSet.has(token)
+    const tokenWeight = isPrimaryToken ? 1 : 0.55
+
     if (getContainsFullSlugToken(titleSlug, token)) {
-      exactTokenMatches += 1
-      score += 320
-      continue
+      if (isPrimaryToken) {
+        exactPrimaryTokenMatches += 1
+      }
+
+      score += Math.round(320 * tokenWeight)
+    } else if (getContainsSlugTokenPrefix(titleSlug, token)) {
+      tokenPrefixMatches += 1
+      score += Math.round(90 * tokenWeight)
     }
 
-    if (getContainsSlugTokenPrefix(titleSlug, token)) {
-      tokenPrefixMatches += 1
-      score += 90
+    if (normalizedDescription) {
+      if (getContainsFullTextToken(normalizedDescription, token)) {
+        descriptionTokenMatches += 1
+        score += Math.round(85 * tokenWeight)
+      } else if (normalizedDescription.includes(token)) {
+        score += Math.round(35 * tokenWeight)
+      }
+    }
+
+    if (normalizedBrand) {
+      if (getContainsFullTextToken(normalizedBrand, token)) {
+        score += Math.round(80 * tokenWeight)
+      } else if (normalizedBrand.includes(token)) {
+        score += Math.round(30 * tokenWeight)
+      }
     }
   }
 
-  if (searchTokens.length > 0 && exactTokenMatches === searchTokens.length) {
+  if (primarySearchTokens.length > 0 && exactPrimaryTokenMatches === primarySearchTokens.length) {
     score += 400
+  }
+
+  if (primarySearchTokens.length >= 2 && (exactPrimaryTokenMatches + descriptionTokenMatches) >= primarySearchTokens.length) {
+    score += 280
   }
 
   if (normalizedSearchQuery && normalizedBrand === normalizedSearchQuery) {
@@ -314,7 +482,7 @@ const getRelevanceScore = (row: DbProduct, normalizedSearchQuery: string, search
     score -= 220
   }
 
-  if (tokenPrefixMatches > 0 && exactTokenMatches === 0) {
+  if (tokenPrefixMatches > 0 && exactPrimaryTokenMatches === 0) {
     score -= 40
   }
 
@@ -325,14 +493,16 @@ const getRankedSearchRows = (
   rows: DbProduct[],
   normalizedSearchQuery: string,
   searchQuerySlug: string,
-  sortBy: SearchSort
+  sortBy: SearchSort,
+  scoringTokens: string[]
 ) => {
-  const searchTokens = tokenizeSearchText(searchQuerySlug)
+  const primarySearchTokens = getMeaningfulSearchTokens(tokenizeSearchText(searchQuerySlug))
+  const resolvedScoringTokens = scoringTokens.length > 0 ? scoringTokens : primarySearchTokens
   const tieBreakSort = getResolvedDbSort(sortBy)
 
   const rankedRows: RankedSearchRow[] = rows.map((row) => ({
     row,
-    score: getRelevanceScore(row, normalizedSearchQuery, searchQuerySlug, searchTokens)
+    score: getRelevanceScore(row, normalizedSearchQuery, searchQuerySlug, primarySearchTokens, resolvedScoringTokens)
   }))
 
   rankedRows.sort((a, b) => {
@@ -361,13 +531,14 @@ const getSearchCandidateLimit = (offset: number, limit: number) => {
 const getSearchCount = async (
   supabase: any,
   params: SearchFilterParams,
-  store: string
+  store: string,
+  mode: SearchFilterMode = 'strict'
 ) => {
   let countQuery = supabase
     .from('products')
     .select('id', { count: 'exact', head: true })
 
-  countQuery = applySearchFilter(countQuery, params)
+  countQuery = applySearchFilter(countQuery, params, mode)
   countQuery = applyStoreFilter(countQuery, store)
 
   const { error, count } = await countQuery
@@ -386,13 +557,14 @@ const getSearchCandidateRows = async (
   supabase: any,
   params: SearchFilterParams,
   store: string,
-  limit: number
+  limit: number,
+  mode: SearchFilterMode = 'strict'
 ) => {
   let dbQuery = supabase
     .from('products')
     .select(SELECT_FIELDS)
 
-  dbQuery = applySearchFilter(dbQuery, params)
+  dbQuery = applySearchFilter(dbQuery, params, mode)
   dbQuery = applyStoreFilter(dbQuery, store)
   dbQuery = dbQuery
     .order('scraped_at', { ascending: false })
@@ -463,12 +635,7 @@ const getRowsByRequestedItem = async (
   perItemLimit: number,
   preferredStore?: string | null
 ): Promise<DbProduct[]> => {
-  const normalizedRequestedItem = normalizeSearchText(requestedItem)
-  const requestedItemSearchParams: SearchFilterParams = {
-    rawSearchQuery: requestedItem,
-    normalizedSearchQuery: normalizedRequestedItem,
-    searchQuerySlug: toSlug(normalizedRequestedItem)
-  }
+  const requestedItemSearchParams = buildSearchFilterParams(requestedItem)
 
   let dbQuery = supabase
     .from('products')
@@ -505,12 +672,7 @@ const getRowsByRequestedItem = async (
 }
 
 export const searchProductsRows = async (supabase: any, params: SearchProductsRowsParams) => {
-  const normalizedSearchQuery = normalizeSearchText(params.searchQuery)
-  const searchParams: SearchFilterParams = {
-    rawSearchQuery: params.searchQuery,
-    normalizedSearchQuery,
-    searchQuerySlug: toSlug(normalizedSearchQuery)
-  }
+  const searchParams = buildSearchFilterParams(params.searchQuery)
 
   const hasSearchQuery = searchParams.normalizedSearchQuery.length > 0
   const canUseRelevanceRanking = hasSearchQuery
@@ -518,7 +680,12 @@ export const searchProductsRows = async (supabase: any, params: SearchProductsRo
     && (params.offset + params.limit) <= MAX_CANDIDATE_ROWS
 
   if (canUseRelevanceRanking) {
-    const count = await getSearchCount(supabase, searchParams, params.store)
+    const strictCount = await getSearchCount(supabase, searchParams, params.store, 'strict')
+    const canUseExpandedSearch = searchParams.expandedSearchTokens.length > searchParams.searchTokens.length
+    const activeMode: SearchFilterMode = strictCount === 0 && canUseExpandedSearch ? 'expanded' : 'strict'
+    const count = activeMode === 'expanded'
+      ? await getSearchCount(supabase, searchParams, params.store, 'expanded')
+      : strictCount
 
     if (count === 0) {
       return {
@@ -528,12 +695,13 @@ export const searchProductsRows = async (supabase: any, params: SearchProductsRo
     }
 
     const candidateLimit = Math.min(getSearchCandidateLimit(params.offset, params.limit), count)
-    const candidateRows = await getSearchCandidateRows(supabase, searchParams, params.store, candidateLimit)
+    const candidateRows = await getSearchCandidateRows(supabase, searchParams, params.store, candidateLimit, activeMode)
     const rankedRows = getRankedSearchRows(
       candidateRows,
       searchParams.normalizedSearchQuery,
       searchParams.searchQuerySlug,
-      params.sortBy
+      params.sortBy,
+      activeMode === 'expanded' ? searchParams.expandedSearchTokens : searchParams.searchTokens
     )
 
     return {
