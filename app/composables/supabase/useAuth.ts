@@ -31,12 +31,15 @@ const getAuthRedirectUrl = (nextPath?: string) => {
 export const useAuth = () => {
   const supabase = useSupabaseClient()
 
-  const sendMagicLink = async (email: string, nextPath?: string) => {
+  const sendMagicLink = async (email: string, nextPath?: string, captchaToken?: string | null) => {
+    const normalizedCaptchaToken = captchaToken?.trim() || undefined
+
     return supabase.auth.signInWithOtp({
       email,
       options: {
         shouldCreateUser: true,
-        emailRedirectTo: getAuthRedirectUrl(nextPath)
+        emailRedirectTo: getAuthRedirectUrl(nextPath),
+        captchaToken: normalizedCaptchaToken
       }
     })
   }

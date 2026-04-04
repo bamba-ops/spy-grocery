@@ -2,7 +2,115 @@
 import { Chrome, Loader2, Mail } from 'lucide-vue-next'
 import { useAuthStore } from '~/stores/auth'
 
+interface TurnstileRenderOptions {
+  sitekey: string
+  theme?: 'auto' | 'light' | 'dark'
+  callback?: (token: string) => void
+  'expired-callback'?: () => void
+  'error-callback'?: () => void
+}
+
+interface TurnstileApi {
+  render: (container: HTMLElement, options: TurnstileRenderOptions) => string
+  reset: (widgetId?: string) => void
+  remove: (widgetId: string) => void
+}
+
+const TURNSTILE_MAX_RENDER_ATTEMPTS = 60
+const TURNSTILE_RETRY_DELAY_MS = 150
+
 const authStore = useAuthStore()
+const runtimeConfig = useRuntimeConfig()
+const turnstileSiteKey = (runtimeConfig.public.turnstileSiteKey || '').trim()
+const turnstileContainerRef = ref<HTMLElement | null>(null)
+const turnstileWidgetId = ref<string | null>(null)
+const turnstileError = ref<string | null>(null)
+
+let turnstileRenderTimer: ReturnType<typeof setTimeout> | null = null
+let turnstileRenderAttempts = 0
+
+const getTurnstileApi = () => {
+  if (!import.meta.client) {
+    return null
+  }
+
+  const windowWithTurnstile = window as typeof window & {
+    turnstile?: TurnstileApi
+  }
+
+  return windowWithTurnstile.turnstile || null
+}
+
+const setClearTurnstileRenderTimer = () => {
+  if (!turnstileRenderTimer) {
+    return
+  }
+
+  clearTimeout(turnstileRenderTimer)
+  turnstileRenderTimer = null
+}
+
+const setResetTurnstileWidget = () => {
+  authStore.setClearLoginCaptchaToken()
+  const turnstile = getTurnstileApi()
+
+  if (!turnstile || !turnstileWidgetId.value) {
+    return
+  }
+
+  turnstile.reset(turnstileWidgetId.value)
+}
+
+const setUnmountTurnstileWidget = () => {
+  const turnstile = getTurnstileApi()
+
+  if (turnstile && turnstileWidgetId.value) {
+    turnstile.remove(turnstileWidgetId.value)
+  }
+
+  turnstileWidgetId.value = null
+}
+
+const setRenderTurnstileWidget = () => {
+  if (!import.meta.client || !turnstileSiteKey || !turnstileContainerRef.value || turnstileWidgetId.value) {
+    return
+  }
+
+  const turnstile = getTurnstileApi()
+
+  if (!turnstile) {
+    turnstileRenderAttempts += 1
+
+    if (turnstileRenderAttempts >= TURNSTILE_MAX_RENDER_ATTEMPTS) {
+      turnstileError.value = 'Impossible de charger la verification anti-bot. Rechargez la page.'
+      return
+    }
+
+    setClearTurnstileRenderTimer()
+    turnstileRenderTimer = setTimeout(() => {
+      setRenderTurnstileWidget()
+    }, TURNSTILE_RETRY_DELAY_MS)
+    return
+  }
+
+  turnstileError.value = null
+  turnstileWidgetId.value = turnstile.render(turnstileContainerRef.value, {
+    sitekey: turnstileSiteKey,
+    theme: 'dark',
+    callback: (token) => {
+      turnstileError.value = null
+      authStore.setLoginCaptchaToken(token)
+    },
+    'expired-callback': () => {
+      turnstileError.value = 'Verification anti-bot expiree. Veuillez recommencer.'
+      setResetTurnstileWidget()
+    },
+    'error-callback': () => {
+      turnstileError.value = 'Impossible de verifier le captcha. Veuillez recommencer.'
+      authStore.setClearLoginCaptchaToken()
+    }
+  })
+}
 
 definePageMeta({
   middleware: 'guest'
@@ -10,11 +118,32 @@ definePageMeta({
 
 onMounted(() => {
   authStore.setInitializeLoginPage()
+
+  if (!turnstileSiteKey) {
+    turnstileError.value = 'Configuration anti-bot manquante. Contactez le support.'
+    return
+  }
+
+  turnstileRenderAttempts = 0
+  void nextTick(() => {
+    setRenderTurnstileWidget()
+  })
 })
 
 onBeforeUnmount(() => {
+  setClearTurnstileRenderTimer()
+  setUnmountTurnstileWidget()
   authStore.setDisposeLoginPage()
 })
+
+watch(
+  () => authStore.loginMagicLinkSent,
+  (isSent) => {
+    if (!isSent) {
+      setResetTurnstileWidget()
+    }
+  }
+)
 
 useHead({
   title: 'Connexion - SpyGrocery',
@@ -93,6 +222,17 @@ useHead({
               >
             </div>
           </label>
+
+          <section class="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+            <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Verification anti-bot</p>
+            <div ref="turnstileContainerRef" class="mt-3 flex min-h-[68px] items-center justify-center" />
+            <p v-if="turnstileError" class="mt-2 text-xs text-white/70">
+              {{ turnstileError }}
+            </p>
+            <p v-else-if="!authStore.getHasLoginCaptchaToken" class="mt-2 text-xs text-white/60">
+              Completez la verification pour continuer.
+            </p>
+          </section>
 
           <button
             type="submit"

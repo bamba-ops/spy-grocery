@@ -50,6 +50,16 @@ const getIsMissingAuthSessionError = (message: string | undefined, name: string 
   return normalizedMessage.includes('auth session missing')
 }
 
+const getIsCaptchaError = (message: string | undefined) => {
+  const normalizedMessage = message?.toLowerCase().trim() || ''
+
+  if (!normalizedMessage) {
+    return false
+  }
+
+  return normalizedMessage.includes('captcha') || normalizedMessage.includes('bot detection')
+}
+
 const getSingleQueryValue = (value: unknown) => {
   if (Array.isArray(value)) {
     for (const entry of value) {
@@ -97,6 +107,7 @@ export const useAuthStore = defineStore('auth', () => {
   const error = ref<string | null>(null)
   const loginEmail = ref('')
   const loginMagicLinkSent = ref(false)
+  const loginCaptchaToken = ref<string | null>(null)
   const loginNextPath = ref(DEFAULT_NEXT_PATH)
   const loginHasAuthFailed = ref(false)
   const isLoginPageInitialized = ref(false)
@@ -110,7 +121,11 @@ export const useAuthStore = defineStore('auth', () => {
   let stopLoginUserWatcher: (() => void) | null = null
 
   const getCanSubmitLoginEmail = computed(() => {
-    return loginEmail.value.trim().length > 0 && !isLoading.value
+    return loginEmail.value.trim().length > 0 && Boolean(loginCaptchaToken.value) && !isLoading.value
+  })
+
+  const getHasLoginCaptchaToken = computed(() => {
+    return Boolean(loginCaptchaToken.value)
   })
 
   const setErrorMessage = (message: string | null | undefined, fallback = DEFAULT_ERROR_MESSAGE) => {
@@ -172,6 +187,7 @@ export const useAuthStore = defineStore('auth', () => {
     stopLoginRouteWatcher = null
     stopLoginUserWatcher = null
     isLoginPageInitialized.value = false
+    setClearLoginCaptchaToken()
   }
 
   const setOpenAuthPrompt = (options?: {
@@ -202,8 +218,18 @@ export const useAuthStore = defineStore('auth', () => {
     clearStoredNextPath()
   }
 
+  const setLoginCaptchaToken = (value: string | null | undefined) => {
+    const normalizedToken = value?.trim() || null
+    loginCaptchaToken.value = normalizedToken
+  }
+
+  const setClearLoginCaptchaToken = () => {
+    loginCaptchaToken.value = null
+  }
+
   const setResetLoginMagicLinkState = () => {
     loginMagicLinkSent.value = false
+    setClearLoginCaptchaToken()
   }
 
   const refreshUser = async () => {
@@ -241,11 +267,17 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  const loginWithMagicLink = async (email: string, nextPath?: string) => {
+  const loginWithMagicLink = async (email: string, nextPath?: string, captchaToken?: string | null) => {
     const normalizedEmail = email.trim().toLowerCase()
+    const normalizedCaptchaToken = captchaToken?.trim() || ''
 
     if (!normalizedEmail) {
       error.value = 'Veuillez entrer votre adresse courriel.'
+      return false
+    }
+
+    if (!normalizedCaptchaToken) {
+      error.value = 'Veuillez completer la verification anti-bot.'
       return false
     }
 
@@ -253,9 +285,15 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = null
 
     try {
-      const { error: signInError } = await sendMagicLink(normalizedEmail, nextPath)
+      const { error: signInError } = await sendMagicLink(normalizedEmail, nextPath, normalizedCaptchaToken)
 
       if (signInError) {
+        if (getIsCaptchaError(signInError.message)) {
+          setClearLoginCaptchaToken()
+          setErrorMessage(signInError.message, 'Verification anti-bot invalide ou expiree. Veuillez recommencer.')
+          return false
+        }
+
         setErrorMessage(signInError.message, 'Impossible d\'envoyer le lien magique.')
         return false
       }
@@ -288,12 +326,13 @@ export const useAuthStore = defineStore('auth', () => {
     loginMagicLinkSent.value = false
     setStoredNextPath(loginNextPath.value)
 
-    const ok = await loginWithMagicLink(loginEmail.value, loginNextPath.value)
+    const ok = await loginWithMagicLink(loginEmail.value, loginNextPath.value, loginCaptchaToken.value)
     if (!ok) {
       return false
     }
 
     loginMagicLinkSent.value = true
+    setClearLoginCaptchaToken()
     return true
   }
 
@@ -335,8 +374,10 @@ export const useAuthStore = defineStore('auth', () => {
     authPromptCtaLabel,
     loginEmail,
     loginMagicLinkSent,
+    loginCaptchaToken,
     loginHasAuthFailed,
     getCanSubmitLoginEmail,
+    getHasLoginCaptchaToken,
     initAuth,
     setInitializeLoginPage,
     setDisposeLoginPage,
@@ -344,6 +385,8 @@ export const useAuthStore = defineStore('auth', () => {
     setCloseAuthPrompt,
     setContinueAuthPromptToLogin,
     setClearStoredLoginNextPath,
+    setLoginCaptchaToken,
+    setClearLoginCaptchaToken,
     setResetLoginMagicLinkState,
     loginWithMagicLink,
     loginWithGoogle,
