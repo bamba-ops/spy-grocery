@@ -1,6 +1,18 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 const SITE_URL = process.env.NUXT_PUBLIC_SITE_URL || 'https://spygrocery.com'
 
+const getBooleanEnv = (value: string | undefined, fallback: boolean) => {
+  const normalizedValue = value?.trim().toLowerCase()
+
+  if (!normalizedValue) {
+    return fallback
+  }
+
+  return !['0', 'false', 'off', 'no'].includes(normalizedValue)
+}
+
+const TURNSTILE_ENABLED = getBooleanEnv(process.env.NUXT_PUBLIC_TURNSTILE_ENABLED, true)
+
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
@@ -30,6 +42,7 @@ export default defineNuxtConfig({
       posthogPublicKey: process.env.NUXT_PUBLIC_POSTHOG_KEY,
       posthogHost: process.env.NUXT_PUBLIC_POSTHOG_HOST,
       posthogDefaults: process.env.NUXT_PUBLIC_POSTHOG_DEFAULTS,
+      turnstileEnabled: TURNSTILE_ENABLED,
       turnstileSiteKey: process.env.NUXT_PUBLIC_TURNSTILE_SITE_KEY || '0x4AAAAAAC0qEv0IAgoV4X5w',
       siteUrl: SITE_URL
     }

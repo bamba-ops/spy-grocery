@@ -60,6 +60,20 @@ const getIsCaptchaError = (message: string | undefined) => {
   return normalizedMessage.includes('captcha') || normalizedMessage.includes('bot detection')
 }
 
+const getIsEnabled = (value: unknown, fallback = true) => {
+  if (typeof value === 'boolean') {
+    return value
+  }
+
+  const normalizedValue = typeof value === 'string' ? value.trim().toLowerCase() : ''
+
+  if (!normalizedValue) {
+    return fallback
+  }
+
+  return !['0', 'false', 'off', 'no'].includes(normalizedValue)
+}
+
 const getSingleQueryValue = (value: unknown) => {
   if (Array.isArray(value)) {
     for (const entry of value) {
@@ -100,6 +114,7 @@ const setSignedOutToast = () => {
 
 export const useAuthStore = defineStore('auth', () => {
   const { sendMagicLink, signInWithGoogle, signOut, getCurrentUser } = useAuth()
+  const runtimeConfig = useRuntimeConfig()
 
   const user = ref<User | null>(null)
   const isLoading = ref(false)
@@ -120,8 +135,19 @@ export const useAuthStore = defineStore('auth', () => {
   let stopLoginRouteWatcher: (() => void) | null = null
   let stopLoginUserWatcher: (() => void) | null = null
 
+  const getIsLoginCaptchaEnabled = computed(() => {
+    return getIsEnabled(runtimeConfig.public.turnstileEnabled, true)
+  })
+
   const getCanSubmitLoginEmail = computed(() => {
-    return loginEmail.value.trim().length > 0 && Boolean(loginCaptchaToken.value) && !isLoading.value
+    const hasEmail = loginEmail.value.trim().length > 0
+    const hasCaptchaToken = Boolean(loginCaptchaToken.value)
+
+    if (!getIsLoginCaptchaEnabled.value) {
+      return hasEmail && !isLoading.value
+    }
+
+    return hasEmail && hasCaptchaToken && !isLoading.value
   })
 
   const getHasLoginCaptchaToken = computed(() => {
@@ -270,14 +296,15 @@ export const useAuthStore = defineStore('auth', () => {
   const loginWithMagicLink = async (email: string, nextPath?: string, captchaToken?: string | null) => {
     const normalizedEmail = email.trim().toLowerCase()
     const normalizedCaptchaToken = captchaToken?.trim() || ''
+    const isCaptchaEnabled = getIsLoginCaptchaEnabled.value
 
     if (!normalizedEmail) {
       error.value = 'Veuillez entrer votre adresse courriel.'
       return false
     }
 
-    if (!normalizedCaptchaToken) {
-      error.value = 'Veuillez completer la verification anti-bot.'
+    if (isCaptchaEnabled && !normalizedCaptchaToken) {
+      error.value = 'Veuillez completer la verification.'
       return false
     }
 
@@ -285,12 +312,25 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = null
 
     try {
-      const { error: signInError } = await sendMagicLink(normalizedEmail, nextPath, normalizedCaptchaToken)
+      const { error: signInError } = await sendMagicLink(
+        normalizedEmail,
+        nextPath,
+        isCaptchaEnabled ? normalizedCaptchaToken : null
+      )
 
       if (signInError) {
         if (getIsCaptchaError(signInError.message)) {
           setClearLoginCaptchaToken()
-          setErrorMessage(signInError.message, 'Verification anti-bot invalide ou expiree. Veuillez recommencer.')
+
+          if (!isCaptchaEnabled) {
+            setErrorMessage(
+              signInError.message,
+              'Le captcha est desactive cote client, mais encore requis par la configuration serveur.'
+            )
+            return false
+          }
+
+          setErrorMessage(signInError.message, 'Verification invalide ou expiree. Veuillez recommencer.')
           return false
         }
 
@@ -376,6 +416,7 @@ export const useAuthStore = defineStore('auth', () => {
     loginMagicLinkSent,
     loginCaptchaToken,
     loginHasAuthFailed,
+    getIsLoginCaptchaEnabled,
     getCanSubmitLoginEmail,
     getHasLoginCaptchaToken,
     initAuth,

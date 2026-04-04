@@ -21,6 +21,7 @@ const TURNSTILE_RETRY_DELAY_MS = 150
 
 const authStore = useAuthStore()
 const runtimeConfig = useRuntimeConfig()
+const isTurnstileEnabled = computed(() => authStore.getIsLoginCaptchaEnabled)
 const turnstileSiteKey = (runtimeConfig.public.turnstileSiteKey || '').trim()
 const turnstileContainerRef = ref<HTMLElement | null>(null)
 const turnstileWidgetId = ref<string | null>(null)
@@ -72,7 +73,13 @@ const setUnmountTurnstileWidget = () => {
 }
 
 const setRenderTurnstileWidget = () => {
-  if (!import.meta.client || !turnstileSiteKey || !turnstileContainerRef.value || turnstileWidgetId.value) {
+  if (
+    !import.meta.client ||
+    !isTurnstileEnabled.value ||
+    !turnstileSiteKey ||
+    !turnstileContainerRef.value ||
+    turnstileWidgetId.value
+  ) {
     return
   }
 
@@ -82,7 +89,7 @@ const setRenderTurnstileWidget = () => {
     turnstileRenderAttempts += 1
 
     if (turnstileRenderAttempts >= TURNSTILE_MAX_RENDER_ATTEMPTS) {
-      turnstileError.value = 'Impossible de charger la verification anti-bot. Rechargez la page.'
+      turnstileError.value = 'Impossible de charger la verification. Rechargez la page.'
       return
     }
 
@@ -102,11 +109,11 @@ const setRenderTurnstileWidget = () => {
       authStore.setLoginCaptchaToken(token)
     },
     'expired-callback': () => {
-      turnstileError.value = 'Verification anti-bot expiree. Veuillez recommencer.'
+      turnstileError.value = 'Verification expiree. Veuillez recommencer.'
       setResetTurnstileWidget()
     },
     'error-callback': () => {
-      turnstileError.value = 'Impossible de verifier le captcha. Veuillez recommencer.'
+      turnstileError.value = 'Impossible de verifier. Veuillez recommencer.'
       authStore.setClearLoginCaptchaToken()
     }
   })
@@ -119,8 +126,13 @@ definePageMeta({
 onMounted(() => {
   authStore.setInitializeLoginPage()
 
+  if (!isTurnstileEnabled.value) {
+    turnstileError.value = null
+    return
+  }
+
   if (!turnstileSiteKey) {
-    turnstileError.value = 'Configuration anti-bot manquante. Contactez le support.'
+    turnstileError.value = 'Configuration manquante. Contactez le support.'
     return
   }
 
@@ -139,6 +151,10 @@ onBeforeUnmount(() => {
 watch(
   () => authStore.loginMagicLinkSent,
   (isSent) => {
+    if (!isTurnstileEnabled.value) {
+      return
+    }
+
     if (!isSent) {
       setResetTurnstileWidget()
     }
@@ -223,16 +239,12 @@ useHead({
             </div>
           </label>
 
-          <section class="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-            <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Verification anti-bot</p>
-            <div ref="turnstileContainerRef" class="mt-3 flex min-h-[68px] items-center justify-center" />
-            <p v-if="turnstileError" class="mt-2 text-xs text-white/70">
+          <div v-if="isTurnstileEnabled" class="flex min-h-[68px] flex-col items-center justify-center gap-2">
+            <div ref="turnstileContainerRef" class="flex min-h-[68px] items-center justify-center" />
+            <p v-if="turnstileError" class="text-xs text-white/70">
               {{ turnstileError }}
             </p>
-            <p v-else-if="!authStore.getHasLoginCaptchaToken" class="mt-2 text-xs text-white/60">
-              Completez la verification pour continuer.
-            </p>
-          </section>
+          </div>
 
           <button
             type="submit"
