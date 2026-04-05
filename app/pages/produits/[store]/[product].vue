@@ -123,6 +123,16 @@ const canonicalUrl = computed(() => {
   return `${siteUrl}${path}`
 })
 
+const getCadPriceLabel = (price: number | null) => {
+  const formattedPrice = productDetails.getFormattedPrice(price)
+
+  if (formattedPrice === 'N/A') {
+    return formattedPrice
+  }
+
+  return `${formattedPrice} $ CA`
+}
+
 const seoTitle = computed(() => {
   const product = productDetails.product
 
@@ -140,8 +150,8 @@ const seoDescription = computed(() => {
     return 'Consultez les details du produit et comparez les prix en epicerie au Quebec.'
   }
 
-  const priceValue = productDetails.getFormattedPrice(product.price_num)
-  return `Consultez ${product.title} chez ${product.store}, prix actuel ${priceValue}$, et comparez les options dans les autres magasins.`
+  const priceLabel = getCadPriceLabel(product.price_num)
+  return `Consultez ${product.title} chez ${product.store}, prix actuel ${priceLabel}, et comparez les options dans les autres magasins.`
 })
 
 const seoJsonLd = computed(() => {
@@ -367,7 +377,7 @@ useHead(() => {
             <div class="mt-6">
               <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Prix actuel</p>
               <p class="mt-2 font-display text-4xl font-semibold italic tracking-tight text-white sm:text-5xl">
-                ${{ productDetails.getFormattedPrice(productDetails.product.price_num) }}
+                {{ getCadPriceLabel(productDetails.product.price_num) }}
               </p>
               <p
                 v-if="productDetails.product.price_text"
@@ -447,7 +457,7 @@ useHead(() => {
                 {{ otherProduct.store }}
               </p>
               <p class="mt-4 font-display text-3xl font-semibold italic tracking-tight text-white">
-                ${{ productDetails.getFormattedPrice(otherProduct.price_num) }}
+                {{ getCadPriceLabel(otherProduct.price_num) }}
               </p>
               <p
                 v-if="otherProduct.price_text"
