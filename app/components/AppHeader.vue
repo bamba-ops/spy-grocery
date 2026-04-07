@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { LogIn, LogOut, Menu, X } from 'lucide-vue-next'
+import { ArrowRight, LogIn, LogOut, Menu, X } from 'lucide-vue-next'
 import { useAuthStore } from '~/stores/auth'
 
 const isOpen = ref(false)
@@ -53,6 +53,14 @@ const setSignOut = async () => {
 
       <div class="flex items-center gap-3">
         <NuxtLink
+          to="/search"
+          class="hidden items-center gap-2 rounded-full border border-white/20 bg-white/5 px-4 py-2 font-sans text-[10px] font-semibold uppercase tracking-[0.28em] text-white/85 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:inline-flex"
+        >
+          Rechercher
+          <ArrowRight class="h-3.5 w-3.5" />
+        </NuxtLink>
+
+        <NuxtLink
           v-if="!isAuthenticated"
           to="/login"
           class="hidden items-center gap-2 rounded-full border border-white/20 bg-white px-4 py-2 font-sans text-xs font-semibold text-black transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:inline-flex"
@@ -88,6 +96,15 @@ const setSignOut = async () => {
 
     <div v-if="isOpen" id="mobile-menu" class="border-t border-white/10 bg-black px-4 pb-6 md:hidden">
       <div class="flex flex-col gap-4 py-4 font-sans text-sm font-medium text-white/75">
+        <NuxtLink
+          to="/search"
+          class="inline-flex w-full items-center justify-center gap-2 rounded-full border border-white/20 bg-white/5 px-4 py-3 font-sans text-[10px] font-semibold uppercase tracking-[0.28em] text-white/85 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+          @click="closeMenu"
+        >
+          Rechercher
+          <ArrowRight class="h-3.5 w-3.5" />
+        </NuxtLink>
+
         <a
           v-for="item in navItems"
           :key="item.label"

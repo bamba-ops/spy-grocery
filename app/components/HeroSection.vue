@@ -183,6 +183,26 @@ onBeforeUnmount(() => {
           </div>
         </form>
       </div>
+
+      <section class="mt-10 overflow-hidden rounded-[28px] border border-white/15 bg-black/80 shadow-[0_28px_70px_rgba(0,0,0,0.5)] sm:mt-12">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-4 py-3 sm:px-5">
+
+          <NuxtLink
+            to="/search"
+            class="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.28em] text-white/85 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+          >
+            Ouvrir la recherche
+            <ArrowRight class="h-3.5 w-3.5" />
+          </NuxtLink>
+        </div>
+
+        <iframe
+          src="/search"
+          title="Apercu de la page de recherche SpyGrocery"
+          loading="lazy"
+          class="h-[420px] w-full bg-black sm:h-[560px]"
+        ></iframe>
+      </section>
     </div>
   </section>
 </template>
