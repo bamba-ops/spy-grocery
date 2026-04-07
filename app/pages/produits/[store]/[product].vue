@@ -133,6 +133,52 @@ const getCadPriceLabel = (price: number | null) => {
   return `${formattedPrice} $ CA`
 }
 
+const getTimestamp = (value: string | null | undefined) => {
+  if (!value) {
+    return 0
+  }
+
+  const parsed = Date.parse(value)
+  return Number.isNaN(parsed) ? 0 : parsed
+}
+
+const getFormattedDate = (value: string | null) => {
+  if (!value) {
+    return 'N/A'
+  }
+
+  const parsedDate = new Date(value)
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return 'N/A'
+  }
+
+  return parsedDate.toLocaleDateString('fr-CA', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  })
+}
+
+const trustUpdatedAt = computed(() => {
+  const allRows = [
+    productDetails.product,
+    ...productDetails.otherStoreProducts
+  ].filter((row): row is NonNullable<typeof productDetails.product> => Boolean(row))
+
+  if (allRows.length === 0) {
+    return null
+  }
+
+  const latestRow = allRows.reduce((latest, current) => {
+    return getTimestamp(current.scraped_at) > getTimestamp(latest.scraped_at)
+      ? current
+      : latest
+  })
+
+  return latestRow.scraped_at || null
+})
+
 const seoTitle = computed(() => {
   const product = productDetails.product
 
@@ -358,12 +404,12 @@ useHead(() => {
             <NuxtLink
               v-if="storePath"
               :to="storePath"
-              class="mt-4 inline-flex h-9 items-center rounded-full border border-white/20 px-4 text-[10px] uppercase tracking-[0.3em] text-white/80 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+              class="mt-4 inline-flex h-9 items-center rounded-full border border-white/20 px-4 text-sm font-semibold uppercase tracking-[0.18em] text-white/90 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:text-base"
             >
               {{ productDetails.product.store }}
             </NuxtLink>
 
-            <p v-else class="mt-4 text-sm text-white/80 sm:text-base">
+            <p v-else class="mt-4 text-base font-semibold text-white/90 sm:text-lg">
               {{ productDetails.product.store }}
             </p>
 
@@ -416,8 +462,71 @@ useHead(() => {
                 Voir en magasin
               </a>
             </div>
+
+            <p class="mt-3 text-xs leading-relaxed text-white/65 sm:text-sm">
+              Astuce: ajoutez ce produit a votre liste pour comparer votre panier total avant vos courses.
+            </p>
           </div>
         </article>
+
+        <section class="grid gap-4 sm:gap-6 lg:grid-cols-2">
+          <article class="rounded-2xl border border-white/10 bg-black/60 p-5 sm:p-6">
+            <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Confiance</p>
+            <h2 class="mt-2 font-display text-3xl font-semibold italic tracking-tight text-white sm:text-4xl">
+              Comment nous evaluons ce produit
+            </h2>
+
+            <div class="mt-4 grid gap-3 text-sm text-white/80 sm:grid-cols-2">
+              <div class="rounded-xl border border-white/10 bg-white/5 p-3">
+                <p class="text-[10px] uppercase tracking-[0.28em] text-white/55">Auteur</p>
+                <p class="mt-2">Equipe SpyGrocery</p>
+              </div>
+              <div class="rounded-xl border border-white/10 bg-white/5 p-3">
+                <p class="text-[10px] uppercase tracking-[0.28em] text-white/55">Derniere mise a jour</p>
+                <p class="mt-2">{{ getFormattedDate(trustUpdatedAt) }}</p>
+              </div>
+            </div>
+
+            <div class="mt-3 rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white/80">
+              <p class="text-[10px] uppercase tracking-[0.28em] text-white/55">Couverture</p>
+              <p class="mt-2 leading-relaxed">
+                Produit compare sur notre snapshot actif, avec mise a jour continue selon les collectes en epicerie.
+              </p>
+            </div>
+
+            <div class="mt-3 rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white/80">
+              <p class="text-[10px] uppercase tracking-[0.28em] text-white/55">Sources</p>
+              <p class="mt-2 leading-relaxed">
+                Prix publics observes sur les sites officiels des enseignes et verifies lors de l ingestion.
+              </p>
+            </div>
+          </article>
+
+          <article class="rounded-2xl border border-white/10 bg-white/5 p-5 sm:p-6">
+            <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Nouveau sur SpyGrocery</p>
+            <h2 class="mt-2 font-display text-3xl font-semibold italic tracking-tight text-white sm:text-4xl">
+              Passez du prix produit au panier complet en quelques clics.
+            </h2>
+            <p class="mt-3 text-sm leading-relaxed text-white/80 sm:text-base">
+              Conservez les produits qui vous interessent, comparez les enseignes et gardez vos reperes budget sans refaire vos recherches.
+            </p>
+
+            <div class="mt-5 flex flex-wrap gap-3">
+              <NuxtLink
+                to="/lists"
+                class="inline-flex h-11 items-center justify-center rounded-full border border-white/20 bg-white px-6 text-[10px] uppercase tracking-[0.35em] text-black transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+              >
+                Creer ma liste gratuite
+              </NuxtLink>
+              <NuxtLink
+                to="/search"
+                class="inline-flex h-11 items-center justify-center rounded-full border border-white/20 px-6 text-[10px] uppercase tracking-[0.35em] text-white/80 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+              >
+                Retour a la recherche
+              </NuxtLink>
+            </div>
+          </article>
+        </section>
 
         <section
           v-if="productDetails.getHasOtherStoreProducts"
@@ -449,11 +558,11 @@ useHead(() => {
               <NuxtLink
                 v-if="otherProduct.store_slug"
                 :to="`/magasins/${encodeURIComponent(otherProduct.store_slug)}`"
-                class="text-[10px] uppercase tracking-[0.35em] text-white/60 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                class="text-sm font-semibold uppercase tracking-[0.18em] text-white/80 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:text-base"
               >
                 {{ otherProduct.store }}
               </NuxtLink>
-              <p v-else class="text-[10px] uppercase tracking-[0.35em] text-white/60">
+              <p v-else class="text-sm font-semibold uppercase tracking-[0.18em] text-white/80 sm:text-base">
                 {{ otherProduct.store }}
               </p>
               <p class="mt-4 font-display text-3xl font-semibold italic tracking-tight text-white">

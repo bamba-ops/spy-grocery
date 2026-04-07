@@ -302,7 +302,7 @@ useHead(() => ({
               class="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-black/40 px-4 py-3 transition hover:bg-black/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
             >
               <div>
-                <p class="text-[10px] uppercase tracking-[0.3em] text-white/60">{{ product.store }}</p>
+                <p class="text-sm font-semibold uppercase tracking-[0.18em] text-white/80 sm:text-base">{{ product.store }}</p>
                 <p class="mt-1 text-sm text-white/90 sm:text-base">{{ product.title }}</p>
               </div>
 

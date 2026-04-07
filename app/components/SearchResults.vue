@@ -113,7 +113,7 @@ const setOpenAiAssistant = () => {
             </NuxtLink>
           </div>
           <div class="flex flex-1 flex-col p-3 sm:p-5">
-            <p class="text-[9px] uppercase tracking-[0.28em] text-white/60 sm:text-[10px] sm:tracking-[0.35em]">{{ product.store }}</p>
+            <p class="text-sm font-semibold uppercase tracking-[0.18em] text-white/85 sm:text-base sm:tracking-[0.2em]">{{ product.store }}</p>
             <NuxtLink
               :to="getProductRoutePath(product)"
               class="mt-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:mt-2"

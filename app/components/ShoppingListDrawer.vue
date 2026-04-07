@@ -54,11 +54,11 @@ const lists = useListsStore()
 
           <div v-else class="space-y-6">
             <div v-for="(items, storeName) in lists.groupedItems" :key="storeName" class="space-y-3">
-              <div class="flex items-center justify-between text-[10px] uppercase tracking-[0.35em] text-white/60">
+              <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
-                  <span>{{ storeName }}</span>
+                  <span class="text-sm font-semibold uppercase tracking-[0.2em] text-white/90 sm:text-base">{{ storeName }}</span>
                 </div>
-                <span>${{ lists.storeTotals[storeName]?.toFixed(2) }}</span>
+                <span class="text-[10px] uppercase tracking-[0.3em] text-white/60">${{ lists.storeTotals[storeName]?.toFixed(2) }}</span>
               </div>
 
               <div v-for="item in items" :key="item.product.id" class="flex gap-4 rounded-2xl border border-white/10 bg-white/5 p-3">

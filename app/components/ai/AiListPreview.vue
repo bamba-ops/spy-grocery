@@ -50,9 +50,9 @@ const grandTotal = computed(() => {
         :key="`${storeName}-${groupIndex}`"
         class="space-y-3"
       >
-        <div class="flex items-center justify-between text-[10px] uppercase tracking-[0.35em] text-white/60">
-          <span>{{ storeName }}</span>
-          <span>${{ storeTotals[storeName]?.toFixed(2) }}</span>
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-semibold uppercase tracking-[0.2em] text-white/90 sm:text-base">{{ storeName }}</span>
+          <span class="text-[10px] uppercase tracking-[0.3em] text-white/60">${{ storeTotals[storeName]?.toFixed(2) }}</span>
         </div>
 
         <div

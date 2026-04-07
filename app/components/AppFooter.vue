@@ -71,11 +71,11 @@ const footerColumns = [
 
         <div>
           <h4 class="text-[10px] uppercase tracking-[0.35em] text-white/60">Magasins</h4>
-          <ul class="mt-4 space-y-3 text-xs uppercase tracking-[0.25em] text-white/70">
+          <ul class="mt-4 space-y-3 text-sm uppercase tracking-[0.16em] text-white/85 sm:text-base">
             <li v-for="store in storeLinks" :key="store.to">
               <NuxtLink
                 :to="store.to"
-                class="transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                class="font-semibold transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
               >
                 {{ store.label }}
               </NuxtLink>

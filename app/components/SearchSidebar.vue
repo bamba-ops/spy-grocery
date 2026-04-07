@@ -32,7 +32,7 @@ const searchStore = useSearchStore()
 
       <select
         :value="searchStore.selectedStoreId"
-        class="h-10 rounded-full border border-white/15 bg-black px-3 text-[10px] uppercase tracking-[0.3em] text-white/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+        class="h-10 rounded-full border border-white/15 bg-black px-3 text-[10px] uppercase tracking-[0.3em] text-white/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
         @change="searchStore.setStoreFilter(($event.target as HTMLSelectElement).value)"
       >
         <option value="all">Magasin : tous</option>
