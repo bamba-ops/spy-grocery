@@ -1,9 +1,15 @@
 <script setup lang="ts">
 const lastUpdated = '31 mars 2026'
+const runtimeConfig = useRuntimeConfig()
+const siteUrl = (runtimeConfig.public.siteUrl || 'https://spygrocery.com').replace(/\/$/, '')
 
 useHead({
   title: 'Conditions de service - SpyGrocery',
   link: [
+    {
+      rel: 'canonical',
+      href: `${siteUrl}/terms`
+    },
     {
       rel: 'preconnect',
       href: 'https://fonts.googleapis.com'

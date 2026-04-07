@@ -14,6 +14,8 @@ const authStore = useAuthStore()
 const onboardingApi = useOnboarding()
 const route = useRoute()
 const supabase = useSupabaseClient()
+const runtimeConfig = useRuntimeConfig()
+const siteUrl = (runtimeConfig.public.siteUrl || 'https://spygrocery.com').replace(/\/$/, '')
 
 const statusMessage = ref('Connexion en cours...')
 
@@ -144,9 +146,17 @@ onMounted(() => {
   void setFinalizeAuth()
 })
 
+useServerSeoMeta({
+  robots: 'noindex,follow'
+})
+
 useHead({
   title: 'Confirmation de session - SpyGrocery',
   link: [
+    {
+      rel: 'canonical',
+      href: `${siteUrl}/auth/confirm`
+    },
     {
       rel: 'preconnect',
       href: 'https://fonts.googleapis.com'

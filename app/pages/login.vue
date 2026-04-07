@@ -21,6 +21,7 @@ const TURNSTILE_RETRY_DELAY_MS = 150
 
 const authStore = useAuthStore()
 const runtimeConfig = useRuntimeConfig()
+const siteUrl = (runtimeConfig.public.siteUrl || 'https://spygrocery.com').replace(/\/$/, '')
 const isTurnstileEnabled = computed(() => authStore.getIsLoginCaptchaEnabled)
 const turnstileSiteKey = (runtimeConfig.public.turnstileSiteKey || '').trim()
 const turnstileContainerRef = ref<HTMLElement | null>(null)
@@ -161,9 +162,17 @@ watch(
   }
 )
 
+useServerSeoMeta({
+  robots: 'noindex,follow'
+})
+
 useHead({
   title: 'Connexion - SpyGrocery',
   link: [
+    {
+      rel: 'canonical',
+      href: `${siteUrl}/login`
+    },
     {
       rel: 'preconnect',
       href: 'https://fonts.googleapis.com'

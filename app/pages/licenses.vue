@@ -1,5 +1,7 @@
 <script setup lang="ts">
 const lastUpdated = '31 mars 2026'
+const runtimeConfig = useRuntimeConfig()
+const siteUrl = (runtimeConfig.public.siteUrl || 'https://spygrocery.com').replace(/\/$/, '')
 
 const libraries = [
   { name: 'Nuxt', license: 'MIT', url: 'https://github.com/nuxt/nuxt' },
@@ -14,6 +16,10 @@ const libraries = [
 useHead({
   title: 'Licences - SpyGrocery',
   link: [
+    {
+      rel: 'canonical',
+      href: `${siteUrl}/licenses`
+    },
     {
       rel: 'preconnect',
       href: 'https://fonts.googleapis.com'

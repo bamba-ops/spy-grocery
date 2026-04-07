@@ -4,9 +4,15 @@ import { ONBOARDING_MAX_STEP } from '#shared/utils/onboarding'
 import { useOnboardingStore } from '~/stores/onboarding'
 
 const onboardingStore = useOnboardingStore()
+const runtimeConfig = useRuntimeConfig()
+const siteUrl = (runtimeConfig.public.siteUrl || 'https://spygrocery.com').replace(/\/$/, '')
 
 definePageMeta({
   middleware: 'auth'
+})
+
+useServerSeoMeta({
+  robots: 'noindex,follow'
 })
 
 const stepNumbers = [1, 2, 3]
@@ -35,6 +41,10 @@ onMounted(async () => {
 useHead({
   title: 'Parcours de demarrage - SpyGrocery',
   link: [
+    {
+      rel: 'canonical',
+      href: `${siteUrl}/onboarding`
+    },
     {
       rel: 'preconnect',
       href: 'https://fonts.googleapis.com'

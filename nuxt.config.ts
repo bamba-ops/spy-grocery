@@ -1,5 +1,27 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
-const SITE_URL = process.env.NUXT_PUBLIC_SITE_URL || 'https://spygrocery.com'
+const DEFAULT_SITE_URL = 'https://spygrocery.com'
+
+const getNormalizedSiteUrl = (value: string | undefined) => {
+  const trimmed = value?.trim()
+
+  if (!trimmed) {
+    return DEFAULT_SITE_URL
+  }
+
+  try {
+    const parsed = new URL(trimmed)
+
+    if (parsed.hostname === 'www.spygrocery.com') {
+      parsed.hostname = 'spygrocery.com'
+    }
+
+    return parsed.toString().replace(/\/$/, '')
+  } catch {
+    return DEFAULT_SITE_URL
+  }
+}
+
+const SITE_URL = getNormalizedSiteUrl(process.env.NUXT_PUBLIC_SITE_URL)
 
 const getBooleanEnv = (value: string | undefined, fallback: boolean) => {
   const normalizedValue = value?.trim().toLowerCase()

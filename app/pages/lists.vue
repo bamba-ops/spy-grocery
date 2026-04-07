@@ -2,15 +2,25 @@
 import { useListsStore } from '~/stores/lists'
 
 const listsStore = useListsStore()
+const runtimeConfig = useRuntimeConfig()
+const siteUrl = (runtimeConfig.public.siteUrl || 'https://spygrocery.com').replace(/\/$/, '')
 
 definePageMeta({
   layout: 'bottom-nav',
   middleware: ['auth', 'onboarding']
 })
 
+useServerSeoMeta({
+  robots: 'noindex,follow'
+})
+
 useHead({
   title: 'Mes listes - SpyGrocery',
   link: [
+    {
+      rel: 'canonical',
+      href: `${siteUrl}/lists`
+    },
     { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
     { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
     {
