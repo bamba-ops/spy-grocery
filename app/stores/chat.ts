@@ -304,6 +304,23 @@ export const useChatStore = defineStore('chat', () => {
     }
   }
 
+  const setOpenChatPanelWithSession = async (sessionId: string) => {
+    const normalizedSessionId = sessionId.trim()
+
+    if (!normalizedSessionId) {
+      return false
+    }
+
+    const isOpened = await setOpenChatSessionById(normalizedSessionId)
+
+    if (!isOpened) {
+      return false
+    }
+
+    isChatPanelOpen.value = true
+    return true
+  }
+
   const setDeleteChatSessionById = async (sessionId: string) => {
     const normalizedSessionId = sessionId.trim()
 
@@ -434,6 +451,7 @@ export const useChatStore = defineStore('chat', () => {
     setHydrateCurrentChatFromSession,
     setCreateNewChatSession,
     setOpenChatSessionById,
+    setOpenChatPanelWithSession,
     setDeleteChatSessionById,
     setDismissAiList,
     setResetChatSession,

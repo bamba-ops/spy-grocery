@@ -1,5 +1,5 @@
 import {
-  getIsBlockingOnboardingStatus,
+  getIsBlockingOnboardingState,
   ONBOARDING_ROUTE_PATH
 } from '#shared/utils/onboarding'
 import { useOnboarding } from '~/composables/api/useOnboarding'
@@ -24,7 +24,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
     const onboardingApi = useOnboarding()
     const onboardingState = await onboardingApi.getOnboardingState()
 
-    if (!getIsBlockingOnboardingStatus(onboardingState.status)) {
+    if (!getIsBlockingOnboardingState(onboardingState.status, onboardingState.current_step)) {
       return
     }
 

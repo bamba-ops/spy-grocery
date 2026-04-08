@@ -8,7 +8,7 @@ import type {
 } from '#shared/types/onboarding'
 import {
   getCanResumeOnboardingStatus,
-  getIsBlockingOnboardingStatus,
+  getIsBlockingOnboardingState,
   ONBOARDING_DEFAULT_STEP,
   ONBOARDING_FIRST_SESSION_TITLE,
   ONBOARDING_MAX_INTENT_LENGTH,
@@ -60,7 +60,7 @@ export const useOnboardingStore = defineStore('onboarding', () => {
   })
 
   const getIsBlocking = computed(() => {
-    return getIsBlockingOnboardingStatus(status.value)
+    return getIsBlockingOnboardingState(status.value, currentStep.value)
   })
 
   const getCanResume = computed(() => {
@@ -302,6 +302,10 @@ export const useOnboardingStore = defineStore('onboarding', () => {
     await navigateTo('/search')
   }
 
+  const setContinueToSearch = async () => {
+    await navigateTo('/search')
+  }
+
   const setResumeOnboarding = async () => {
     error.value = null
     status.value = 'in_progress'
@@ -351,6 +355,41 @@ export const useOnboardingStore = defineStore('onboarding', () => {
 
     isSaving.value = false
     await navigateTo('/search')
+    return true
+  }
+
+  const setCompleteFromChatSession = async (chatId: string | null) => {
+    const normalizedChatId = typeof chatId === 'string' ? chatId.trim() : ''
+    const onboardingSessionId = typeof firstChatSessionId.value === 'string'
+      ? firstChatSessionId.value.trim()
+      : ''
+
+    if (!normalizedChatId || !onboardingSessionId || normalizedChatId !== onboardingSessionId) {
+      return false
+    }
+
+    if (status.value === 'completed' && hasAddedList.value) {
+      return true
+    }
+
+    const completedAtIso = new Date().toISOString()
+
+    status.value = 'completed'
+    currentStep.value = ONBOARDING_MAX_STEP
+    hasPreview.value = true
+    hasAddedList.value = true
+    completedAt.value = completedAtIso
+    skippedAt.value = null
+
+    await setPersistOnboardingPatch({
+      status: 'completed',
+      current_step: ONBOARDING_MAX_STEP,
+      has_preview: true,
+      has_added_list: true,
+      completed_at: completedAtIso,
+      skipped_at: null
+    })
+
     return true
   }
 
@@ -411,7 +450,9 @@ export const useOnboardingStore = defineStore('onboarding', () => {
     setSubmitIntent,
     setBackToIntentStep,
     setSkipForNow,
+    setContinueToSearch,
     setResumeOnboarding,
-    setAddPreviewToCurrentList
+    setAddPreviewToCurrentList,
+    setCompleteFromChatSession
   }
 })

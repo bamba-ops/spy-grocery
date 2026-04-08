@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Loader2 } from 'lucide-vue-next'
 import {
-  getIsBlockingOnboardingStatus,
+  getIsBlockingOnboardingState,
   ONBOARDING_ROUTE_PATH
 } from '#shared/utils/onboarding'
 import { useOnboarding } from '~/composables/api/useOnboarding'
@@ -88,7 +88,7 @@ const getPostLoginPath = async () => {
     try {
       const onboardingState = await onboardingApi.getOnboardingState()
 
-      if (getIsBlockingOnboardingStatus(onboardingState.status)) {
+      if (getIsBlockingOnboardingState(onboardingState.status, onboardingState.current_step)) {
         return ONBOARDING_ROUTE_PATH
       }
 

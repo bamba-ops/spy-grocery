@@ -24,14 +24,6 @@ const storeLinks = computed(() => storeLinksData.value || [])
 
 const footerColumns = [
   {
-    title: 'Outils',
-    links: [
-      { label: 'Recherche de prix', to: '/search' },
-      { label: 'Magasins', to: '/search' },
-      { label: 'Mes listes', to: '/lists' }
-    ]
-  },
-  {
     title: 'Mentions legales',
     links: [
       { label: 'Conditions de service', to: '/terms' },

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ChevronRight, Loader2, Sparkles, UserCircle2 } from 'lucide-vue-next'
+import { ChevronRight, Loader2, Sparkles } from 'lucide-vue-next'
 import { ONBOARDING_MAX_STEP } from '#shared/utils/onboarding'
 import { useOnboardingStore } from '~/stores/onboarding'
 
@@ -15,18 +15,17 @@ useServerSeoMeta({
   robots: 'noindex,follow'
 })
 
-const stepNumbers = [1, 2, 3]
+const stepNumbers = [1, 2]
 
 const isStepOne = computed(() => onboardingStore.currentStep === 1)
 const isStepTwo = computed(() => onboardingStore.currentStep === 2)
-const isStepThree = computed(() => onboardingStore.currentStep === 3)
 
 const setSubmitIntent = async () => {
   await onboardingStore.setSubmitIntent()
 }
 
-const setAddPreviewToCurrentList = async () => {
-  await onboardingStore.setAddPreviewToCurrentList()
+const setContinueToSearch = async () => {
+  await onboardingStore.setContinueToSearch()
 }
 
 onMounted(async () => {
@@ -97,7 +96,7 @@ useHead({
 
     <main class="relative z-10 mx-auto flex min-h-[calc(100vh-6rem)] w-full max-w-7xl items-center px-4 pb-12 pt-8 sm:px-6 sm:pt-12">
       <section v-if="isStepOne" class="mx-auto w-full max-w-5xl text-center">
-        <p class="text-[10px] uppercase tracking-[0.35em] text-white/60 sm:hidden">Etape 1 sur 3</p>
+        <p class="text-[10px] uppercase tracking-[0.35em] text-white/60 sm:hidden">Etape 1 sur 2</p>
         <h1 class="mt-3 font-display text-5xl font-semibold italic tracking-tight text-white sm:mt-0 sm:text-7xl">
           Qu'y a-t-il dans votre menu ?
         </h1>
@@ -149,25 +148,57 @@ useHead({
 
       <section v-else-if="isStepTwo" class="mx-auto w-full max-w-3xl text-center">
         <div class="text-center">
-          <p class="text-[10px] uppercase tracking-[0.35em] text-white/60 sm:hidden">Etape 2 sur 3</p>
+          <p class="text-[10px] uppercase tracking-[0.35em] text-white/60 sm:hidden">Etape 2 sur 2</p>
           <h1 class="mt-3 font-display text-5xl font-semibold italic tracking-tight text-white sm:mt-0 sm:text-7xl">
-            Preparation de votre liste...
+            {{ onboardingStore.hasPreview && !onboardingStore.isGenerating
+              ? 'Votre liste est prete dans Spy AI.'
+              : 'Preparation de votre liste...' }}
           </h1>
           <p class="mx-auto mt-4 max-w-2xl text-base text-white/60 sm:text-xl">
-            Cela prend quelques secondes.
+            {{ onboardingStore.hasPreview && !onboardingStore.isGenerating
+              ? 'Ouvrez Spy AI depuis le bouton en bas pour voir votre liste.'
+              : 'Cela prend quelques secondes.' }}
           </p>
         </div>
 
-        <div class="mx-auto mt-10 flex w-full max-w-md items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-6 py-6">
+        <!--<div
+          v-if="!onboardingStore.hasPreview || onboardingStore.isGenerating"
+          class="mx-auto mt-10 flex w-full max-w-md items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-6 py-6"
+        >
           <Loader2 class="h-5 w-5 animate-spin text-white/80" />
           <p class="text-sm text-white/80">
             {{ onboardingStore.isGenerating ? 'Generation de votre premiere liste d\'epicerie...' : 'En attente de generation...' }}
           </p>
+        </div>-->
+
+        <div
+          v-if="onboardingStore.hasPreview && !onboardingStore.isGenerating"
+          class="mx-auto mt-10 w-full max-w-xl rounded-2xl border border-white/10 bg-white/5 px-6 py-6 text-left"
+        >
+          <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Liste prete</p>
+          <p class="mt-3 text-sm text-white/80 sm:text-base">
+            Votre premiere liste IA est disponible dans la conversation Spy AI de ce parcours.
+          </p>
+        </div>
+
+        <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
+          <button
+            type="button"
+            class="inline-flex h-11 items-center rounded-full border border-white/20 bg-white px-5 text-[10px] uppercase tracking-[0.35em] text-black transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+            @click="setContinueToSearch"
+          >
+            {{ onboardingStore.hasPreview && !onboardingStore.isGenerating
+              ? 'Aller a la recherche'
+              : 'Continuer pendant que Spy AI prepare votre liste' }}
+          </button>
         </div>
 
         <p v-if="onboardingStore.error" class="mt-5 text-center text-sm text-white/75">{{ onboardingStore.error }}</p>
 
-        <div v-if="onboardingStore.error && !onboardingStore.isGenerating" class="mt-8 flex flex-wrap items-center justify-center gap-3">
+        <div
+          v-if="onboardingStore.error && !onboardingStore.isGenerating && !onboardingStore.hasPreview"
+          class="mt-8 flex flex-wrap items-center justify-center gap-3"
+        >
           <button
             type="button"
             class="inline-flex h-11 items-center rounded-full border border-white/20 px-5 text-[10px] uppercase tracking-[0.35em] text-white/80 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:cursor-not-allowed disabled:opacity-40"
@@ -182,47 +213,6 @@ useHead({
             @click="setSubmitIntent"
           >
             Reessayer
-          </button>
-        </div>
-      </section>
-
-      <section v-else-if="isStepThree" class="mx-auto w-full max-w-5xl text-center">
-        <p class="text-[10px] uppercase tracking-[0.35em] text-white/60 sm:hidden">Etape 3 sur 3</p>
-        <h1 class="mt-3 font-display text-5xl font-semibold italic tracking-tight text-white sm:mt-0 sm:text-7xl">
-          Votre premiere liste est prete.
-        </h1>
-        <p class="mx-auto mt-4 max-w-3xl text-base text-white/60 sm:text-xl">
-          Revoyez cette liste structuree, puis ajoutez-la a votre liste courante.
-        </p>
-
-        <div class="mt-8 flex justify-center">
-          <AiListPreview
-            v-if="onboardingStore.generatedItems.length > 0"
-            :items="onboardingStore.generatedItems"
-            @add="setAddPreviewToCurrentList"
-            @dismiss="onboardingStore.setBackToIntentStep"
-          />
-
-          <div v-else class="w-full max-w-xl rounded-2xl border border-white/10 bg-white/5 p-6 text-left">
-            <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Aucun apercu pour l'instant</p>
-            <p class="mt-3 text-sm text-white/75">Nous n'avons pas pu recuperer l'apercu de votre liste. Regenerez depuis l'etape 1.</p>
-            <button
-              type="button"
-              class="mt-4 inline-flex h-11 items-center rounded-full border border-white/20 bg-white px-5 text-[10px] uppercase tracking-[0.35em] text-black transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-              @click="onboardingStore.setBackToIntentStep"
-            >
-              Recommencer
-            </button>
-          </div>
-        </div>
-
-        <div class="mt-6 flex flex-wrap items-center justify-center gap-3">
-          <button
-            type="button"
-            class="inline-flex h-11 items-center rounded-full border border-white/20 px-5 text-[10px] uppercase tracking-[0.35em] text-white/80 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-            @click="onboardingStore.setBackToIntentStep"
-          >
-            Regenerer la liste
           </button>
         </div>
       </section>

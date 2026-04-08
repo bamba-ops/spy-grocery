@@ -3,6 +3,7 @@ import { ArrowUpRight } from 'lucide-vue-next'
 import { getRouteParam } from '#shared/utils/getRouteParam'
 import { getProductRoutePath } from '#shared/utils/productRoute'
 import { toPageError } from '#shared/utils/toPageError'
+import { useAuthStore } from '~/stores/auth'
 import { useProductDetailsStore } from '~/stores/productDetails'
 import { useListsStore } from '~/stores/lists'
 
@@ -16,6 +17,11 @@ const runtimeConfig = useRuntimeConfig()
 const siteUrl = (runtimeConfig.public.siteUrl || 'https://spygrocery.com').replace(/\/$/, '')
 const productDetails = useProductDetailsStore()
 const lists = useListsStore()
+const authStore = useAuthStore()
+
+const getIsAuthenticated = computed(() => {
+  return Boolean(authStore.user)
+})
 
 const storeSlug = computed(() => {
   return getRouteParam(route.params.store as string | string[] | undefined)
@@ -502,7 +508,10 @@ useHead(() => {
             </div>
           </article>
 
-          <article class="rounded-2xl border border-white/10 bg-white/5 p-5 sm:p-6">
+          <article
+            v-if="!getIsAuthenticated"
+            class="rounded-2xl border border-white/10 bg-white/5 p-5 sm:p-6"
+          >
             <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Nouveau sur SpyGrocery</p>
             <h2 class="mt-2 font-display text-3xl font-semibold italic tracking-tight text-white sm:text-4xl">
               Passez du prix produit au panier complet en quelques clics.

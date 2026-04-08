@@ -247,6 +247,9 @@ Reference:
 
 ## Migrations Present
 
+Workflow obligatoire TEST -> PROD:
+- `docs/DB_MIGRATIONS.md`
+
 Applied migrations currently visible:
 - `20260307085506 create_products_table_from_normalized_product`
 - `20260307085609 products_id_to_uuid_primary_key`

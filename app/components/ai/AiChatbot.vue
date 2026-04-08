@@ -3,6 +3,7 @@ import { ArrowLeft, Loader2, Send, X } from 'lucide-vue-next'
 import { computed } from 'vue'
 import { useChatStore } from '~/stores/chat'
 import { useListsStore } from '~/stores/lists'
+import { useOnboardingStore } from '~/stores/onboarding'
 
 const props = defineProps<{
   open: boolean
@@ -17,6 +18,7 @@ const inputRef = ref<HTMLInputElement | null>(null)
 const messagesContainerRef = ref<HTMLElement | null>(null)
 const lists = useListsStore()
 const chatStore = useChatStore()
+const onboardingStore = useOnboardingStore()
 const panelView = ref<'sessions' | 'chat'>('sessions')
 const isDeleteConfirmOpen = ref(false)
 const pendingDeleteChatId = ref<string | null>(null)
@@ -75,7 +77,7 @@ const scrollToBottom = () => {
   messagesContainerRef.value.scrollTop = messagesContainerRef.value.scrollHeight
 }
 
-const setAddAiItemsToCurrentList = () => {
+const setAddAiItemsToCurrentList = async () => {
   if (chatStore.aiListItems.length === 0) {
     return
   }
@@ -87,6 +89,7 @@ const setAddAiItemsToCurrentList = () => {
   }
 
   lists.setShoppingListDrawerOpen()
+  await onboardingStore.setCompleteFromChatSession(chatStore.currentChatId)
   chatStore.setDismissAiList()
   setClosePanel()
 }
@@ -203,6 +206,17 @@ watch(
   async (open) => {
     if (!open) {
       setCloseDeleteConfirm()
+      return
+    }
+
+    if (chatStore.currentChatId) {
+      panelView.value = 'chat'
+
+      nextTick(() => {
+        inputRef.value?.focus()
+        scrollToBottom()
+      })
+
       return
     }
 
