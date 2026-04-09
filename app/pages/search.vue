@@ -57,7 +57,7 @@ definePageMeta({
 
 useServerSeoMeta({
   title: 'Recherche de produits - SpyGrocery',
-  description: 'Recherchez des produits et comparez les prix en epicerie dans les magasins du Quebec.',
+  description: 'Recherchez et comparez les produits en special dans les epiceries du Quebec.',
   robots: 'noindex,follow'
 })
 

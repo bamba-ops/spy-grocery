@@ -13,7 +13,7 @@ const searchStore = useSearchStore()
         <input
           :value="searchStore.searchInput"
           type="text"
-          placeholder="Rechercher"
+          placeholder="Rechercher un produit en special"
           class="h-full w-full bg-transparent text-[10px] uppercase tracking-[0.3em] text-white placeholder:text-white/40 focus:outline-none"
           @input="searchStore.setSearchInput(($event.target as HTMLInputElement).value)"
         />

@@ -1,12 +1,25 @@
 import { defineNuxtPlugin } from '#app'
 import posthog from 'posthog-js'
 
-export default defineNuxtPlugin(nuxtApp => {
-  const runtimeConfig = useRuntimeConfig();
-  const posthogClient = posthog.init(runtimeConfig.public.posthogPublicKey as string, {
-    api_host: runtimeConfig.public.posthogHost as string,
-    loaded: (posthog) => {
-      if (import.meta.env.MODE === 'development') posthog.debug();
+export default defineNuxtPlugin(() => {
+  const runtimeConfig = useRuntimeConfig()
+  const posthogPublicKey = String(runtimeConfig.public.posthogPublicKey || '').trim()
+  const posthogHost = String(runtimeConfig.public.posthogHost || '').trim()
+
+  if (!posthogPublicKey || !posthogHost) {
+    return {
+      provide: {
+        posthog: () => null
+      }
+    }
+  }
+
+  const posthogClient = posthog.init(posthogPublicKey, {
+    api_host: posthogHost,
+    loaded: (loadedPosthog) => {
+      if (import.meta.env.MODE === 'development') {
+        loadedPosthog.debug()
+      }
     }
   })
 

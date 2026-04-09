@@ -4,10 +4,12 @@ import { getProductRoutePath } from '#shared/utils/productRoute'
 import { useSearchStore } from '~/stores/search'
 import { useChatStore } from '~/stores/chat'
 import { useListsStore } from '~/stores/lists'
+import { useAuthStore } from '~/stores/auth'
 
 const searchStore = useSearchStore()
 const chatStore = useChatStore()
 const lists = useListsStore()
+const authStore = useAuthStore()
 
 const getSafeProductUrl = (url: string | null) => {
   if (!url) return null
@@ -19,6 +21,36 @@ const getSafeProductUrl = (url: string | null) => {
 
 const setOpenAiAssistant = () => {
   chatStore.setChatPanelOpen(true)
+}
+
+const getNotifySpecialNextPath = () => {
+  const params = new URLSearchParams()
+  params.set('intent', 'notify-special')
+
+  const normalizedQuery = (searchStore.query || searchStore.searchInput || '').trim()
+
+  if (normalizedQuery) {
+    params.set('q', normalizedQuery)
+  }
+
+  if (searchStore.selectedStoreId && searchStore.selectedStoreId !== 'all') {
+    params.set('store', searchStore.selectedStoreId)
+  }
+
+  return `/search?${params.toString()}`
+}
+
+const setNotifySpecialRequest = () => {
+  if (authStore.user) {
+    return
+  }
+
+  authStore.setOpenAuthPrompt({
+    title: 'Alerte specials',
+    description: 'Connectez-vous pour que nous puissions vous contacter quand ce produit est en special.',
+    nextPath: getNotifySpecialNextPath(),
+    ctaLabel: 'Connexion pour activer l\'alerte'
+  })
 }
 </script>
 
@@ -65,20 +97,30 @@ const setOpenAiAssistant = () => {
               On n'a rien trouve pour "{{ searchStore.query || 'votre recherche' }}"
             </p>
             <p class="mt-2 text-sm leading-relaxed text-white/80 sm:text-base">
-              Ouvrez Spy AI pour lancer une recherche plus large et verifier si le produit existe dans nos donnees, meme avec un nom different.
+              SpyGrocery affiche les produits en special. Ce produit n'est peut-etre pas en promo en ce moment.
             </p>
             <p class="mt-3 text-[10px] uppercase tracking-[0.3em] text-white/55">
-              Astuce: l'icone AI pulse dans la barre du bas
+              Vous pouvez demander une alerte ou ouvrir Spy AI pour des alternatives.
             </p>
           </div>
 
-          <button
-            type="button"
-            class="inline-flex h-11 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white px-6 text-[10px] uppercase tracking-[0.35em] text-black transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-            @click="setOpenAiAssistant"
-          >
-            Ouvrir Spy AI
-          </button>
+          <div class="flex flex-wrap items-center justify-end gap-3">
+            <button
+              type="button"
+              class="inline-flex h-11 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white px-6 text-[10px] uppercase tracking-[0.35em] text-black transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+              @click="setNotifySpecialRequest"
+            >
+              Notifie-moi quand c'est en special
+            </button>
+
+            <button
+              type="button"
+              class="inline-flex h-11 shrink-0 items-center justify-center rounded-full border border-white/20 px-6 text-[10px] uppercase tracking-[0.35em] text-white/85 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+              @click="setOpenAiAssistant"
+            >
+              Ouvrir Spy AI
+            </button>
+          </div>
         </div>
       </div>
 
