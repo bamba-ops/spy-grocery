@@ -130,7 +130,7 @@ onBeforeUnmount(() => {
         <h1 class="font-display text-[clamp(2.6rem,6vw,4.8rem)] font-semibold italic leading-[0.95] tracking-tight text-white">
           Trouvez le panier d'epicerie le moins cher.
           <br />
-          Concu pour les magasins du Quebec.
+          Concu pour les épiceries du Québec.
         </h1>
         <p class="mt-4 max-w-2xl text-sm font-medium text-white/80 sm:mt-6 sm:text-base">
           SpyGrocery compare les vrais prix en epicerie au Quebec et utilise l'IA pour structurer votre liste en quelques secondes.
