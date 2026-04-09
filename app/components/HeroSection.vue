@@ -184,7 +184,7 @@ onBeforeUnmount(() => {
         </form>
       </div>
 
-      <section class="mt-10 sm:mt-12">
+     <!--<section class="mt-10 sm:mt-12">
         <div class="flex flex-col items-start gap-3 rounded-2xl border border-white/15 bg-black/70 p-4 sm:p-5">
           <p class="text-sm text-white/75 sm:text-base">
             Vous pouvez aussi aller directement sur la page de recherche.
@@ -198,7 +198,7 @@ onBeforeUnmount(() => {
             <ArrowRight class="h-4 w-4" />
           </NuxtLink>
         </div>
-      </section>
+      </section>-->
     </div>
   </section>
 </template>
