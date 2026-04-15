@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { ArrowUpRight } from 'lucide-vue-next'
+import { ArrowRight, ArrowUpRight } from 'lucide-vue-next'
 import { getRouteParam } from '#shared/utils/getRouteParam'
+import { ONBOARDING_MAX_STEP } from '#shared/utils/onboarding'
 import { getProductRoutePath } from '#shared/utils/productRoute'
+import { toSlug } from '#shared/utils/toSlug'
 import { toPageError } from '#shared/utils/toPageError'
-import { useAuthStore } from '~/stores/auth'
 import { useProductDetailsStore } from '~/stores/productDetails'
 import { useListsStore } from '~/stores/lists'
+import { useOnboardingStore } from '~/stores/onboarding'
 
 definePageMeta({
   layout: 'bottom-nav',
@@ -17,10 +19,21 @@ const runtimeConfig = useRuntimeConfig()
 const siteUrl = (runtimeConfig.public.siteUrl || 'https://spygrocery.com').replace(/\/$/, '')
 const productDetails = useProductDetailsStore()
 const lists = useListsStore()
-const authStore = useAuthStore()
+const onboardingStore = useOnboardingStore()
+const { getImageDisplay } = useProducts()
+const onboardingStepNumbers = [1, 2, 3]
 
-const getIsAuthenticated = computed(() => {
-  return Boolean(authStore.user)
+// Keep the product onboarding banner aligned with step 2 visual language.
+const onboardingDisplayStep = computed(() => {
+  const current = Number.isInteger(onboardingStore.currentStep)
+    ? onboardingStore.currentStep
+    : 2
+
+  return Math.max(2, Math.min(current, ONBOARDING_MAX_STEP))
+})
+
+const getIsOnboardingContext = computed(() => {
+  return route.query.onboarding === '1'
 })
 
 const storeSlug = computed(() => {
@@ -39,13 +52,85 @@ const getSafeProductUrl = (url: string | null) => {
   return trimmed
 }
 
-const setAddCurrentProductToList = () => {
+const setAddCurrentProductToList = async () => {
   if (!productDetails.product) {
     return
   }
 
   lists.setProductInCurrentList(productDetails.product)
+
+  if (!getIsOnboardingContext.value) {
+    return
+  }
+
+  const nextStoreSlug = productDetails.product.store_slug
+    || toSlug(productDetails.product.store || '')
+
+  if (!nextStoreSlug) {
+    return
+  }
+
+  console.log('[onboarding] first product added, redirecting to store page:', {
+    productId: productDetails.product.id,
+    storeSlug: nextStoreSlug
+  })
+
+  await onboardingStore.setMoveToStoreStep(nextStoreSlug)
+  await navigateTo(`/magasins/${encodeURIComponent(nextStoreSlug)}?onboarding=1`)
 }
+
+const currentProductImageDisplay = computed(() => {
+  const product = productDetails.product
+  return getImageDisplay(product?.image_url || null, product?.title || '')
+})
+
+const setAddOtherProductToList = (product: NonNullable<typeof productDetails.product>) => {
+  lists.setProductInCurrentList(product)
+}
+
+const getPriceSortValue = (price: number | null) => {
+  return typeof price === 'number' ? price : Number.POSITIVE_INFINITY
+}
+
+const sortedOtherStoreProducts = computed(() => {
+  return [...productDetails.otherStoreProducts].sort((a, b) => {
+    const priceDiff = getPriceSortValue(a.price_num) - getPriceSortValue(b.price_num)
+
+    if (priceDiff !== 0) {
+      return priceDiff
+    }
+
+    return a.store.localeCompare(b.store)
+  })
+})
+
+const searchMoreProductsPath = computed(() => {
+  const productTitle = productDetails.product?.title?.trim() || ''
+
+  if (!productTitle) {
+    return '/search'
+  }
+
+  const params = new URLSearchParams({
+    q: productTitle
+  })
+
+  return `/search?${params.toString()}`
+})
+
+const marketAveragePrice = computed(() => {
+  const prices = [
+    productDetails.product?.price_num,
+    ...sortedOtherStoreProducts.value.map((product) => product.price_num)
+  ].filter((price): price is number => typeof price === 'number')
+
+  if (prices.length === 0) {
+    return null
+  }
+
+  const sum = prices.reduce((acc, price) => acc + price, 0)
+  return sum / prices.length
+})
 
 const loadProductPage = async (
   nextStoreSlug: string,
@@ -111,6 +196,19 @@ if (!productDetails.product) {
     message: 'Produit introuvable'
   })
 }
+
+onMounted(() => {
+  if (!getIsOnboardingContext.value || !productDetails.product) {
+    return
+  }
+
+  // Debug log intentionally kept while onboarding guidance visibility is monitored.
+  console.log('[onboarding] product page guidance shown:', {
+    productId: productDetails.product.id,
+    storeSlug: productDetails.product.store_slug || storeSlug.value,
+    currentStep: onboardingStore.currentStep
+  })
+})
 
 const canonicalPath = computed(() => {
   if (productDetails.canonicalPath) {
@@ -383,99 +481,123 @@ useHead(() => {
         {{ productDetails.error }}
       </div>
 
-      <section v-else-if="productDetails.product" class="mt-6 space-y-8">
-        <article
-          class="grid gap-4 rounded-[36px] border border-white/10 bg-white/5 p-4 shadow-[0_30px_80px_rgba(0,0,0,0.55)] sm:gap-6 sm:p-6 lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)]"
+      <section v-else-if="productDetails.product" class="mt-8 space-y-8 sm:space-y-10">
+        <section
+          v-if="getIsOnboardingContext"
+          class="rounded-2xl border border-white/10 bg-white/5 p-5 sm:p-6"
         >
-          <div class="overflow-hidden rounded-2xl border border-white/10 bg-black/60">
-            <div class="relative aspect-square">
-              <img
-                v-if="productDetails.product.image_url"
-                :src="productDetails.product.image_url"
-                :alt="productDetails.product.title"
-                class="h-full w-full object-contain"
-                loading="lazy"
-              >
-              <div v-else class="flex h-full w-full items-center justify-center text-sm uppercase tracking-[0.3em] text-white/60">Aucune image</div>
-              <div class="pointer-events-none absolute inset-0 bg-black/35"></div>
-            </div>
+          <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Etape {{ onboardingDisplayStep }} sur {{ ONBOARDING_MAX_STEP }}</p>
+          <h2 class="mt-2 font-display text-3xl font-semibold italic tracking-tight text-white sm:text-4xl">
+            Continuez votre liste chez {{ productDetails.product.store }}
+          </h2>
+          <p class="mt-2 text-sm text-white/75 sm:text-base">
+            Ajoutez ce produit ou voir d'autre magasin dans la page de recherche.
+          </p>
+
+          <div class="mt-4 flex items-center gap-2">
+            <span
+              v-for="step in onboardingStepNumbers"
+              :key="`product-onboarding-step-${step}`"
+              :class="[
+                'h-[2px] w-12 rounded-full transition',
+                step <= onboardingDisplayStep ? 'bg-white' : 'bg-white/20'
+              ]"
+            />
           </div>
+        </section>
 
-          <div class="flex flex-col">
-            <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Details du produit</p>
-            <h1 class="mt-2 font-display text-4xl font-semibold italic tracking-tight text-white sm:text-5xl">
-              {{ productDetails.product.title }}
-            </h1>
+        <header class="rounded-[36px] border border-white/10 bg-white/5 p-4 shadow-[0_30px_80px_rgba(0,0,0,0.55)] sm:p-6">
+          <div class="grid gap-4 sm:gap-6 lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)]">
+            <div class="relative block aspect-[16/9] overflow-hidden rounded-2xl border border-white/10 bg-black sm:aspect-square">
+              <template v-if="currentProductImageDisplay.type === 'url'">
+                <img
+                  :src="currentProductImageDisplay.value"
+                  :alt="productDetails.product.title"
+                  class="h-full w-full object-contain brightness-90 contrast-110"
+                  loading="lazy"
+                >
+              </template>
 
-            <NuxtLink
-              v-if="storePath"
-              :to="storePath"
-              class="mt-4 inline-flex h-9 items-center rounded-full border border-white/20 px-4 text-sm font-semibold uppercase tracking-[0.18em] text-white/90 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:text-base"
-            >
-              {{ productDetails.product.store }}
-            </NuxtLink>
+              <template v-else>
+                <div class="flex h-full w-full items-center justify-center text-5xl text-white/60">
+                  {{ currentProductImageDisplay.value }}
+                </div>
+              </template>
 
-            <p v-else class="mt-4 text-base font-semibold text-white/90 sm:text-lg">
-              {{ productDetails.product.store }}
-            </p>
-
-            <p
-              v-if="productDetails.product.brand"
-              class="mt-2 text-[10px] uppercase tracking-[0.35em] text-white/60"
-            >
-              {{ productDetails.product.brand }}
-            </p>
-
-            <div class="mt-6">
-              <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Prix actuel</p>
-              <p class="mt-2 font-display text-4xl font-semibold italic tracking-tight text-white sm:text-5xl">
-                {{ getCadPriceLabel(productDetails.product.price_num) }}
-              </p>
-              <p
-                v-if="productDetails.product.price_text"
-                class="mt-2 text-[10px] uppercase tracking-[0.32em] text-white/60"
-              >
-                {{ productDetails.product.price_text }}
-              </p>
+              <div class="pointer-events-none absolute inset-0 bg-black/40"></div>
             </div>
 
-            <div
-              v-if="productDetails.product.description"
-              class="mt-6 rounded-2xl border border-white/10 bg-black/40 p-4"
-            >
-              <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Profil du produit</p>
-              <p class="mt-2 text-sm leading-relaxed text-white/80 sm:text-base">
+            <div class="flex flex-col">
+              <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Details du produit</p>
+              <h1 class="mt-2 font-display text-4xl font-semibold italic tracking-tight text-white sm:text-5xl lg:text-6xl">
+                {{ productDetails.product.title }}
+              </h1>
+
+              <p
+                v-if="productDetails.product.brand"
+                class="mt-4 text-[10px] uppercase tracking-[0.3em] text-white/60"
+              >
+                {{ productDetails.product.brand }}
+              </p>
+
+              <NuxtLink
+                v-if="storePath"
+                :to="storePath"
+                class="mt-5 inline-flex h-10 w-fit items-center rounded-full border border-white/20 px-4 text-sm font-semibold uppercase tracking-[0.18em] text-white/90 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+              >
+                {{ productDetails.product.store }}
+              </NuxtLink>
+
+              <p v-else class="mt-5 text-base font-semibold text-white/90 sm:text-lg">
+                {{ productDetails.product.store }}
+              </p>
+
+              <div class="mt-6 flex flex-wrap items-end gap-4">
+                <div>
+                  <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Prix actuel</p>
+                  <p class="mt-2 font-display text-4xl font-semibold italic tracking-tight text-white sm:text-5xl">
+                    {{ getCadPriceLabel(productDetails.product.price_num) }}
+                  </p>
+                </div>
+
+                <p
+                  v-if="productDetails.product.price_text"
+                  class="pb-1 text-[10px] uppercase tracking-[0.32em] text-white/60"
+                >
+                  {{ productDetails.product.price_text }}
+                </p>
+              </div>
+
+              <p
+                v-if="productDetails.product.description"
+                class="mt-5 max-w-3xl text-sm leading-relaxed text-white/80 sm:text-base"
+              >
                 {{ productDetails.product.description }}
               </p>
+
+              <div class="mt-6 flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  class="inline-flex h-11 items-center justify-center rounded-full border border-white/20 bg-white px-6 text-[10px] uppercase tracking-[0.35em] text-black transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                  @click="setAddCurrentProductToList"
+                >
+                  Ajouter a ma liste
+                </button>
+
+                <a
+                  v-if="getSafeProductUrl(productDetails.product.url)"
+                  :href="getSafeProductUrl(productDetails.product.url)!"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="inline-flex h-11 items-center justify-center rounded-full border border-white/20 px-6 text-[10px] uppercase tracking-[0.35em] text-white/80 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                >
+                  Voir en magasin
+                </a>
+              </div>
             </div>
-
-            <div class="mt-6 flex flex-wrap gap-3">
-              <button
-                type="button"
-                class="inline-flex h-11 items-center justify-center rounded-full border border-white/20 bg-white px-6 text-[10px] uppercase tracking-[0.35em] text-black transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-                @click="setAddCurrentProductToList"
-              >
-                Ajouter a la liste
-              </button>
-
-              <a
-                v-if="getSafeProductUrl(productDetails.product.url)"
-                :href="getSafeProductUrl(productDetails.product.url)!"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="inline-flex h-11 items-center justify-center rounded-full border border-white/20 px-6 text-[10px] uppercase tracking-[0.35em] text-white/80 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-              >
-                Voir en magasin
-              </a>
-            </div>
-
-            <p class="mt-3 text-xs leading-relaxed text-white/65 sm:text-sm">
-              Astuce: ajoutez ce produit a votre liste pour comparer votre panier total avant vos courses.
-            </p>
           </div>
-        </article>
 
-        <section class="grid gap-4 sm:gap-6 lg:grid-cols-2">
+          <!--
           <article class="rounded-2xl border border-white/10 bg-black/60 p-5 sm:p-6">
             <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Confiance</p>
             <h2 class="mt-2 font-display text-3xl font-semibold italic tracking-tight text-white sm:text-4xl">
@@ -507,91 +629,142 @@ useHead(() => {
               </p>
             </div>
           </article>
-
-          <article
-            v-if="!getIsAuthenticated"
-            class="rounded-2xl border border-white/10 bg-white/5 p-5 sm:p-6"
-          >
-            <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Nouveau sur SpyGrocery</p>
-            <h2 class="mt-2 font-display text-3xl font-semibold italic tracking-tight text-white sm:text-4xl">
-              Passez du prix produit au panier complet en quelques clics.
-            </h2>
-            <p class="mt-3 text-sm leading-relaxed text-white/80 sm:text-base">
-              Conservez les produits qui vous interessent, comparez les enseignes et gardez vos reperes budget sans refaire vos recherches.
-            </p>
-
-            <div class="mt-5 flex flex-wrap gap-3">
-              <NuxtLink
-                to="/lists"
-                class="inline-flex h-11 items-center justify-center rounded-full border border-white/20 bg-white px-6 text-[10px] uppercase tracking-[0.35em] text-black transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-              >
-                Creer ma liste gratuite
-              </NuxtLink>
-              <NuxtLink
-                to="/search"
-                class="inline-flex h-11 items-center justify-center rounded-full border border-white/20 px-6 text-[10px] uppercase tracking-[0.35em] text-white/80 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-              >
-                Retour a la recherche
-              </NuxtLink>
-            </div>
-          </article>
-        </section>
+          -->
+        </header>
 
         <section
-          v-if="productDetails.getHasOtherStoreProducts"
-          class="rounded-2xl border border-white/10 bg-black/60 p-4 sm:p-6"
+          v-if="sortedOtherStoreProducts.length > 0"
+          class="rounded-[30px] border border-white/10 bg-black/60 p-4 sm:p-6"
         >
-          <div class="flex items-center justify-between gap-4">
-            <h2 class="font-display text-3xl font-semibold italic tracking-tight text-white sm:text-4xl">
-              Disponible dans d'autres magasins
-            </h2>
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Autres promos</p>
+              <h2 class="mt-2 font-display text-3xl font-semibold italic tracking-tight text-white sm:text-4xl">
+                Classement du moins cher au plus cher
+              </h2>
+            </div>
+
             <span class="text-[10px] uppercase tracking-[0.35em] text-white/60">
-              {{ productDetails.otherStoreProducts.length }} magasins
+              {{ sortedOtherStoreProducts.length }} magasins
             </span>
           </div>
 
-          <div class="mt-4 grid gap-4 sm:mt-6 sm:grid-cols-2 lg:grid-cols-3">
-            <article
-              v-for="otherProduct in productDetails.otherStoreProducts"
-              :key="otherProduct.id"
-              class="relative rounded-2xl border border-white/10 bg-white/5 p-4"
-            >
-              <NuxtLink
-                :to="getProductRoutePath(otherProduct)"
-                class="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/20 text-white/70 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-                :aria-label="`Ouvrir ${otherProduct.title}`"
-              >
-                <ArrowUpRight class="h-4 w-4" />
-              </NuxtLink>
+          <div class="mt-6 hidden grid-cols-12 gap-4 px-4 text-[10px] uppercase tracking-[0.28em] text-white/55 md:grid">
+            <p class="col-span-4">Magasin</p>
+            <p class="col-span-2">Prix</p>
+            <p class="col-span-2 text-center">Prix unite</p>
+            <p class="col-span-2 text-center">Status</p>
+            <p class="col-span-2 text-right">Action</p>
+          </div>
 
-              <NuxtLink
-                v-if="otherProduct.store_slug"
-                :to="`/magasins/${encodeURIComponent(otherProduct.store_slug)}`"
-                class="text-sm font-semibold uppercase tracking-[0.18em] text-white/80 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:text-base"
-              >
-                {{ otherProduct.store }}
-              </NuxtLink>
-              <p v-else class="text-sm font-semibold uppercase tracking-[0.18em] text-white/80 sm:text-base">
-                {{ otherProduct.store }}
-              </p>
-              <p class="mt-4 font-display text-3xl font-semibold italic tracking-tight text-white">
+          <div class="mt-4 space-y-4">
+            <article
+              v-for="(otherProduct, index) in sortedOtherStoreProducts"
+              :key="otherProduct.id"
+              class="grid grid-cols-1 gap-4 rounded-2xl border border-white/10 bg-white/5 p-4 transition hover:bg-white/[0.07] md:grid-cols-12 md:items-center md:gap-3 md:px-5 md:py-5"
+            >
+              <div class="md:col-span-4">
+                <div class="flex items-center gap-3">
+                  <NuxtLink
+                    v-if="otherProduct.store_slug"
+                    :to="`/magasins/${encodeURIComponent(otherProduct.store_slug)}`"
+                    class="text-sm font-semibold uppercase tracking-[0.18em] text-white/85 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:text-base"
+                  >
+                    {{ otherProduct.store }}
+                  </NuxtLink>
+                  <p v-else class="text-sm font-semibold uppercase tracking-[0.18em] text-white/85 sm:text-base">
+                    {{ otherProduct.store }}
+                  </p>
+
+                  <NuxtLink
+                    :to="getProductRoutePath(otherProduct)"
+                    class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/20 text-white/70 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                    :aria-label="`Ouvrir ${otherProduct.title}`"
+                  >
+                    <ArrowUpRight class="h-4 w-4" />
+                  </NuxtLink>
+                </div>
+
+                <p class="mt-2 text-xs text-white/65">{{ otherProduct.title }}</p>
+              </div>
+
+              <p class="font-display text-3xl font-semibold italic tracking-tight text-white md:col-span-2">
                 {{ getCadPriceLabel(otherProduct.price_num) }}
               </p>
-              <p
-                v-if="otherProduct.price_text"
-                class="mt-2 text-[10px] uppercase tracking-[0.32em] text-white/60"
-              >
-                {{ otherProduct.price_text }}
+
+              <p class="text-sm text-white/70 md:col-span-2 md:text-center">
+                {{ otherProduct.price_text || 'N/A' }}
               </p>
+
+              <div class="md:col-span-2 md:flex md:justify-center">
+                <span
+                  v-if="index === 0"
+                  class="inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[9px] uppercase tracking-[0.26em] text-white"
+                >
+                  Meilleur prix
+                </span>
+                <span
+                  v-else
+                  class="inline-flex rounded-full border border-white/15 px-3 py-1 text-[9px] uppercase tracking-[0.26em] text-white/70"
+                >
+                  Alternative
+                </span>
+              </div>
+
+              <div class="flex flex-wrap gap-2 md:col-span-2 md:justify-end">
+                <a
+                  v-if="getSafeProductUrl(otherProduct.url)"
+                  :href="getSafeProductUrl(otherProduct.url)!"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="inline-flex h-10 items-center justify-center rounded-full border border-white/20 px-4 text-[10px] uppercase tracking-[0.32em] text-white/85 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                >
+                  Magasin
+                </a>
+
+                <button
+                  type="button"
+                  class="inline-flex h-10 items-center justify-center rounded-full border border-white/20 bg-white px-4 text-[10px] uppercase tracking-[0.32em] text-black transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                  @click="setAddOtherProductToList(otherProduct)"
+                >
+                  Ajouter
+                </button>
+              </div>
             </article>
           </div>
+
+          <footer class="mt-10 flex flex-col gap-6 border-t border-white/10 pt-6 sm:flex-row sm:items-end sm:justify-between">
+            <div class="max-w-2xl">
+              <p class="text-[10px] uppercase tracking-[0.32em] text-white/55">Editorial insight</p>
+              <p class="mt-3 text-sm leading-relaxed text-white/75 sm:text-base">
+                Prix indexes quotidiennement. Ce classement met en avant les meilleures options observees pour ce produit dans les enseignes suivies.
+              </p>
+            </div>
+
+            <div class="flex items-center gap-8">
+              <div>
+                <p class="text-[10px] uppercase tracking-[0.3em] text-white/55">Prix moyen</p>
+                <p class="mt-2 font-display text-3xl font-semibold italic text-white">
+                  {{ getCadPriceLabel(marketAveragePrice) }}
+                </p>
+              </div>
+            </div>
+          </footer>
         </section>
 
         <section v-else class="rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-5">
-          <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Autres magasins</p>
+          <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Autres promos</p>
           <p class="mt-2 text-sm text-white/80 sm:text-base">
-            Ce produit n'est pas disponible dans d'autres magasins pour le moment.
+            Aucune autre promo observee pour ce produit pour le moment.
           </p>
+
+          <NuxtLink
+            :to="searchMoreProductsPath"
+            class="mt-4 inline-flex h-11 items-center gap-2 rounded-full border border-white/20 px-5 text-[10px] uppercase tracking-[0.32em] text-white/85 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+          >
+            Chercher d'autres produits
+            <ArrowRight class="h-4 w-4" />
+          </NuxtLink>
         </section>
       </section>
     </main>

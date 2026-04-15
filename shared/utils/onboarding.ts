@@ -3,7 +3,7 @@ import type { OnboardingStatus } from '../types/onboarding'
 export const ONBOARDING_API_PATH = '/api/onboarding'
 export const ONBOARDING_ROUTE_PATH = '/onboarding'
 export const ONBOARDING_DEFAULT_STEP = 1
-export const ONBOARDING_MAX_STEP = 2
+export const ONBOARDING_MAX_STEP = 3
 export const ONBOARDING_MAX_INTENT_LENGTH = 2000
 export const ONBOARDING_FIRST_SESSION_TITLE = 'First grocery list'
 
@@ -27,6 +27,8 @@ export const getIsBlockingOnboardingState = (
     return true
   }
 
+  // During onboarding v2, we only hard-block at step 1.
+  // Step 2 and 3 happen directly on regular pages (store/lists/search).
   return currentStep <= ONBOARDING_DEFAULT_STEP
 }
 

@@ -6,6 +6,7 @@ interface SetOnboardingRowByUserIdParams {
   status?: string
   current_step?: number
   first_intent?: string | null
+  selected_store_slug?: string | null
   first_chat_session_id?: string | null
   has_preview?: boolean
   has_added_list?: boolean
@@ -19,6 +20,7 @@ const ONBOARDING_SELECT_FIELDS = [
   'status',
   'current_step',
   'first_intent',
+  'selected_store_slug',
   'first_chat_session_id',
   'has_preview',
   'has_added_list',
@@ -91,6 +93,10 @@ export const setOnboardingRowByUserId = async (
 
   if (params.first_intent !== undefined) {
     patch.first_intent = params.first_intent
+  }
+
+  if (params.selected_store_slug !== undefined) {
+    patch.selected_store_slug = params.selected_store_slug
   }
 
   if (params.first_chat_session_id !== undefined) {

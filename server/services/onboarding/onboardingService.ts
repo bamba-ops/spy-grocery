@@ -104,6 +104,31 @@ const getFirstIntentFromUnknown = (value: unknown): string | null | undefined =>
   return trimmed
 }
 
+const getStoreSlugFromUnknown = (value: unknown): string | null | undefined => {
+  if (value === undefined) {
+    return undefined
+  }
+
+  if (value === null) {
+    return null
+  }
+
+  if (typeof value !== 'string') {
+    throw createError({
+      statusCode: 400,
+      message: 'Invalid onboarding selected store slug.'
+    })
+  }
+
+  const trimmed = value.trim().toLowerCase()
+
+  if (!trimmed) {
+    return null
+  }
+
+  return trimmed
+}
+
 const getChatSessionIdFromUnknown = (value: unknown): string | null | undefined => {
   if (value === undefined) {
     return undefined
@@ -180,6 +205,7 @@ const toOnboardingState = (row: OnboardingRow): OnboardingState => {
     status: row.status as OnboardingStatus,
     current_step: row.current_step,
     first_intent: row.first_intent,
+    selected_store_slug: row.selected_store_slug,
     first_chat_session_id: row.first_chat_session_id,
     has_preview: row.has_preview,
     has_added_list: row.has_added_list,
@@ -210,12 +236,19 @@ export const updateOnboarding = async ({
   userId,
   payload
 }: UpdateOnboardingParams): Promise<OnboardingState> => {
+  // Debug log kept intentionally while onboarding v2 is being rolled out.
+  console.log('[onboarding] update payload received:', {
+    userId,
+    payload
+  })
+
   const currentRow = await getOrCreateOnboardingRow({ supabase, userId })
   const nextPayload = payload || {}
 
   const status = getStatusFromUnknown(nextPayload.status)
   const currentStep = getCurrentStepFromUnknown(nextPayload.current_step)
   const firstIntent = getFirstIntentFromUnknown(nextPayload.first_intent)
+  const selectedStoreSlug = getStoreSlugFromUnknown(nextPayload.selected_store_slug)
   const firstChatSessionId = getChatSessionIdFromUnknown(nextPayload.first_chat_session_id)
   const hasPreview = getBooleanFromUnknown(nextPayload.has_preview, 'has_preview')
   const hasAddedList = getBooleanFromUnknown(nextPayload.has_added_list, 'has_added_list')
@@ -251,6 +284,10 @@ export const updateOnboarding = async ({
 
   if (firstIntent !== undefined) {
     patch.first_intent = firstIntent
+  }
+
+  if (selectedStoreSlug !== undefined) {
+    patch.selected_store_slug = selectedStoreSlug
   }
 
   if (firstChatSessionId !== undefined) {

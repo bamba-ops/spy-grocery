@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import type { ListProduct } from '#shared/types/lists'
 import type {
   OnboardingState,
   OnboardingStatus,
@@ -10,29 +9,25 @@ import {
   getCanResumeOnboardingStatus,
   getIsBlockingOnboardingState,
   ONBOARDING_DEFAULT_STEP,
-  ONBOARDING_FIRST_SESSION_TITLE,
   ONBOARDING_MAX_INTENT_LENGTH,
   ONBOARDING_MAX_STEP
 } from '#shared/utils/onboarding'
+import { toSlug } from '#shared/utils/toSlug'
 import { useOnboardingStorage } from '~/composables/local/useOnboardingStorage'
-import { useChat } from '~/composables/api/useChat'
-import { useChatSessions } from '~/composables/api/useChatSessions'
 import { useOnboarding } from '~/composables/api/useOnboarding'
 import { useAuthStore } from '~/stores/auth'
-import { useListsStore } from '~/stores/lists'
 
 export const useOnboardingStore = defineStore('onboarding', () => {
   const onboardingApi = useOnboarding()
   const onboardingStorage = useOnboardingStorage()
-  const { chat, sendMessage, getLatestAssistantListPayload } = useChat()
-  const chatSessionsApi = useChatSessions()
   const authStore = useAuthStore()
-  const listsStore = useListsStore()
 
   const quickPrompts = [
-    'Un souper sain pour deux sous 40$',
-    'Preparation de repas proteines pour la semaine',
-    'Collations sans gluten pour la route'
+    'lait 2%',
+    'oeufs',
+    'pain complet',
+    'fromage cheddar',
+    'yogourt grec'
   ]
 
   const loading = ref(false)
@@ -44,19 +39,19 @@ export const useOnboardingStore = defineStore('onboarding', () => {
   const status = ref<OnboardingStatus>('not_started')
   const currentStep = ref(ONBOARDING_DEFAULT_STEP)
   const firstIntent = ref('')
+  const selectedStoreSlug = ref<string | null>(null)
   const firstChatSessionId = ref<string | null>(null)
   const hasPreview = ref(false)
   const hasAddedList = ref(false)
   const completedAt = ref<string | null>(null)
   const skippedAt = ref<string | null>(null)
-  const generatedItems = ref<ListProduct[]>([])
 
   const getProgressPercent = computed(() => {
     return Math.round((currentStep.value / ONBOARDING_MAX_STEP) * 100)
   })
 
   const getCanSubmitIntent = computed(() => {
-    return firstIntent.value.trim().length > 0 && !isGenerating.value && !isSaving.value
+    return firstIntent.value.trim().length > 0 && !isSaving.value && !isGenerating.value
   })
 
   const getIsBlocking = computed(() => {
@@ -79,6 +74,7 @@ export const useOnboardingStore = defineStore('onboarding', () => {
     status.value = nextState.status
     currentStep.value = getClampedStep(nextState.current_step)
     firstIntent.value = nextState.first_intent || ''
+    selectedStoreSlug.value = nextState.selected_store_slug || null
     firstChatSessionId.value = nextState.first_chat_session_id
     hasPreview.value = nextState.has_preview
     hasAddedList.value = nextState.has_added_list
@@ -91,40 +87,21 @@ export const useOnboardingStore = defineStore('onboarding', () => {
       return null
     }
 
+    isSaving.value = true
+
     try {
+      // Debug log intentionally kept for onboarding v2 rollout.
+      console.log('[onboarding] persist patch:', payload)
+
       const nextState = await onboardingApi.setOnboardingState(payload)
       setApplyServerState(nextState)
       return nextState
     } catch (persistError) {
-      console.error('[onboarding] save failed:', persistError)
-      error.value = 'Impossible d\'enregistrer la progression du parcours de demarrage.'
+      console.error('[onboarding] persist failed:', persistError)
+      error.value = 'Impossible d\'enregistrer votre progression pour le moment.'
       return null
-    }
-  }
-
-  const setHydratePreviewFromSession = async () => {
-    if (!firstChatSessionId.value) {
-      return
-    }
-
-    try {
-      const session = await chatSessionsApi.getChatSessionById(firstChatSessionId.value)
-      chat.messages = Array.isArray(session.messages_json) ? session.messages_json : []
-
-      const latestPayload = getLatestAssistantListPayload(chat.messages)
-
-      if (!latestPayload || latestPayload.items.length === 0) {
-        return
-      }
-
-      generatedItems.value = latestPayload.items
-      hasPreview.value = true
-
-      if (currentStep.value < ONBOARDING_MAX_STEP) {
-        currentStep.value = ONBOARDING_MAX_STEP
-      }
-    } catch (hydrateError) {
-      console.error('[onboarding] hydrate session failed:', hydrateError)
+    } finally {
+      isSaving.value = false
     }
   }
 
@@ -148,249 +125,20 @@ export const useOnboardingStore = defineStore('onboarding', () => {
     error.value = null
 
     try {
-      const onboardingState = await onboardingApi.getOnboardingState()
-      setApplyServerState(onboardingState)
-      await setHydratePreviewFromSession()
+      const nextState = await onboardingApi.getOnboardingState()
+      setApplyServerState(nextState)
+      console.log('[onboarding] state loaded:', {
+        status: nextState.status,
+        currentStep: nextState.current_step,
+        selectedStoreSlug: nextState.selected_store_slug
+      })
     } catch (loadError) {
       console.error('[onboarding] load failed:', loadError)
-      error.value = 'Impossible de charger le parcours de demarrage.'
+      error.value = 'Impossible de charger votre parcours de demarrage.'
     } finally {
       loading.value = false
       isReady.value = true
     }
-  }
-
-  const setEnsureChatSessionId = async () => {
-    if (firstChatSessionId.value) {
-      return firstChatSessionId.value
-    }
-
-    try {
-      const session = await chatSessionsApi.createChatSession({
-        title: ONBOARDING_FIRST_SESSION_TITLE
-      })
-
-      firstChatSessionId.value = session.id
-      await setPersistOnboardingPatch({
-        first_chat_session_id: session.id
-      })
-
-      return session.id
-    } catch (sessionError) {
-      console.error('[onboarding] chat session creation failed:', sessionError)
-      error.value = 'Impossible de demarrer la session de clavardage du parcours de demarrage.'
-      return null
-    }
-  }
-
-  const setSubmitIntent = async () => {
-    const intent = firstIntent.value.trim()
-
-    if (!intent || isGenerating.value || isSaving.value) {
-      return false
-    }
-
-    if (intent.length > ONBOARDING_MAX_INTENT_LENGTH) {
-      error.value = `Veuillez garder votre demande sous ${ONBOARDING_MAX_INTENT_LENGTH} caracteres.`
-      return false
-    }
-
-    error.value = null
-    isGenerating.value = true
-    status.value = 'in_progress'
-    currentStep.value = 2
-    generatedItems.value = []
-    hasPreview.value = false
-
-    const initialPatchState = await setPersistOnboardingPatch({
-      status: 'in_progress',
-      current_step: 2,
-      first_intent: intent,
-      skipped_at: null
-    })
-
-    if (!initialPatchState) {
-      isGenerating.value = false
-      return false
-    }
-
-    const chatId = await setEnsureChatSessionId()
-
-    if (!chatId) {
-      isGenerating.value = false
-      return false
-    }
-
-    const previousPayloadKey = getLatestAssistantListPayload(chat.messages)?.key || null
-
-    try {
-      await sendMessage({
-        text: intent,
-        createListMode: true,
-        chatId
-      })
-
-      const latestPayload = getLatestAssistantListPayload(chat.messages)
-
-      if (!latestPayload || latestPayload.items.length === 0 || latestPayload.key === previousPayloadKey) {
-        throw new Error('Aucune liste d\'epicerie trouvee dans la reponse.')
-      }
-
-      generatedItems.value = latestPayload.items
-      hasPreview.value = true
-      currentStep.value = ONBOARDING_MAX_STEP
-
-      await setPersistOnboardingPatch({
-        status: 'in_progress',
-        current_step: ONBOARDING_MAX_STEP,
-        first_intent: intent,
-        has_preview: true
-      })
-
-      return true
-    } catch (submitError) {
-      console.error('[onboarding] generate list failed:', submitError)
-      generatedItems.value = []
-      hasPreview.value = false
-      currentStep.value = 2
-      error.value = 'Impossible de generer votre premiere liste. Reessayez.'
-
-      await setPersistOnboardingPatch({
-        status: 'in_progress',
-        current_step: 2,
-        has_preview: false
-      })
-
-      return false
-    } finally {
-      isGenerating.value = false
-    }
-  }
-
-  const setBackToIntentStep = async () => {
-    error.value = null
-    currentStep.value = 1
-    generatedItems.value = []
-    hasPreview.value = false
-
-    await setPersistOnboardingPatch({
-      status: 'in_progress',
-      current_step: 1,
-      has_preview: false
-    })
-  }
-
-  const setSkipForNow = async () => {
-    if (isSaving.value) {
-      return
-    }
-
-    isSaving.value = true
-    error.value = null
-
-    const skippedAtIso = new Date().toISOString()
-
-    status.value = 'skipped'
-    skippedAt.value = skippedAtIso
-
-    await setPersistOnboardingPatch({
-      status: 'skipped',
-      skipped_at: skippedAtIso
-    })
-
-    isSaving.value = false
-    await navigateTo('/search')
-  }
-
-  const setContinueToSearch = async () => {
-    await navigateTo('/search')
-  }
-
-  const setResumeOnboarding = async () => {
-    error.value = null
-    status.value = 'in_progress'
-    currentStep.value = 1
-    skippedAt.value = null
-
-    await setPersistOnboardingPatch({
-      status: 'in_progress',
-      current_step: 1,
-      skipped_at: null
-    })
-
-    await navigateTo('/onboarding')
-  }
-
-  const setAddPreviewToCurrentList = async () => {
-    if (generatedItems.value.length === 0 || isSaving.value) {
-      return false
-    }
-
-    isSaving.value = true
-    error.value = null
-
-    for (const item of generatedItems.value) {
-      for (let index = 0; index < item.quantity; index += 1) {
-        listsStore.setProductInCurrentList(item.product)
-      }
-    }
-
-    listsStore.setShoppingListDrawerOpen()
-
-    const completedAtIso = new Date().toISOString()
-
-    status.value = 'completed'
-    hasAddedList.value = true
-    completedAt.value = completedAtIso
-    currentStep.value = ONBOARDING_MAX_STEP
-
-    await setPersistOnboardingPatch({
-      status: 'completed',
-      current_step: ONBOARDING_MAX_STEP,
-      has_preview: true,
-      has_added_list: true,
-      completed_at: completedAtIso,
-      skipped_at: null
-    })
-
-    isSaving.value = false
-    await navigateTo('/search')
-    return true
-  }
-
-  const setCompleteFromChatSession = async (chatId: string | null) => {
-    const normalizedChatId = typeof chatId === 'string' ? chatId.trim() : ''
-    const onboardingSessionId = typeof firstChatSessionId.value === 'string'
-      ? firstChatSessionId.value.trim()
-      : ''
-
-    if (!normalizedChatId || !onboardingSessionId || normalizedChatId !== onboardingSessionId) {
-      return false
-    }
-
-    if (status.value === 'completed' && hasAddedList.value) {
-      return true
-    }
-
-    const completedAtIso = new Date().toISOString()
-
-    status.value = 'completed'
-    currentStep.value = ONBOARDING_MAX_STEP
-    hasPreview.value = true
-    hasAddedList.value = true
-    completedAt.value = completedAtIso
-    skippedAt.value = null
-
-    await setPersistOnboardingPatch({
-      status: 'completed',
-      current_step: ONBOARDING_MAX_STEP,
-      has_preview: true,
-      has_added_list: true,
-      completed_at: completedAtIso,
-      skipped_at: null
-    })
-
-    return true
   }
 
   const setIntent = (value: string) => {
@@ -409,18 +157,152 @@ export const useOnboardingStore = defineStore('onboarding', () => {
       return false
     }
 
-    const canHydrateIntent = currentStep.value === ONBOARDING_DEFAULT_STEP
-      && !hasPreview.value
-      && !hasAddedList.value
-      && status.value !== 'completed'
-      && firstIntent.value.trim().length === 0
+    if (!firstIntent.value.trim()) {
+      firstIntent.value = heroPrompt
+      return true
+    }
 
-    if (!canHydrateIntent) {
+    return false
+  }
+
+  const setStartOnboardingStep = async (intent: string) => {
+    const normalizedIntent = intent.trim().slice(0, ONBOARDING_MAX_INTENT_LENGTH)
+    firstIntent.value = normalizedIntent
+    status.value = 'in_progress'
+    currentStep.value = ONBOARDING_DEFAULT_STEP
+    selectedStoreSlug.value = null
+    error.value = null
+
+    await setPersistOnboardingPatch({
+      status: 'in_progress',
+      current_step: ONBOARDING_DEFAULT_STEP,
+      first_intent: normalizedIntent,
+      selected_store_slug: null,
+      skipped_at: null
+    })
+  }
+
+  const setMoveToStoreStep = async (storeSlug: string, firstIntentOverride?: string | null) => {
+    const normalizedStoreSlug = toSlug(storeSlug)
+    const normalizedFirstIntent = typeof firstIntentOverride === 'string'
+      ? firstIntentOverride.trim().slice(0, ONBOARDING_MAX_INTENT_LENGTH)
+      : ''
+
+    if (!normalizedStoreSlug) {
+      error.value = 'Impossible de determiner le magasin pour poursuivre le parcours.'
       return false
     }
 
-    firstIntent.value = heroPrompt
+    status.value = 'in_progress'
+    currentStep.value = 2
+    selectedStoreSlug.value = normalizedStoreSlug
+
+    // When step 1 ends on a selected product, keep its title as canonical first intent.
+    if (normalizedFirstIntent) {
+      firstIntent.value = normalizedFirstIntent
+    }
+
+    error.value = null
+
+    console.log('[onboarding] step 2 reached for store:', {
+      storeSlug: normalizedStoreSlug,
+      firstIntent: normalizedFirstIntent || firstIntent.value || null
+    })
+
+    const patchPayload: UpdateOnboardingPayload = {
+      status: 'in_progress',
+      current_step: 2,
+      selected_store_slug: normalizedStoreSlug,
+      skipped_at: null
+    }
+
+    if (normalizedFirstIntent) {
+      patchPayload.first_intent = normalizedFirstIntent
+    }
+
+    await setPersistOnboardingPatch(patchPayload)
+
     return true
+  }
+
+  const setAdvanceToStepThree = async () => {
+    status.value = 'in_progress'
+    currentStep.value = ONBOARDING_MAX_STEP
+    error.value = null
+
+    console.log('[onboarding] step 3 reached')
+
+    await setPersistOnboardingPatch({
+      status: 'in_progress',
+      current_step: ONBOARDING_MAX_STEP,
+      skipped_at: null
+    })
+  }
+
+  const setCompleteOnboarding = async () => {
+    const completedAtIso = new Date().toISOString()
+
+    status.value = 'completed'
+    currentStep.value = ONBOARDING_MAX_STEP
+    completedAt.value = completedAtIso
+    skippedAt.value = null
+    error.value = null
+
+    console.log('[onboarding] completed')
+
+    await setPersistOnboardingPatch({
+      status: 'completed',
+      current_step: ONBOARDING_MAX_STEP,
+      completed_at: completedAtIso,
+      skipped_at: null
+    })
+  }
+
+  const setSkipForNow = async () => {
+    const skippedAtIso = new Date().toISOString()
+
+    status.value = 'skipped'
+    skippedAt.value = skippedAtIso
+    error.value = null
+
+    console.log('[onboarding] skipped by user')
+
+    await setPersistOnboardingPatch({
+      status: 'skipped',
+      skipped_at: skippedAtIso
+    })
+
+    await navigateTo('/search')
+  }
+
+  const setResumeOnboarding = async () => {
+    status.value = 'in_progress'
+    currentStep.value = ONBOARDING_DEFAULT_STEP
+    skippedAt.value = null
+    completedAt.value = null
+    selectedStoreSlug.value = null
+    error.value = null
+
+    console.log('[onboarding] resumed from skipped')
+
+    await setPersistOnboardingPatch({
+      status: 'in_progress',
+      current_step: ONBOARDING_DEFAULT_STEP,
+      skipped_at: null,
+      completed_at: null,
+      selected_store_slug: null
+    })
+
+    await navigateTo('/onboarding')
+  }
+
+  const setContinueToSearch = async () => {
+    await navigateTo('/search')
+  }
+
+  // Compatibility method kept while frontend AI component is still in codebase.
+  const setCompleteFromChatSession = async (_chatId: string | null) => {
+    return false
   }
 
   return {
@@ -433,26 +315,27 @@ export const useOnboardingStore = defineStore('onboarding', () => {
     status,
     currentStep,
     firstIntent,
+    selectedStoreSlug,
     firstChatSessionId,
     hasPreview,
     hasAddedList,
     completedAt,
     skippedAt,
-    generatedItems,
     getProgressPercent,
     getCanSubmitIntent,
     getIsBlocking,
     getCanResume,
+    setLoadOnboardingState,
     setIntent,
     setUseQuickPrompt,
     setConsumeHeroPrompt,
-    setLoadOnboardingState,
-    setSubmitIntent,
-    setBackToIntentStep,
+    setStartOnboardingStep,
+    setMoveToStoreStep,
+    setAdvanceToStepThree,
+    setCompleteOnboarding,
     setSkipForNow,
-    setContinueToSearch,
     setResumeOnboarding,
-    setAddPreviewToCurrentList,
+    setContinueToSearch,
     setCompleteFromChatSession
   }
 })

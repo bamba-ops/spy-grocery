@@ -184,6 +184,36 @@ export const useListsStore = defineStore('lists', {
       this.multipleListsOfProducts = saved.map(toUiListFromStorage)
     },
 
+    setHydrateCurrentListDraft() {
+      if (this.productList.length > 0) {
+        return false
+      }
+
+      const draftItems = this.listsStorage.getCurrentListDraftItems()
+
+      if (!Array.isArray(draftItems) || draftItems.length === 0) {
+        return false
+      }
+
+      this.productList = toListProducts(draftItems)
+
+      // Debug log intentionally kept while onboarding v2 is monitored.
+      console.log('[lists] draft restored from localStorage:', {
+        itemCount: this.productList.length
+      })
+
+      return true
+    },
+
+    setPersistCurrentListDraft() {
+      if (this.productList.length === 0) {
+        this.listsStorage.clearCurrentListDraftItems()
+        return
+      }
+
+      this.listsStorage.setCurrentListDraftItems(this.productList as unknown[])
+    },
+
     setSyncCurrentListSourceWithSavedLists() {
       if (!this.currentListSourceName) {
         return
@@ -358,6 +388,8 @@ export const useListsStore = defineStore('lists', {
           this.lastAddedProductId = null
         }
       }, this.ADD_FEEDBACK_MS)
+
+      this.setPersistCurrentListDraft()
     },
 
     setProductAddedToast(product: Product) {
@@ -406,11 +438,15 @@ export const useListsStore = defineStore('lists', {
       item.quantity = quantity
       if (item.quantity <= 0) {
         this.deleteProductFromCurrentList(productId)
+        return
       }
+
+      this.setPersistCurrentListDraft()
     },
 
     deleteProductFromCurrentList(productId: string) {
       this.productList = this.productList.filter((item) => item.product.id !== productId)
+      this.setPersistCurrentListDraft()
     },
 
     setToggleShoppingListDrawer() {
@@ -552,6 +588,7 @@ export const useListsStore = defineStore('lists', {
 
     setCurrentListItems(items: ListProduct[]) {
       this.productList = items
+      this.setPersistCurrentListDraft()
     },
 
     setListsControls(controls: ListsControls) {

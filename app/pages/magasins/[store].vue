@@ -1,8 +1,12 @@
 <script setup lang="ts">
-import { ArrowUpRight } from 'lucide-vue-next'
+import { ArrowUpRight, Plus } from 'lucide-vue-next'
 import { getRouteParam } from '#shared/utils/getRouteParam'
+import { ONBOARDING_MAX_STEP } from '#shared/utils/onboarding'
 import { getProductRoutePath } from '#shared/utils/productRoute'
 import { toPageError } from '#shared/utils/toPageError'
+import { useAuthStore } from '~/stores/auth'
+import { useListsStore } from '~/stores/lists'
+import { useOnboardingStore } from '~/stores/onboarding'
 import { useStoreOverviewStore } from '~/stores/storeOverview'
 
 definePageMeta({
@@ -14,9 +18,36 @@ const route = useRoute()
 const runtimeConfig = useRuntimeConfig()
 const siteUrl = (runtimeConfig.public.siteUrl || 'https://spygrocery.com').replace(/\/$/, '')
 const storeOverview = useStoreOverviewStore()
+const onboardingStore = useOnboardingStore()
+const authStore = useAuthStore()
+const listsStore = useListsStore()
+
+const onboardingStepNumbers = [1, 2, 3]
 
 const storeSlug = computed(() => {
   return getRouteParam(route.params.store as string | string[] | undefined)
+})
+
+const getIsOnboardingContext = computed(() => route.query.onboarding === '1')
+
+const showOnboardingProgress = computed(() => {
+  if (!authStore.user) {
+    return false
+  }
+
+  if (getIsOnboardingContext.value) {
+    return true
+  }
+
+  return onboardingStore.status === 'in_progress' && onboardingStore.currentStep >= 2
+})
+
+const onboardingDisplayStep = computed(() => {
+  const current = Number.isInteger(onboardingStore.currentStep)
+    ? onboardingStore.currentStep
+    : 2
+
+  return Math.max(2, Math.min(current, ONBOARDING_MAX_STEP))
 })
 
 const getSafeProductUrl = (url: string | null) => {
@@ -45,6 +76,39 @@ if (!storeSlug.value) {
     message: 'Slug de magasin invalide'
   })
 }
+
+const setGoToOnboardingLists = async () => {
+  // Step 3 starts from the user's own CTA decision, no forced counters.
+  await onboardingStore.setAdvanceToStepThree()
+
+  console.log('[onboarding] store page CTA -> lists')
+  await navigateTo('/lists?source=onboarding')
+}
+
+const setAddStoreProductToList = (product: Parameters<typeof listsStore.setProductInCurrentList>[0]) => {
+  listsStore.setProductInCurrentList(product)
+
+  console.log('[onboarding] product added from store page:', {
+    productId: product.id,
+    store: product.store
+  })
+}
+
+onMounted(async () => {
+  if (!authStore.isReady) {
+    await authStore.initAuth()
+  }
+
+  if (!authStore.user) {
+    return
+  }
+
+  await onboardingStore.setLoadOnboardingState()
+
+  if (getIsOnboardingContext.value && onboardingStore.currentStep < 2) {
+    await onboardingStore.setMoveToStoreStep(storeSlug.value)
+  }
+})
 
 try {
   await storeOverview.loadStoreOverview(storeSlug.value, { throwOnError: true })
@@ -214,6 +278,45 @@ useHead(() => ({
         </div>
       </header>
 
+      <section
+        v-if="showOnboardingProgress"
+        class="mt-6 rounded-2xl border border-white/10 bg-white/5 p-5 sm:p-6"
+      >
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Etape {{ onboardingDisplayStep }} sur {{ ONBOARDING_MAX_STEP }}</p>
+            <h2 class="mt-2 font-display text-3xl font-semibold italic tracking-tight text-white sm:text-4xl">
+              Continuez votre liste chez {{ storeOverview.storeName || storeSlug }}
+            </h2>
+            <p class="mt-2 text-sm text-white/75 sm:text-base">
+              Ajoutez les produits que vous voulez, puis choisissez simplement la suite.
+            </p>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              class="inline-flex h-11 items-center justify-center rounded-full border border-white/20 bg-white px-5 text-[10px] uppercase tracking-[0.35em] text-black transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+              @click="setGoToOnboardingLists"
+            >
+              Enregistrer ma liste
+            </button>
+
+          </div>
+        </div>
+
+        <div class="mt-4 flex items-center gap-2">
+          <span
+            v-for="step in onboardingStepNumbers"
+            :key="`store-onboarding-step-${step}`"
+            :class="[
+              'h-[2px] w-12 rounded-full transition',
+              step <= onboardingDisplayStep ? 'bg-white' : 'bg-white/20'
+            ]"
+          />
+        </div>
+      </section>
+
       <div v-if="storeOverview.error" class="mt-6 rounded-2xl border border-white/20 bg-white/5 p-4 text-sm text-white/80">
         {{ storeOverview.error }}
       </div>
@@ -269,15 +372,26 @@ useHead(() => ({
                 ${{ storeOverview.getFormattedPrice(product.price_num) }}
               </p>
 
-              <a
-                v-if="getSafeProductUrl(product.url)"
-                :href="getSafeProductUrl(product.url)!"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="mt-3 inline-flex rounded-full border border-white/20 px-3 py-1 text-[10px] uppercase tracking-[0.28em] text-white/80 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-              >
-                Voir en magasin
-              </a>
+              <div class="mt-3 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 text-white/80 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                  aria-label="Ajouter a la liste"
+                  @click="setAddStoreProductToList(product)"
+                >
+                  <Plus class="h-5 w-5" />
+                </button>
+
+                <a
+                  v-if="getSafeProductUrl(product.url)"
+                  :href="getSafeProductUrl(product.url)!"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="inline-flex rounded-full border border-white/20 px-3 py-1 text-[10px] uppercase tracking-[0.28em] text-white/80 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                >
+                  Voir en magasin
+                </a>
+              </div>
             </article>
           </div>
 

@@ -282,7 +282,13 @@ export const extractRequestedIngredientsFromMessages = (messages: UIMessage[]): 
     return []
   }
 
-  if (!hasListSeparators && resolved.length === 1 && resolved[0].name.split(/\s+/).length >= 5) {
+  const firstResolved = resolved[0]
+
+  if (!firstResolved) {
+    return []
+  }
+
+  if (!hasListSeparators && resolved.length === 1 && firstResolved.name.split(/\s+/).length >= 5) {
     return []
   }
 

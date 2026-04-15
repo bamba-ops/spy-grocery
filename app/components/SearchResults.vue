@@ -2,12 +2,10 @@
 import { Plus } from 'lucide-vue-next'
 import { getProductRoutePath } from '#shared/utils/productRoute'
 import { useSearchStore } from '~/stores/search'
-import { useChatStore } from '~/stores/chat'
 import { useListsStore } from '~/stores/lists'
 import { useAuthStore } from '~/stores/auth'
 
 const searchStore = useSearchStore()
-const chatStore = useChatStore()
 const lists = useListsStore()
 const authStore = useAuthStore()
 
@@ -17,10 +15,6 @@ const getSafeProductUrl = (url: string | null) => {
   if (!trimmed) return null
   if (!/^https?:\/\//i.test(trimmed)) return null
   return trimmed
-}
-
-const setOpenAiAssistant = () => {
-  chatStore.setChatPanelOpen(true)
 }
 
 const getNotifySpecialNextPath = () => {
@@ -100,7 +94,7 @@ const setNotifySpecialRequest = () => {
               SpyGrocery affiche les produits en special. Ce produit n'est peut-etre pas en promo en ce moment.
             </p>
             <p class="mt-3 text-[10px] uppercase tracking-[0.3em] text-white/55">
-              Vous pouvez demander une alerte ou ouvrir Spy AI pour des alternatives.
+              Vous pouvez demander une alerte puis poursuivre vos comparaisons dans d'autres magasins.
             </p>
           </div>
 
@@ -111,14 +105,6 @@ const setNotifySpecialRequest = () => {
               @click="setNotifySpecialRequest"
             >
               Notifie-moi quand c'est en special
-            </button>
-
-            <button
-              type="button"
-              class="inline-flex h-11 shrink-0 items-center justify-center rounded-full border border-white/20 px-6 text-[10px] uppercase tracking-[0.35em] text-white/85 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-              @click="setOpenAiAssistant"
-            >
-              Ouvrir Spy AI
             </button>
           </div>
         </div>

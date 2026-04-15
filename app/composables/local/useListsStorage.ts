@@ -3,6 +3,7 @@ import type { ListStorage, ResultListStorage } from '#shared/types/lists'
 
 const LISTS_STORAGE_KEY = 'spygrocery:saved-lists'
 const LISTS_DELETED_NAMES_KEY = 'spygrocery:deleted-list-names'
+const CURRENT_LIST_DRAFT_STORAGE_KEY = 'spygrocery:current-list-draft'
 
 const toStringOrNull = (value: unknown): string | null => {
   if (typeof value !== 'string') return null
@@ -360,10 +361,62 @@ export const useListsStorage = () => {
     return setParsedDeletedNames([])
   }
 
+  const getCurrentListDraftItems = () => {
+    if (!import.meta.client) {
+      return []
+    }
+
+    try {
+      const raw = localStorage.getItem(CURRENT_LIST_DRAFT_STORAGE_KEY)
+
+      if (!raw) {
+        return []
+      }
+
+      const parsed = JSON.parse(raw)
+
+      if (!Array.isArray(parsed)) {
+        return []
+      }
+
+      return normalizeListItems(parsed)
+    } catch {
+      return []
+    }
+  }
+
+  const setCurrentListDraftItems = (items: unknown[]) => {
+    if (!import.meta.client) {
+      return false
+    }
+
+    try {
+      localStorage.setItem(
+        CURRENT_LIST_DRAFT_STORAGE_KEY,
+        JSON.stringify(normalizeListItems(items))
+      )
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  const clearCurrentListDraftItems = () => {
+    if (!import.meta.client) {
+      return false
+    }
+
+    localStorage.removeItem(CURRENT_LIST_DRAFT_STORAGE_KEY)
+    return true
+  }
+
   return {
     isNameListExist,
     getListsStorageItems,
+    getCurrentListDraftItems,
     getListStorageItemByName,
+    setCurrentListDraftItems,
+    clearCurrentListDraftItems,
     setListStorageItem,
     setUpdatedListStorageItemByName,
     deleteListStorageItemByName,

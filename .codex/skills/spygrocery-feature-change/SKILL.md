@@ -54,6 +54,21 @@ description: Implement or modify a user-facing SpyGrocery web feature in the Nux
 4. Keep naming and style conventions from `web/AGENTS.md`.
 5. Validate behavior and regression surface after edits.
 
+## Explainability and Debug Rules (Mandatory)
+- For each feature implementation, add short code comments in touched files to explain intent and flow.
+- Comments must explain **why** and expected behavior, not restate obvious syntax.
+- Add frontend and backend `console.log` traces at important checkpoints:
+  - page/component entry actions,
+  - store actions and state transitions,
+  - API handler start + validation branch,
+  - service decision points,
+  - repository query result summaries.
+- Keep logs simple: no mandatory layer prefix like `[frontend]` or `[backend]`.
+- Always use a feature prefix on logs so traces stay searchable (example: `[onboarding] ...`).
+- Log structured context (route, ids, step, counts) but never secrets or sensitive payloads.
+- Avoid noisy logs in tight loops; prefer one summary log with counts/status.
+- If debug logs are intentionally kept for rollout monitoring, add an explicit code comment near the log.
+
 ## Required Validation
 - Run `npm run build` at minimum after code changes.
 - Run `npx nuxi typecheck` when touching shared types/contracts, if available.
@@ -64,3 +79,7 @@ Always finish with:
 - Touched files summary (grouped by layer).
 - Commands run and key outcomes.
 - Remaining risks, assumptions, or follow-up checks.
+
+## Hard Rules
+- Every non-trivial implementation must include explanatory comments and debug logs across relevant layers.
+- Never log secrets, tokens, auth headers, raw personal data, or full unredacted payloads.

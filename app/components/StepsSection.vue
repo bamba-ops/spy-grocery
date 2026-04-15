@@ -2,18 +2,18 @@
 const steps = [
   {
     number: '01.',
-    title: 'Decrivez votre panier',
-    description: 'Indiquez a Spy AI ce qu\'il vous faut : repas, budget, quantites ou contraintes alimentaires.'
+    title: 'Trouvez votre premier produit',
+    description: 'Cherchez un produit, ouvrez sa fiche et ajoutez-le a votre liste en un clic.'
   },
   {
     number: '02.',
-    title: 'Associez des produits reels',
-    description: 'Nous relions votre demande a de vrais produits et prix des magasins du Quebec.'
+    title: 'Continuez dans un magasin',
+    description: 'Poursuivez vos achats sur la page magasin du produit choisi, avec les memes filtres et cartes.'
   },
   {
     number: '03.',
-    title: 'Construisez le panier le moins cher',
-    description: 'Revoyez votre liste structuree, ajoutez-la a votre liste de comparaison, puis enregistrez-la.'
+    title: 'Finalisez votre liste',
+    description: 'Enregistrez votre liste ou poursuivez la comparaison dans d\'autres magasins.'
   }
 ]
 </script>
@@ -28,7 +28,7 @@ const steps = [
           fonctionne vraiment.
         </h2>
         <p class="max-w-md text-sm font-medium text-black/70 sm:text-base">
-          Trois etapes claires, de la demande aux economies, pour l'epicerie reelle au Quebec.
+          Trois etapes claires pour passer de votre premier produit a une vraie liste enregistrable.
         </p>
       </div>
 

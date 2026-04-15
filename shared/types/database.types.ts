@@ -177,6 +177,7 @@ export type Database = {
           first_intent: string | null
           has_added_list: boolean
           has_preview: boolean
+          selected_store_slug: string | null
           skipped_at: string | null
           status: string
           updated_at: string
@@ -190,6 +191,7 @@ export type Database = {
           first_intent?: string | null
           has_added_list?: boolean
           has_preview?: boolean
+          selected_store_slug?: string | null
           skipped_at?: string | null
           status?: string
           updated_at?: string
@@ -203,6 +205,7 @@ export type Database = {
           first_intent?: string | null
           has_added_list?: boolean
           has_preview?: boolean
+          selected_store_slug?: string | null
           skipped_at?: string | null
           status?: string
           updated_at?: string

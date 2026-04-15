@@ -56,7 +56,7 @@ const getQuantityByKey = (
     const key = getRequestedIngredientKey(ingredient.name)
     const quantity = ingredient.quantity
 
-    if (!key || !Number.isInteger(quantity) || quantity <= 0) {
+    if (!key || typeof quantity !== 'number' || !Number.isInteger(quantity) || quantity <= 0) {
       continue
     }
 

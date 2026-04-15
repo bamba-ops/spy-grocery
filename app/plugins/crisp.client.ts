@@ -38,14 +38,14 @@ export default defineNuxtPlugin(() => {
     document.head.appendChild(script)
   }
 
-  let popupTimer: ReturnType<typeof setTimeout> | null = null
+  let popupTimer: number | null = null
 
   const setClearPopupTimer = () => {
     if (!popupTimer) {
       return
     }
 
-    clearTimeout(popupTimer)
+    window.clearTimeout(popupTimer)
     popupTimer = null
   }
 

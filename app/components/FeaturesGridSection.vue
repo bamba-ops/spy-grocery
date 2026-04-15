@@ -15,10 +15,10 @@ const features = [
     mediaAlt: 'Resultats de recherche SpyGrocery avec produits et prix reels de magasins locaux.'
   },
   {
-    title: 'Commencez avec l\'IA, terminez avec une vraie liste',
-    description: 'Decrivez vos besoins, obtenez une liste structuree, puis ajoutez-la au panier compare.',
+    title: 'Commencez avec un produit, terminez avec une vraie liste',
+    description: 'Partez d\'un produit concret, continuez dans son magasin, puis enregistrez votre liste.',
     mediaSrc: 'https://pub-2720bf762ca74cc39c0ad1d4c3819cf4.r2.dev/landing/feature3.mp4',
-    mediaAlt: 'Parcours de demarrage SpyGrocery qui genere et ajoute une liste d\'epicerie structuree.'
+    mediaAlt: 'Parcours de demarrage SpyGrocery qui construit une liste d\'epicerie et la finalise.'
   }
 ]
 

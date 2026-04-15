@@ -1,28 +1,8 @@
-import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server'
-import { getSupabaseAuthUserId } from '#shared/utils/getSupabaseAuthUserId'
-import { deleteChatSession } from '../../../services/ai/chatSessionsService'
+export default defineEventHandler(async () => {
+  console.log('[ai] DELETE /api/ai/sessions/[id] temporarily disabled (onboarding v2 rollout)')
 
-export default defineEventHandler(async (event) => {
-  const supabase = await serverSupabaseClient(event)
-  const userClaims = await serverSupabaseUser(event).catch(() => null)
-  const userId = getSupabaseAuthUserId(userClaims)
-
-  if (!userId) {
-    throw createError({
-      statusCode: 401,
-      message: 'Authentication required.'
-    })
-  }
-
-  const sessionId = getRouterParam(event, 'id') || ''
-
-  await deleteChatSession({
-    supabase,
-    userId,
-    sessionId
+  throw createError({
+    statusCode: 503,
+    message: 'Spy AI est temporairement indisponible pendant la mise a jour du parcours de demarrage.'
   })
-
-  return {
-    success: true
-  }
 })

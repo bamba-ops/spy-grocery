@@ -5,6 +5,7 @@ export interface OnboardingState {
   status: OnboardingStatus
   current_step: number
   first_intent: string | null
+  selected_store_slug: string | null
   first_chat_session_id: string | null
   has_preview: boolean
   has_added_list: boolean
@@ -18,6 +19,7 @@ export interface UpdateOnboardingPayload {
   status?: OnboardingStatus
   current_step?: number
   first_intent?: string | null
+  selected_store_slug?: string | null
   first_chat_session_id?: string | null
   has_preview?: boolean
   has_added_list?: boolean

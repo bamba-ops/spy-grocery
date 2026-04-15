@@ -34,6 +34,19 @@ const getBooleanEnv = (value: string | undefined, fallback: boolean) => {
 }
 
 const TURNSTILE_ENABLED = getBooleanEnv(process.env.NUXT_PUBLIC_TURNSTILE_ENABLED, true)
+const POSTHOG_ENABLED = getBooleanEnv(process.env.NUXT_PUBLIC_POSTHOG_ENABLED, true)
+
+const warnNitroImport = (message: string) => {
+  const isKnownUseAppConfigDuplicate =
+    message.includes('Duplicated imports "useAppConfig"')
+    && message.includes('nitropack/runtime/internal/config')
+
+  if (isKnownUseAppConfigDuplicate) {
+    return
+  }
+
+  console.warn(message)
+}
 
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
@@ -61,6 +74,7 @@ export default defineNuxtConfig({
     aiGatewayApiKey: process.env.NUXT_AI_GATEWAY_API_KEY,
     aiGatewayModel: process.env.NUXT_AI_GATEWAY_MODEL,
     public: {
+      posthogEnabled: POSTHOG_ENABLED,
       posthogPublicKey: process.env.NUXT_PUBLIC_POSTHOG_KEY,
       posthogHost: process.env.NUXT_PUBLIC_POSTHOG_HOST,
       posthogDefaults: process.env.NUXT_PUBLIC_POSTHOG_DEFAULTS,
@@ -81,6 +95,11 @@ export default defineNuxtConfig({
   },
   imports: {
     dirs: ['~/composables/**']
+  },
+  nitro: {
+    imports: {
+      warn: warnNitroImport
+    }
   },
   shadcn: {
     prefix: '',
