@@ -84,7 +84,7 @@ const setNotifySpecialRequest = () => {
         v-if="searchStore.hasFetchedSearchResults && searchStore.getProducts.length === 0"
         class="border-t border-white/10 pt-6 sm:pt-8"
       >
-        <div class="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
+        <div class="flex flex-col gap-5 sm:gap-6">
           <div class="max-w-2xl">
             <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Aucun resultat</p>
             <p class="mt-2 font-display text-2xl font-semibold italic tracking-tight text-white sm:text-3xl">
@@ -93,15 +93,15 @@ const setNotifySpecialRequest = () => {
             <p class="mt-2 text-sm leading-relaxed text-white/80 sm:text-base">
               SpyGrocery affiche les produits en special. Ce produit n'est peut-etre pas en promo en ce moment.
             </p>
-            <p class="mt-3 text-[10px] uppercase tracking-[0.3em] text-white/55">
+            <p class="mt-3 text-xs leading-relaxed text-white/60 sm:text-[13px]">
               Vous pouvez demander une alerte puis poursuivre vos comparaisons dans d'autres magasins.
             </p>
           </div>
 
-          <div class="flex flex-wrap items-center justify-end gap-3">
+          <div class="flex flex-wrap items-center gap-3 sm:pt-1">
             <button
               type="button"
-              class="inline-flex h-11 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white px-6 text-[10px] uppercase tracking-[0.35em] text-black transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+              class="inline-flex h-11 w-full items-center justify-center rounded-full border border-white/20 bg-white px-5 text-center text-[10px] uppercase tracking-[0.28em] text-black transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:w-auto sm:px-6"
               @click="setNotifySpecialRequest"
             >
               Notifie-moi quand c'est en special
