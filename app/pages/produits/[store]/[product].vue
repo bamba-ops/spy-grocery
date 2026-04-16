@@ -5,9 +5,11 @@ import { ONBOARDING_MAX_STEP } from '#shared/utils/onboarding'
 import { getProductRoutePath } from '#shared/utils/productRoute'
 import { toSlug } from '#shared/utils/toSlug'
 import { toPageError } from '#shared/utils/toPageError'
+import type { SearchProduct } from '#shared/types'
 import { useProductDetailsStore } from '~/stores/productDetails'
 import { useListsStore } from '~/stores/lists'
 import { useOnboardingStore } from '~/stores/onboarding'
+import { useAuthStore } from '~/stores/auth'
 
 definePageMeta({
   layout: 'bottom-nav',
@@ -20,8 +22,33 @@ const siteUrl = (runtimeConfig.public.siteUrl || 'https://spygrocery.com').repla
 const productDetails = useProductDetailsStore()
 const lists = useListsStore()
 const onboardingStore = useOnboardingStore()
+const authStore = useAuthStore()
 const { getImageDisplay } = useProducts()
 const onboardingStepNumbers = [1, 2, 3]
+
+type ProductComparisonRow = {
+  type: 'product'
+  key: string
+  product: SearchProduct
+  rankIndex: number
+  rankTotal: number
+  isCurrent: boolean
+}
+
+type CtaComparisonRow = {
+  type: 'cta'
+  key: string
+}
+
+type ComparisonRow = ProductComparisonRow | CtaComparisonRow
+
+const loadingShimmerBaseClass = "relative overflow-hidden border border-white/10 bg-white/5 before:absolute before:inset-0 before:content-[''] before:bg-gradient-to-r before:from-transparent before:via-white/20 before:to-transparent before:bg-[length:200%_100%] before:animate-shimmer"
+const loadingShimmerPanelClass = `${loadingShimmerBaseClass} rounded-2xl`
+const loadingShimmerLineClass = `${loadingShimmerBaseClass} rounded`
+const loadingShimmerPillClass = `${loadingShimmerBaseClass} rounded-full`
+const INITIAL_VISIBLE_PRODUCT_COUNT = 5
+const LOAD_MORE_PRODUCT_COUNT = 5
+const visibleComparisonProductsCount = ref(INITIAL_VISIBLE_PRODUCT_COUNT)
 
 // Keep the product onboarding banner aligned with step 2 visual language.
 const onboardingDisplayStep = computed(() => {
@@ -52,6 +79,43 @@ const getSafeProductUrl = (url: string | null) => {
   return trimmed
 }
 
+const getNotifySpecialNextPath = () => {
+  const params = new URLSearchParams()
+  params.set('intent', 'notify-special')
+
+  const productTitle = (productDetails.product?.title || '').trim()
+
+  if (productTitle) {
+    params.set('q', productTitle)
+  }
+
+  const storeParam = productDetails.product?.store_id
+    || productDetails.product?.store_slug
+    || storeSlug.value
+
+  if (storeParam) {
+    params.set('store', storeParam)
+  }
+
+  return `/search?${params.toString()}`
+}
+
+const setNotifySpecialFromProductCta = async () => {
+  const nextPath = getNotifySpecialNextPath()
+
+  // Debug log intentionally kept while notify-special CTA routing is monitored.
+  console.log('[notify-special] product CTA clicked, redirecting to login:', {
+    productId: productDetails.product?.id || null,
+    nextPath
+  })
+
+  await navigateTo(`/login?next=${encodeURIComponent(nextPath)}`)
+}
+
+const getShowGuestProductCta = computed(() => {
+  return authStore.isReady && !authStore.user
+})
+
 const setAddCurrentProductToList = async () => {
   if (!productDetails.product) {
     return
@@ -79,12 +143,12 @@ const setAddCurrentProductToList = async () => {
   await navigateTo(`/magasins/${encodeURIComponent(nextStoreSlug)}?onboarding=1`)
 }
 
-const currentProductImageDisplay = computed(() => {
-  const product = productDetails.product
-  return getImageDisplay(product?.image_url || null, product?.title || '')
-})
+const setAddComparisonProductToList = (product: SearchProduct, isCurrent: boolean) => {
+  if (isCurrent) {
+    void setAddCurrentProductToList()
+    return
+  }
 
-const setAddOtherProductToList = (product: NonNullable<typeof productDetails.product>) => {
   lists.setProductInCurrentList(product)
 }
 
@@ -92,8 +156,20 @@ const getPriceSortValue = (price: number | null) => {
   return typeof price === 'number' ? price : Number.POSITIVE_INFINITY
 }
 
-const sortedOtherStoreProducts = computed(() => {
-  return [...productDetails.otherStoreProducts].sort((a, b) => {
+const sortedComparisonProducts = computed(() => {
+  const mergedProducts = [
+    ...(productDetails.product ? [productDetails.product] : []),
+    ...productDetails.otherStoreProducts
+  ]
+  const deduplicatedProducts = new Map<string, SearchProduct>()
+
+  for (const product of mergedProducts) {
+    if (!deduplicatedProducts.has(product.id)) {
+      deduplicatedProducts.set(product.id, product)
+    }
+  }
+
+  return [...deduplicatedProducts.values()].sort((a, b) => {
     const priceDiff = getPriceSortValue(a.price_num) - getPriceSortValue(b.price_num)
 
     if (priceDiff !== 0) {
@@ -102,6 +178,131 @@ const sortedOtherStoreProducts = computed(() => {
 
     return a.store.localeCompare(b.store)
   })
+})
+
+const visibleComparisonProducts = computed(() => {
+  return sortedComparisonProducts.value.slice(0, visibleComparisonProductsCount.value)
+})
+
+const getRemainingComparisonProductsCount = computed(() => {
+  return Math.max(sortedComparisonProducts.value.length - visibleComparisonProductsCount.value, 0)
+})
+
+const getHasMoreComparisonProducts = computed(() => {
+  return getRemainingComparisonProductsCount.value > 0
+})
+
+const getLoadMoreBatchCount = computed(() => {
+  return Math.min(LOAD_MORE_PRODUCT_COUNT, getRemainingComparisonProductsCount.value)
+})
+
+const setShowMoreComparisonProducts = () => {
+  const currentCount = visibleComparisonProductsCount.value
+  const nextCount = Math.min(
+    sortedComparisonProducts.value.length,
+    currentCount + LOAD_MORE_PRODUCT_COUNT
+  )
+
+  // Debug log intentionally kept while progressive ranking disclosure is monitored.
+  console.log('[comparison] load more clicked:', {
+    previousVisibleCount: currentCount,
+    nextVisibleCount: nextCount,
+    totalCount: sortedComparisonProducts.value.length
+  })
+
+  visibleComparisonProductsCount.value = nextCount
+}
+
+const getComparisonProductImageDisplay = (product: SearchProduct) => {
+  return getImageDisplay(product.image_url || null, product.title)
+}
+
+const getCurrentProductRankTier = (rankIndex: number, rankTotal: number) => {
+  if (rankTotal <= 1) {
+    return 'top'
+  }
+
+  const rankRatio = rankIndex / (rankTotal - 1)
+
+  if (rankRatio <= 0.33) {
+    return 'top'
+  }
+
+  if (rankRatio >= 0.67) {
+    return 'bottom'
+  }
+
+  return 'middle'
+}
+
+const getCurrentProductGlowClasses = (rankIndex: number, rankTotal: number) => {
+  const tier = getCurrentProductRankTier(rankIndex, rankTotal)
+
+  if (tier === 'top') {
+    return 'border-emerald-300/60 bg-emerald-500/10 shadow-[0_0_0_1px_rgba(110,231,183,0.35),0_0_30px_rgba(16,185,129,0.35)]'
+  }
+
+  if (tier === 'bottom') {
+    return 'border-rose-300/60 bg-rose-500/10 shadow-[0_0_0_1px_rgba(251,113,133,0.35),0_0_30px_rgba(244,63,94,0.35)]'
+  }
+
+  return 'border-amber-300/60 bg-amber-500/10 shadow-[0_0_0_1px_rgba(252,211,77,0.35),0_0_30px_rgba(245,158,11,0.35)]'
+}
+
+const getCurrentProductAccentClasses = (rankIndex: number, rankTotal: number) => {
+  const tier = getCurrentProductRankTier(rankIndex, rankTotal)
+
+  if (tier === 'top') {
+    return 'bg-emerald-300 shadow-[0_0_12px_rgba(52,211,153,0.8)]'
+  }
+
+  if (tier === 'bottom') {
+    return 'bg-rose-300 shadow-[0_0_12px_rgba(251,113,133,0.8)]'
+  }
+
+  return 'bg-amber-300 shadow-[0_0_12px_rgba(251,191,36,0.8)]'
+}
+
+const comparisonRows = computed<ComparisonRow[]>(() => {
+  const rankedProducts = sortedComparisonProducts.value
+  const visibleProducts = visibleComparisonProducts.value
+
+  if (visibleProducts.length === 0) {
+    return []
+  }
+
+  const rows: ComparisonRow[] = []
+  const currentProductId = productDetails.product?.id || null
+  const ctaInsertIndex = getShowGuestProductCta.value ? Math.ceil(visibleProducts.length / 2) : -1
+
+  visibleProducts.forEach((product, visibleIndex) => {
+    if (visibleIndex === ctaInsertIndex) {
+      rows.push({
+        type: 'cta',
+        key: `cta-${visibleIndex}`
+      })
+    }
+
+    const rankIndex = rankedProducts.findIndex((entry) => entry.id === product.id)
+
+    rows.push({
+      type: 'product',
+      key: product.id,
+      product,
+      rankIndex,
+      rankTotal: rankedProducts.length,
+      isCurrent: product.id === currentProductId
+    })
+  })
+
+  if (getShowGuestProductCta.value && ctaInsertIndex >= visibleProducts.length) {
+    rows.push({
+      type: 'cta',
+      key: 'cta-end'
+    })
+  }
+
+  return rows
 })
 
 const searchMoreProductsPath = computed(() => {
@@ -119,10 +320,9 @@ const searchMoreProductsPath = computed(() => {
 })
 
 const marketAveragePrice = computed(() => {
-  const prices = [
-    productDetails.product?.price_num,
-    ...sortedOtherStoreProducts.value.map((product) => product.price_num)
-  ].filter((price): price is number => typeof price === 'number')
+  const prices = sortedComparisonProducts.value
+    .map((product) => product.price_num)
+    .filter((price): price is number => typeof price === 'number')
 
   if (prices.length === 0) {
     return null
@@ -210,6 +410,14 @@ onMounted(() => {
   })
 })
 
+watch(
+  () => productDetails.product?.id,
+  () => {
+    visibleComparisonProductsCount.value = INITIAL_VISIBLE_PRODUCT_COUNT
+  },
+  { immediate: true }
+)
+
 const canonicalPath = computed(() => {
   if (productDetails.canonicalPath) {
     return productDetails.canonicalPath
@@ -236,52 +444,6 @@ const getCadPriceLabel = (price: number | null) => {
 
   return `${formattedPrice} $ CA`
 }
-
-const getTimestamp = (value: string | null | undefined) => {
-  if (!value) {
-    return 0
-  }
-
-  const parsed = Date.parse(value)
-  return Number.isNaN(parsed) ? 0 : parsed
-}
-
-const getFormattedDate = (value: string | null) => {
-  if (!value) {
-    return 'N/A'
-  }
-
-  const parsedDate = new Date(value)
-
-  if (Number.isNaN(parsedDate.getTime())) {
-    return 'N/A'
-  }
-
-  return parsedDate.toLocaleDateString('fr-CA', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  })
-}
-
-const trustUpdatedAt = computed(() => {
-  const allRows = [
-    productDetails.product,
-    ...productDetails.otherStoreProducts
-  ].filter((row): row is NonNullable<typeof productDetails.product> => Boolean(row))
-
-  if (allRows.length === 0) {
-    return null
-  }
-
-  const latestRow = allRows.reduce((latest, current) => {
-    return getTimestamp(current.scraped_at) > getTimestamp(latest.scraped_at)
-      ? current
-      : latest
-  })
-
-  return latestRow.scraped_at || null
-})
 
 const seoTitle = computed(() => {
   const product = productDetails.product
@@ -464,14 +626,38 @@ useHead(() => {
         Retour a la recherche
       </NuxtLink>
 
-      <div v-if="productDetails.loading" class="mt-6 grid gap-4 sm:gap-6 lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)]">
-        <div class="aspect-square animate-pulse rounded-2xl border border-white/10 bg-white/5"></div>
-        <div class="space-y-3">
-          <div class="h-5 w-40 animate-pulse rounded bg-white/10"></div>
-          <div class="h-12 w-full animate-pulse rounded bg-white/10"></div>
-          <div class="h-10 w-32 animate-pulse rounded bg-white/10"></div>
-          <div class="h-11 w-44 animate-pulse rounded-full bg-white/10"></div>
-        </div>
+      <div v-if="productDetails.loading" class="mt-8">
+        <section class="rounded-[30px] border border-white/10 bg-black/60 p-3 sm:p-5 lg:p-6">
+          <div class="space-y-3">
+            <div :class="[loadingShimmerLineClass, 'h-3 w-32']"></div>
+            <div :class="[loadingShimmerLineClass, 'h-8 w-full max-w-[380px]']"></div>
+            <div :class="[loadingShimmerLineClass, 'h-3 w-24']"></div>
+          </div>
+
+          <div class="mt-4 space-y-3 sm:space-y-4">
+            <article
+              v-for="skeletonIndex in 4"
+              :key="`comparison-skeleton-${skeletonIndex}`"
+              class="grid grid-cols-[auto_minmax(0,1fr)_auto] gap-x-3 gap-y-2 rounded-xl border border-white/10 p-3 sm:rounded-2xl md:grid-cols-12 md:items-center md:gap-3 md:px-5 md:py-5"
+            >
+              <div :class="[loadingShimmerPanelClass, 'row-span-2 h-16 w-16 sm:h-16 sm:w-16 md:col-span-2 md:row-span-1 md:h-20 md:w-20']"></div>
+
+              <div class="min-w-0 md:col-span-3">
+                <div :class="[loadingShimmerLineClass, 'h-3 w-24']"></div>
+                <div :class="[loadingShimmerLineClass, 'mt-2 h-3 w-full max-w-[180px]']"></div>
+              </div>
+
+              <div :class="[loadingShimmerLineClass, 'h-8 w-24 justify-self-end md:col-span-2 md:justify-self-start']"></div>
+              <div :class="[loadingShimmerLineClass, 'col-span-2 h-3 w-16 md:col-span-2 md:justify-self-center']"></div>
+              <div :class="[loadingShimmerPillClass, 'col-start-3 row-start-2 h-6 w-16 justify-self-end md:col-span-1 md:row-auto md:justify-self-center']"></div>
+
+              <div class="col-span-3 mt-1 flex gap-2 md:col-span-2 md:mt-0 md:justify-end">
+                <div :class="[loadingShimmerPillClass, 'h-9 w-20 sm:h-10 sm:w-24']"></div>
+                <div :class="[loadingShimmerPillClass, 'h-9 w-20 sm:h-10 sm:w-24']"></div>
+              </div>
+            </article>
+          </div>
+        </section>
       </div>
 
       <div
@@ -481,7 +667,7 @@ useHead(() => {
         {{ productDetails.error }}
       </div>
 
-      <section v-else-if="productDetails.product" class="mt-8 space-y-8 sm:space-y-10">
+      <section v-else-if="productDetails.product" class="mt-8 flex flex-col gap-8 sm:gap-10">
         <section
           v-if="getIsOnboardingContext"
           class="rounded-2xl border border-white/10 bg-white/5 p-5 sm:p-6"
@@ -506,231 +692,193 @@ useHead(() => {
           </div>
         </section>
 
-        <header class="rounded-[36px] border border-white/10 bg-white/5 p-4 shadow-[0_30px_80px_rgba(0,0,0,0.55)] sm:p-6">
-          <div class="grid gap-4 sm:gap-6 lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)]">
-            <div class="relative block aspect-[16/9] overflow-hidden rounded-2xl border border-white/10 bg-black sm:aspect-square">
-              <template v-if="currentProductImageDisplay.type === 'url'">
-                <img
-                  :src="currentProductImageDisplay.value"
-                  :alt="productDetails.product.title"
-                  class="h-full w-full object-contain brightness-90 contrast-110"
-                  loading="lazy"
-                >
-              </template>
-
-              <template v-else>
-                <div class="flex h-full w-full items-center justify-center text-5xl text-white/60">
-                  {{ currentProductImageDisplay.value }}
-                </div>
-              </template>
-
-              <div class="pointer-events-none absolute inset-0 bg-black/40"></div>
-            </div>
-
-            <div class="flex flex-col">
-              <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Details du produit</p>
-              <h1 class="mt-2 font-display text-4xl font-semibold italic tracking-tight text-white sm:text-5xl lg:text-6xl">
-                {{ productDetails.product.title }}
-              </h1>
-
-              <p
-                v-if="productDetails.product.brand"
-                class="mt-4 text-[10px] uppercase tracking-[0.3em] text-white/60"
-              >
-                {{ productDetails.product.brand }}
-              </p>
-
-              <NuxtLink
-                v-if="storePath"
-                :to="storePath"
-                class="mt-5 inline-flex h-10 w-fit items-center rounded-full border border-white/20 px-4 text-sm font-semibold uppercase tracking-[0.18em] text-white/90 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-              >
-                {{ productDetails.product.store }}
-              </NuxtLink>
-
-              <p v-else class="mt-5 text-base font-semibold text-white/90 sm:text-lg">
-                {{ productDetails.product.store }}
-              </p>
-
-              <div class="mt-6 flex flex-wrap items-end gap-4">
-                <div>
-                  <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Prix actuel</p>
-                  <p class="mt-2 font-display text-4xl font-semibold italic tracking-tight text-white sm:text-5xl">
-                    {{ getCadPriceLabel(productDetails.product.price_num) }}
-                  </p>
-                </div>
-
-                <p
-                  v-if="productDetails.product.price_text"
-                  class="pb-1 text-[10px] uppercase tracking-[0.32em] text-white/60"
-                >
-                  {{ productDetails.product.price_text }}
-                </p>
-              </div>
-
-              <p
-                v-if="productDetails.product.description"
-                class="mt-5 max-w-3xl text-sm leading-relaxed text-white/80 sm:text-base"
-              >
-                {{ productDetails.product.description }}
-              </p>
-
-              <div class="mt-6 flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  class="inline-flex h-11 items-center justify-center rounded-full border border-white/20 bg-white px-6 text-[10px] uppercase tracking-[0.35em] text-black transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-                  @click="setAddCurrentProductToList"
-                >
-                  Ajouter a ma liste
-                </button>
-
-                <a
-                  v-if="getSafeProductUrl(productDetails.product.url)"
-                  :href="getSafeProductUrl(productDetails.product.url)!"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="inline-flex h-11 items-center justify-center rounded-full border border-white/20 px-6 text-[10px] uppercase tracking-[0.35em] text-white/80 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-                >
-                  Voir en magasin
-                </a>
-              </div>
-            </div>
-          </div>
-
-          <!--
-          <article class="rounded-2xl border border-white/10 bg-black/60 p-5 sm:p-6">
-            <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Confiance</p>
-            <h2 class="mt-2 font-display text-3xl font-semibold italic tracking-tight text-white sm:text-4xl">
-              Comment nous evaluons ce produit
-            </h2>
-
-            <div class="mt-4 grid gap-3 text-sm text-white/80 sm:grid-cols-2">
-              <div class="rounded-xl border border-white/10 bg-white/5 p-3">
-                <p class="text-[10px] uppercase tracking-[0.28em] text-white/55">Auteur</p>
-                <p class="mt-2">Equipe SpyGrocery</p>
-              </div>
-              <div class="rounded-xl border border-white/10 bg-white/5 p-3">
-                <p class="text-[10px] uppercase tracking-[0.28em] text-white/55">Derniere mise a jour</p>
-                <p class="mt-2">{{ getFormattedDate(trustUpdatedAt) }}</p>
-              </div>
-            </div>
-
-            <div class="mt-3 rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white/80">
-              <p class="text-[10px] uppercase tracking-[0.28em] text-white/55">Couverture</p>
-              <p class="mt-2 leading-relaxed">
-                Produit compare sur notre snapshot actif, avec mise a jour continue selon les collectes en epicerie.
-              </p>
-            </div>
-
-            <div class="mt-3 rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white/80">
-              <p class="text-[10px] uppercase tracking-[0.28em] text-white/55">Sources</p>
-              <p class="mt-2 leading-relaxed">
-                Prix publics observes sur les sites officiels des enseignes et verifies lors de l ingestion.
-              </p>
-            </div>
-          </article>
-          -->
-        </header>
-
         <section
-          v-if="sortedOtherStoreProducts.length > 0"
-          class="rounded-[30px] border border-white/10 bg-black/60 p-4 sm:p-6"
+          v-if="sortedComparisonProducts.length > 0"
+          class="rounded-[30px] border border-white/10 bg-black/60 p-3 sm:p-5 lg:p-6"
         >
           <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Autres promos</p>
-              <h2 class="mt-2 font-display text-3xl font-semibold italic tracking-tight text-white sm:text-4xl">
+              <h2 class="mt-2 font-display text-2xl font-semibold italic tracking-tight text-white sm:text-3xl lg:text-4xl">
                 Classement du moins cher au plus cher
               </h2>
             </div>
 
             <span class="text-[10px] uppercase tracking-[0.35em] text-white/60">
-              {{ sortedOtherStoreProducts.length }} magasins
+              {{ sortedComparisonProducts.length }} magasins
             </span>
           </div>
 
           <div class="mt-6 hidden grid-cols-12 gap-4 px-4 text-[10px] uppercase tracking-[0.28em] text-white/55 md:grid">
-            <p class="col-span-4">Magasin</p>
+            <p class="col-span-2">Produit</p>
+            <p class="col-span-3">Magasin</p>
             <p class="col-span-2">Prix</p>
             <p class="col-span-2 text-center">Prix unite</p>
-            <p class="col-span-2 text-center">Status</p>
+            <p class="col-span-1 text-center">Status</p>
             <p class="col-span-2 text-right">Action</p>
           </div>
 
-          <div class="mt-4 space-y-4">
+          <TransitionGroup
+            tag="div"
+            class="mt-4 space-y-3 sm:space-y-4"
+            enter-active-class="transition duration-300 ease-out"
+            enter-from-class="translate-y-2 opacity-0"
+            enter-to-class="translate-y-0 opacity-100"
+          >
             <article
-              v-for="(otherProduct, index) in sortedOtherStoreProducts"
-              :key="otherProduct.id"
-              class="grid grid-cols-1 gap-4 rounded-2xl border border-white/10 bg-white/5 p-4 transition hover:bg-white/[0.07] md:grid-cols-12 md:items-center md:gap-3 md:px-5 md:py-5"
+              v-for="row in comparisonRows"
+              :key="row.key"
+              :class="[
+                'grid grid-cols-[auto_minmax(0,1fr)_auto] gap-x-3 gap-y-2 rounded-xl border p-3 transition sm:rounded-2xl md:grid-cols-12 md:items-center md:gap-3 md:px-5 md:py-5',
+                row.type === 'product'
+                  ? (row.isCurrent
+                      ? getCurrentProductGlowClasses(row.rankIndex, row.rankTotal)
+                      : 'border-white/10 bg-white/5 hover:bg-white/[0.07]')
+                  : 'border-white/20 bg-black/70'
+              ]"
             >
-              <div class="md:col-span-4">
-                <div class="flex items-center gap-3">
+              <template v-if="row.type === 'product'">
+                <div class="row-span-2 md:col-span-2 md:row-span-1">
                   <NuxtLink
-                    v-if="otherProduct.store_slug"
-                    :to="`/magasins/${encodeURIComponent(otherProduct.store_slug)}`"
-                    class="text-sm font-semibold uppercase tracking-[0.18em] text-white/85 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:text-base"
+                    :to="getProductRoutePath(row.product)"
+                    class="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-xl border border-white/15 bg-black transition hover:border-white/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:h-16 sm:w-16 md:h-20 md:w-20"
+                    :aria-label="`Ouvrir ${row.product.title}`"
                   >
-                    {{ otherProduct.store }}
-                  </NuxtLink>
-                  <p v-else class="text-sm font-semibold uppercase tracking-[0.18em] text-white/85 sm:text-base">
-                    {{ otherProduct.store }}
-                  </p>
+                    <template v-if="getComparisonProductImageDisplay(row.product).type === 'url'">
+                      <img
+                        :src="getComparisonProductImageDisplay(row.product).value"
+                        :alt="row.product.title"
+                        class="h-full w-full object-contain brightness-90 contrast-110"
+                        loading="lazy"
+                      >
+                    </template>
 
-                  <NuxtLink
-                    :to="getProductRoutePath(otherProduct)"
-                    class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/20 text-white/70 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-                    :aria-label="`Ouvrir ${otherProduct.title}`"
-                  >
-                    <ArrowUpRight class="h-4 w-4" />
+                    <template v-else>
+                      <span class="text-2xl text-white/70">{{ getComparisonProductImageDisplay(row.product).value }}</span>
+                    </template>
+
+                    <span
+                      v-if="row.isCurrent"
+                      :class="[
+                        'absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full',
+                        getCurrentProductAccentClasses(row.rankIndex, row.rankTotal)
+                      ]"
+                    />
                   </NuxtLink>
                 </div>
 
-                <p class="mt-2 text-xs text-white/65">{{ otherProduct.title }}</p>
-              </div>
+                <div class="min-w-0 md:col-span-3">
+                  <div class="flex items-center gap-3">
+                    <NuxtLink
+                      v-if="row.product.store_slug"
+                      :to="`/magasins/${encodeURIComponent(row.product.store_slug)}`"
+                      class="text-xs font-semibold uppercase tracking-[0.18em] text-white/85 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:text-sm md:text-base"
+                    >
+                      {{ row.product.store }}
+                    </NuxtLink>
+                    <p v-else class="text-xs font-semibold uppercase tracking-[0.18em] text-white/85 sm:text-sm md:text-base">
+                      {{ row.product.store }}
+                    </p>
 
-              <p class="font-display text-3xl font-semibold italic tracking-tight text-white md:col-span-2">
-                {{ getCadPriceLabel(otherProduct.price_num) }}
-              </p>
+                    <NuxtLink
+                      :to="getProductRoutePath(row.product)"
+                      class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/20 text-white/70 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                      :aria-label="`Ouvrir ${row.product.title}`"
+                    >
+                      <ArrowUpRight class="h-4 w-4" />
+                    </NuxtLink>
+                  </div>
 
-              <p class="text-sm text-white/70 md:col-span-2 md:text-center">
-                {{ otherProduct.price_text || 'N/A' }}
-              </p>
+                  <p class="mt-1 text-[11px] leading-tight text-white/65 md:mt-2 md:text-xs">{{ row.product.title }}</p>
+                </div>
 
-              <div class="md:col-span-2 md:flex md:justify-center">
-                <span
-                  v-if="index === 0"
-                  class="inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[9px] uppercase tracking-[0.26em] text-white"
-                >
-                  Meilleur prix
-                </span>
-                <span
-                  v-else
-                  class="inline-flex rounded-full border border-white/15 px-3 py-1 text-[9px] uppercase tracking-[0.26em] text-white/70"
-                >
-                  Alternative
-                </span>
-              </div>
+                <p class="self-start text-right font-display text-2xl font-semibold italic tracking-tight text-white sm:text-3xl md:col-span-2 md:text-left">
+                  {{ getCadPriceLabel(row.product.price_num) }}
+                </p>
 
-              <div class="flex flex-wrap gap-2 md:col-span-2 md:justify-end">
-                <a
-                  v-if="getSafeProductUrl(otherProduct.url)"
-                  :href="getSafeProductUrl(otherProduct.url)!"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="inline-flex h-10 items-center justify-center rounded-full border border-white/20 px-4 text-[10px] uppercase tracking-[0.32em] text-white/85 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-                >
-                  Magasin
-                </a>
+                <p class="col-span-2 text-[11px] text-white/70 sm:text-sm md:col-span-2 md:text-center">
+                  {{ row.product.price_text || 'N/A' }}
+                </p>
 
-                <button
-                  type="button"
-                  class="inline-flex h-10 items-center justify-center rounded-full border border-white/20 bg-white px-4 text-[10px] uppercase tracking-[0.32em] text-black transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-                  @click="setAddOtherProductToList(otherProduct)"
-                >
-                  Ajouter
-                </button>
-              </div>
+                <div class="col-start-3 row-start-2 flex justify-end md:col-span-1 md:flex md:justify-center">
+                  <span
+                    v-if="row.rankIndex === 0"
+                    class="inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[9px] uppercase tracking-[0.26em] text-white"
+                  >
+                    Meilleur
+                  </span>
+                  <span
+                    v-else
+                    class="inline-flex rounded-full border border-white/15 px-3 py-1 text-[9px] uppercase tracking-[0.26em] text-white/70"
+                  >
+                    Alt
+                  </span>
+                </div>
+
+                <div class="col-span-3 mt-1 flex flex-wrap gap-2 md:col-span-2 md:mt-0 md:justify-end">
+                  <a
+                    v-if="getSafeProductUrl(row.product.url)"
+                    :href="getSafeProductUrl(row.product.url)!"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="inline-flex h-9 items-center justify-center rounded-full border border-white/20 px-3 text-[9px] uppercase tracking-[0.3em] text-white/85 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:h-10 sm:px-4 sm:text-[10px]"
+                  >
+                    Magasin
+                  </a>
+
+                  <button
+                    type="button"
+                    class="inline-flex h-9 items-center justify-center rounded-full border border-white/20 bg-white px-3 text-[9px] uppercase tracking-[0.3em] text-black transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:h-10 sm:px-4 sm:text-[10px]"
+                    @click="setAddComparisonProductToList(row.product, row.isCurrent)"
+                  >
+                    Ajouter
+                  </button>
+                </div>
+              </template>
+
+              <template v-else>
+                <div class="col-span-3 md:col-span-8">
+                  <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Alerte specials</p>
+                  <p class="mt-2 text-sm leading-relaxed text-white/80 sm:text-base">
+                    Gardez ce produit en tete et recevez un rappel quand il revient en special.
+                  </p>
+                </div>
+
+                <div class="col-span-3 flex flex-wrap gap-2 md:col-span-4 md:justify-end">
+                  <button
+                    type="button"
+                    class="inline-flex h-9 items-center justify-center rounded-full border border-white/20 bg-white px-3 text-[9px] uppercase tracking-[0.3em] text-black transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:h-10 sm:px-4 sm:text-[10px]"
+                    @click="setAddCurrentProductToList"
+                  >
+                    Ajouter a ma liste
+                  </button>
+
+                  <button
+                    type="button"
+                    class="inline-flex h-9 items-center justify-center rounded-full border border-white/20 px-3 text-[9px] uppercase tracking-[0.3em] text-white/85 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:h-10 sm:px-4 sm:text-[10px]"
+                    @click="setNotifySpecialFromProductCta"
+                  >
+                    Notifie-moi
+                  </button>
+                </div>
+              </template>
             </article>
+          </TransitionGroup>
+
+          <div v-if="getHasMoreComparisonProducts" class="mt-4">
+            <div class="pointer-events-none h-8 rounded-b-2xl bg-gradient-to-b from-transparent to-black/70"></div>
+            <div class="mt-3 flex justify-center">
+              <button
+                type="button"
+                class="inline-flex h-10 items-center justify-center rounded-full border border-white/20 px-5 text-[10px] uppercase tracking-[0.32em] text-white/85 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                @click="setShowMoreComparisonProducts"
+              >
+                Voir {{ getLoadMoreBatchCount }} produits de plus
+              </button>
+            </div>
+            <p class="mt-2 text-center text-[10px] uppercase tracking-[0.3em] text-white/50">
+              {{ getRemainingComparisonProductsCount }} restants
+            </p>
           </div>
 
           <footer class="mt-10 flex flex-col gap-6 border-t border-white/10 pt-6 sm:flex-row sm:items-end sm:justify-between">
