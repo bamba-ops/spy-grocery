@@ -1,9 +1,12 @@
 <script setup lang="ts">
+import { useSearchStore } from '~/stores/search'
+
 const currentYear = new Date().getFullYear()
-const { fetchStores } = useStores()
+const searchStore = useSearchStore()
 
 const { data: storeLinksData } = await useAsyncData('footer-store-links', async () => {
-  const stores = await fetchStores()
+  await searchStore.getStores()
+  const stores = [...searchStore.stores]
 
   return stores
     .sort((a, b) => {
