@@ -20,6 +20,7 @@ Current runtime data model (important):
 - Historical prices live in `public.product_prices`.
 - Saved user lists live in `public.lists`.
 - Saved AI chat sessions live in `public.ai_chat_sessions`.
+- Onboarding progression lives in `public.onboarding`.
 - Store list for UI is derived from `products` rows (`store`, `store_id`) in backend.
 - Current operational dataset in `products` is treated as specials-only.
 
@@ -91,7 +92,8 @@ Current concrete API flows:
 - Product search:
   - Component/Page -> `useSearchStore` -> `useProducts().search()` -> `GET /api/products/search` -> `searchProducts` service -> `searchProductsRows` repository -> Supabase `products`
 - Product details:
-  - Component/Page -> `useProductDetailsStore` -> `useProducts().getProductDetails()` -> `GET /api/products/[slug]` -> `getProductDetails` service -> `getProductRowBySlug/getSimilarProductsRows` repository -> Supabase `products`
+  - Canonical: Component/Page -> `useProductDetailsStore` -> `useProducts().getByRoute()` -> `GET /api/products/route/[store]/[product]` -> `getProductDetailsByRoute` service -> products repositories -> Supabase `products`
+  - Legacy compat: Component/Page -> `useProductDetailsStore` -> `useProducts().getBySlug()` -> `GET /api/products/[slug]` -> `getProductDetails` service -> `getProductRowBySlug/getSimilarProductsRows` repository -> Supabase `products`
 - Stores filter list:
   - Component/Page -> `useSearchStore` -> `useStores().fetchStores()` -> `GET /api/stores` -> `listStores` service -> `fetchProductStoreRows` repository -> Supabase `products`
 - Saved lists (local-first + cloud sync):
@@ -138,6 +140,14 @@ Response shape:
 - Returns:
   - `product: SearchProduct`
   - `otherStoreProducts: SearchProduct[]`
+
+### `GET /api/products/route/[store]/[product]`
+- Canonical product details endpoint for product pages.
+- Returns:
+  - `product: SearchProduct`
+  - `otherStoreProducts: SearchProduct[]`
+  - `canonicalPath: string`
+  - `shouldRedirect: boolean`
 
 ### Lists API (authenticated)
 - `GET /api/lists`

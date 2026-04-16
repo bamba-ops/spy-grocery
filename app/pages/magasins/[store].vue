@@ -28,6 +28,13 @@ const storeSlug = computed(() => {
   return getRouteParam(route.params.store as string | string[] | undefined)
 })
 
+const storeSearchInputModel = computed({
+  get: () => storeOverview.storeSearchInput,
+  set: (value: string) => {
+    storeOverview.setStoreSearchInput(value)
+  }
+})
+
 const getIsOnboardingContext = computed(() => route.query.onboarding === '1')
 
 const showOnboardingProgress = computed(() => {
@@ -65,6 +72,8 @@ watch(
       return
     }
 
+    storeOverview.setResetStoreSearch()
+
     void storeOverview.loadStoreOverview(nextStoreSlug)
   },
   { immediate: false }
@@ -92,6 +101,16 @@ const setAddStoreProductToList = (product: Parameters<typeof listsStore.setProdu
     productId: product.id,
     store: product.store
   })
+}
+
+const setOpenStoreSearchProduct = async (product: Parameters<typeof listsStore.setProductInCurrentList>[0]) => {
+  console.log('[store-search] open product from dropdown:', {
+    productId: product.id,
+    productSlug: product.slug,
+    store: product.store
+  })
+
+  await navigateTo(getProductRoutePath(product))
 }
 
 onMounted(async () => {
@@ -326,6 +345,35 @@ useHead(() => ({
       </div>
 
       <section v-else class="mt-6 space-y-8">
+        <section class="rounded-2xl border border-white/10 bg-black/70 p-5 sm:p-6">
+          <div class="flex flex-col gap-2">
+            <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Recherche locale</p>
+            <h2 class="font-display text-3xl font-semibold italic tracking-tight text-white sm:text-4xl">
+              Chercher un produit chez {{ storeOverview.storeName || storeSlug }}
+            </h2>
+            <p class="text-sm text-white/70 sm:text-base">
+              Ouvrez rapidement une fiche produit, ou ajoutez directement un resultat a votre liste.
+            </p>
+          </div>
+
+          <ProductSearchDropdown
+            v-model="storeSearchInputModel"
+            :products="storeOverview.storeSearchResults"
+            :loading="storeOverview.storeSearchLoading"
+            :error="storeOverview.storeSearchError"
+            :get-formatted-price="storeOverview.getFormattedPrice"
+            placeholder="Ex: lait, oeufs, pain, yogourt..."
+            submit-label="Rechercher"
+            action-label="Voir"
+            empty-state-text="Aucun produit ne correspond a cette recherche dans ce magasin."
+            log-prefix="store-search"
+            :enable-quick-add="true"
+            @submit="storeOverview.setSearchProductsInStore"
+            @select-product="setOpenStoreSearchProduct"
+            @quick-add-product="setAddStoreProductToList"
+          />
+        </section>
+
         <section class="rounded-2xl border border-white/10 bg-black/60 p-5 sm:p-6">
           <div class="flex items-center justify-between gap-4">
             <h2 class="font-display text-3xl font-semibold italic tracking-tight text-white sm:text-4xl">

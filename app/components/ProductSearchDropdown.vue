@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowRight, Search } from 'lucide-vue-next'
+import { ArrowRight, Plus, Search } from 'lucide-vue-next'
 import type { SearchProduct } from '#shared/types'
 
 const props = withDefaults(defineProps<{
@@ -14,19 +14,23 @@ const props = withDefaults(defineProps<{
   actionLabel?: string
   emptyStateText?: string
   logPrefix?: string
+  // Feature flag for rollout: show inline quick-add button in dropdown rows.
+  enableQuickAdd?: boolean
 }>(), {
   maxLength: 2000,
   placeholder: 'Ex: lait 2%, oeufs, pain complet...',
   submitLabel: 'Rechercher',
   actionLabel: 'Choisir',
   emptyStateText: 'Aucun produit trouve pour cette recherche. Essayez un autre mot-cle.',
-  logPrefix: 'search'
+  logPrefix: 'search',
+  enableQuickAdd: false
 })
 
 const emit = defineEmits<{
   'update:modelValue': [value: string]
   submit: []
   'select-product': [product: SearchProduct]
+  'quick-add-product': [product: SearchProduct]
 }>()
 
 const { getImageDisplay } = useProducts()
@@ -102,6 +106,16 @@ const setSubmit = () => {
 const setSelectProduct = (product: SearchProduct) => {
   setCloseDropdown('result-selected')
   emit('select-product', product)
+}
+
+const setQuickAddProduct = (product: SearchProduct) => {
+  // Debug log intentionally kept while quick-add behavior is monitored on store pages.
+  console.log(getPrefixedLog('quick add triggered'), {
+    productId: product.id,
+    store: product.store
+  })
+
+  emit('quick-add-product', product)
 }
 
 watch(
@@ -190,32 +204,44 @@ onBeforeUnmount(() => {
 
       <ul v-else-if="hasResults" class="max-h-[56vh] divide-y divide-white/10 overflow-y-auto sm:max-h-[420px]">
         <li v-for="product in products" :key="product.id">
-          <button
-            type="button"
-            class="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-inset"
-            @click="setSelectProduct(product)"
-          >
-            <div class="flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-black/60">
-              <img
-                v-if="getProductImageDisplay(product).type === 'url'"
-                :src="getProductImageDisplay(product).value"
-                :alt="product.title"
-                class="h-full w-full object-contain"
-                loading="lazy"
-              >
-              <span v-else class="text-xl text-white/70">{{ getProductImageDisplay(product).value }}</span>
-            </div>
+          <div class="flex items-center gap-2 px-2 py-2 sm:px-3">
+            <button
+              type="button"
+              class="flex min-w-0 flex-1 items-center gap-3 rounded-xl px-2 py-2 text-left transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-inset"
+              @click="setSelectProduct(product)"
+            >
+              <div class="flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-black/60">
+                <img
+                  v-if="getProductImageDisplay(product).type === 'url'"
+                  :src="getProductImageDisplay(product).value"
+                  :alt="product.title"
+                  class="h-full w-full object-contain"
+                  loading="lazy"
+                >
+                <span v-else class="text-xl text-white/70">{{ getProductImageDisplay(product).value }}</span>
+              </div>
 
-            <div class="min-w-0 flex-1">
-              <p class="truncate font-display text-lg font-semibold italic text-white sm:text-xl">{{ product.title }}</p>
-              <p class="mt-1 text-[10px] uppercase tracking-[0.3em] text-white/65">{{ product.store }}</p>
-            </div>
+              <div class="min-w-0 flex-1">
+                <p class="truncate font-display text-lg font-semibold italic text-white sm:text-xl">{{ product.title }}</p>
+                <p class="mt-1 text-[10px] uppercase tracking-[0.3em] text-white/65">{{ product.store }}</p>
+              </div>
 
-            <div class="text-right">
-              <p class="font-display text-base font-semibold italic text-white sm:text-lg">${{ getFormattedPrice(product.price_num) }}</p>
-              <p class="text-[10px] uppercase tracking-[0.3em] text-white/55">{{ actionLabel }}</p>
-            </div>
-          </button>
+              <div class="text-right">
+                <p class="font-display text-base font-semibold italic text-white sm:text-lg">${{ getFormattedPrice(product.price_num) }}</p>
+                <p class="text-[10px] uppercase tracking-[0.3em] text-white/55">{{ actionLabel }}</p>
+              </div>
+            </button>
+
+            <button
+              v-if="enableQuickAdd"
+              type="button"
+              class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/20 text-white/80 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+              :aria-label="`Ajouter ${product.title} a la liste`"
+              @click="setQuickAddProduct(product)"
+            >
+              <Plus class="h-5 w-5" />
+            </button>
+          </div>
         </li>
       </ul>
 

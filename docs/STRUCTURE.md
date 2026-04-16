@@ -17,6 +17,7 @@ Voir aussi: `docs/SUPABASE_DB.md` (etat DB + contrats API actifs).
 - Les pages = composition de sections + wiring minimal (pas de logique metier).
 - Pinia = couche feature front (etat + actions metier front).
 - Composables = data access layer / domain front (fetch API interne + APIs externes + adapters).
+- Pour les features, la vue appelle les stores (pas d'appel direct aux composables de domaine depuis page/composant).
 - `server/api` = controleurs HTTP (parse/valide, appelle services, retourne).
 - `server/services` = logique metier (use-cases).
 - `server/repositories` = acces donnees (Supabase/SQL), appels isoles.
@@ -76,13 +77,14 @@ Etat feature (global/shareable) -> store Pinia:
 
 Acces donnees/domaine (API/DB/externe) -> composables:
 - ex: `useProducts()` pour `/api/products/search`, `useStores()` pour `/api/stores`, futurs domains externes.
+- Ces composables sont consommes par les actions de store pour garder les pages/composants en UI-only.
 
 Etat d'UI local (non partage) -> page/composant:
 - ex: input local, tab active locale, etat visuel transitoire.
 
 Regle pratique:
 - si c'est du state feature partage (2+ composants/pages), mettre en store.
-- si c'est de l'acces donnees, mettre en composable domain.
+- si c'est de l'acces donnees, mettre en composable domain puis appeler ce composable depuis le store.
 - si c'est purement visuel et local, garder dans le composant/page.
 
 ### Regle anti-magie (watchers)
@@ -155,14 +157,16 @@ Pense en couches: UI -> State -> Use-cases -> Data.
   - `middleware/`
     - `auth.ts` guard pages privees (`/lists`)
     - `guest.ts` garde login/guest
-    - `onboarding.ts` guard onboarding-first (`/search`, `/products/[slug]`, `/lists`)
+    - `onboarding.ts` guard onboarding-first (`/search`, `/produits/[store]/[product]`, `/magasins/[store]`, `/lists`)
   - `pages/`
     - `index.vue` landing
     - `login.vue` auth
     - `auth/confirm.vue` callback auth
-    - `onboarding.vue` onboarding AI guide
+    - `onboarding.vue` onboarding product-first guide
     - `search.vue` recherche
-    - `products/[slug].vue` detail produit
+    - `products/[slug].vue` redirect legacy vers route canonique
+    - `produits/[store]/[product].vue` detail produit canonique
+    - `magasins/[store].vue` page magasin canonique
     - `lists.vue` listes sauvegardees
   - `components/` (sections landing, search, lists, shared + `ai/AiChatbot.vue` + `BottomNavAuthAction.vue`)
   - `stores/` (Pinia)
@@ -195,7 +199,8 @@ Pense en couches: UI -> State -> Use-cases -> Data.
   - `server/api/onboarding/*.ts`
   - `server/api/stores/index.get.ts`
   - `server/api/products/search.get.ts`
-  - `server/api/products/[slug].get.ts`
+  - `server/api/products/[slug].get.ts` (compat legacy)
+  - `server/api/products/route/[store]/[product].get.ts` (canonique)
   - `server/api/ai/chat.post.ts`
   - `server/api/ai/sessions/*.ts`
   - `server/services/lists/listsService.ts`
@@ -248,7 +253,7 @@ Contrat data actuel:
 - Le dataset produits actuel est traite comme specials.
 
 Regle UI actuelle:
-- La navigation principale produit est centree sur `index`, `search`, `products/[slug]`, `lists`.
+- La navigation principale produit est centree sur `index`, `search`, `produits/[store]/[product]`, `magasins/[store]`, `lists`.
 - Auth UI est geree via `login` + `auth/confirm` + action compacte sur bottom nav mobile.
 
 ## UX: listes (localStorage)

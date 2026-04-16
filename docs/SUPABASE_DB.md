@@ -175,6 +175,7 @@ Key columns:
 - `status text` (`not_started`, `in_progress`, `completed`, `skipped`)
 - `current_step integer` (`1..3`)
 - `first_intent text`
+- `selected_store_slug text`
 - `first_chat_session_id uuid` (nullable FK -> `ai_chat_sessions.id`)
 - `has_preview boolean`
 - `has_added_list boolean`
@@ -271,6 +272,7 @@ Applied migrations currently visible:
 - `20260327220732 add_onboarding_first_chat_session_index`
 - `20260331220237 add_products_seo_slugs_and_categories`
 - `20260331224001 remove_products_category_slug_heuristics`
+- `20260414130000 add_onboarding_selected_store_slug`
 
 Note:
 - `public.lists` and `public.ai_chat_sessions` were created directly via SQL (MCP execute SQL), so they may not appear in `supabase_migrations.schema_migrations` history yet.
@@ -317,6 +319,18 @@ Source:
 Response:
 - `product: SearchProduct`
 - `otherStoreProducts: SearchProduct[]`
+
+### `GET /api/products/route/[store]/[product]`
+
+Source:
+- Canonical product lookup from SEO store/product slugs.
+- Comparable alternatives from `products` with matching heuristics in service layer.
+
+Response:
+- `product: SearchProduct`
+- `otherStoreProducts: SearchProduct[]`
+- `canonicalPath: string`
+- `shouldRedirect: boolean`
 
 ### Lists API (authenticated)
 

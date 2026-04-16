@@ -1,6 +1,6 @@
 # SpyGrocery Web
 
-Application web Nuxt pour comparer les prix en epicerie au Quebec, construire des listes d'achats, et utiliser un assistant IA pour generer une premiere liste en quelques secondes.
+Application web Nuxt pour comparer les prix en epicerie au Quebec, construire des listes d'achats, et guider l'utilisateur via un onboarding product-first en 3 etapes.
 
 ## Apercu
 
@@ -17,8 +17,8 @@ Application web Nuxt pour comparer les prix en epicerie au Quebec, construire de
 - Pages magasins (`/magasins/[store]`)
 - Listes sauvegardees avec sync locale + cloud (`/lists`)
 - Auth Supabase (magic link + Google) (`/login`, `/auth/confirm`)
-- Chat IA avec mode normal et mode creation de liste (`/api/ai/chat`)
-- Onboarding guide en 3 etapes (`/onboarding`)
+- Chat IA (mode normal + mode creation de liste) disponible en option (`/api/ai/chat`)
+- Onboarding product-first en 3 etapes (`/onboarding` -> `/produits`/`/magasins` -> `/lists`)
 
 ## Stack technique
 

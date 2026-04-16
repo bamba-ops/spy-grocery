@@ -6,6 +6,10 @@ interface LoadOptions {
   throwOnError?: boolean
 }
 
+const STORE_SEARCH_DEBOUNCE_MS = 250
+const STORE_SEARCH_LIMIT = 12
+let storeSearchDebounceTimer: ReturnType<typeof setTimeout> | null = null
+
 export const useStoreOverviewStore = defineStore('storeOverview', {
   state: () => ({
     storeSlug: '',
@@ -15,6 +19,12 @@ export const useStoreOverviewStore = defineStore('storeOverview', {
     lastUpdatedAt: null as string | null,
     latestPromos: [] as SearchProduct[],
     bestProducts: [] as SearchProduct[],
+    storeSearchInput: '',
+    storeSearchResults: [] as SearchProduct[],
+    storeSearchLoading: false,
+    storeSearchError: null as string | null,
+    hasSearchedStore: false,
+    storeSearchRequestId: 0,
     loading: false,
     error: null as string | null
   }),
@@ -23,6 +33,7 @@ export const useStoreOverviewStore = defineStore('storeOverview', {
     hasData: (state) => state.storeName.length > 0,
     hasLatestPromos: (state) => state.latestPromos.length > 0,
     hasBestProducts: (state) => state.bestProducts.length > 0,
+    hasStoreSearchResults: (state) => state.storeSearchResults.length > 0,
     formattedLastUpdated: (state) => {
       if (!state.lastUpdatedAt) {
         return null
@@ -42,6 +53,109 @@ export const useStoreOverviewStore = defineStore('storeOverview', {
   },
 
   actions: {
+    setStoreSearchInput(value: string) {
+      this.storeSearchInput = value
+
+      if (storeSearchDebounceTimer) {
+        clearTimeout(storeSearchDebounceTimer)
+      }
+
+      if (!value.trim()) {
+        this.storeSearchResults = []
+        this.storeSearchLoading = false
+        this.storeSearchError = null
+        this.hasSearchedStore = false
+        this.storeSearchRequestId += 1
+        return
+      }
+
+      // Debounce keeps requests predictable while users type in the dropdown.
+      storeSearchDebounceTimer = setTimeout(() => {
+        void this.setSearchProductsInStore()
+      }, STORE_SEARCH_DEBOUNCE_MS)
+    },
+
+    setResetStoreSearch() {
+      if (storeSearchDebounceTimer) {
+        clearTimeout(storeSearchDebounceTimer)
+      }
+
+      this.storeSearchInput = ''
+      this.storeSearchResults = []
+      this.storeSearchLoading = false
+      this.storeSearchError = null
+      this.hasSearchedStore = false
+      this.storeSearchRequestId += 1
+    },
+
+    async setSearchProductsInStore() {
+      const normalizedQuery = this.storeSearchInput.trim()
+
+      if (!normalizedQuery) {
+        this.setResetStoreSearch()
+        return
+      }
+
+      if (!this.storeSlug) {
+        this.storeSearchError = 'Impossible de determiner le magasin pour la recherche.'
+        this.storeSearchResults = []
+        this.hasSearchedStore = true
+        return
+      }
+
+      // Request id prevents stale async responses from overriding the latest query result.
+      const requestId = this.storeSearchRequestId + 1
+      this.storeSearchRequestId = requestId
+      this.storeSearchLoading = true
+      this.storeSearchError = null
+      this.hasSearchedStore = true
+
+      // Debug log intentionally kept while store-scoped search rollout is monitored.
+      console.log('[store-search] search submitted:', {
+        storeSlug: this.storeSlug,
+        query: normalizedQuery,
+        limit: STORE_SEARCH_LIMIT
+      })
+
+      try {
+        const { search } = useProducts()
+        const response = await search({
+          q: normalizedQuery,
+          store: this.storeSlug,
+          sort: 'relevance',
+          limit: STORE_SEARCH_LIMIT,
+          offset: 0
+        })
+
+        if (requestId !== this.storeSearchRequestId) {
+          return
+        }
+
+        this.storeSearchResults = response?.items || []
+
+        // Debug log intentionally kept while store-scoped search rollout is monitored.
+        console.log('[store-search] search completed:', {
+          storeSlug: this.storeSlug,
+          query: normalizedQuery,
+          resultsCount: this.storeSearchResults.length
+        })
+      } catch (error: unknown) {
+        if (requestId !== this.storeSearchRequestId) {
+          return
+        }
+
+        console.error('[store-search] search failed:', error)
+        this.storeSearchResults = []
+        this.storeSearchError = error instanceof Error
+          ? error.message
+          : 'Impossible de rechercher des produits dans ce magasin pour le moment.'
+      } finally {
+        if (requestId === this.storeSearchRequestId) {
+          this.storeSearchLoading = false
+        }
+      }
+    },
+
     getFormattedPrice(price: number | null) {
       return formatPrice(price)
     },
