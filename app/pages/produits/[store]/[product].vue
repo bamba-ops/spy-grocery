@@ -23,32 +23,12 @@ const productDetails = useProductDetailsStore()
 const lists = useListsStore()
 const onboardingStore = useOnboardingStore()
 const authStore = useAuthStore()
-const { getImageDisplay } = useProducts()
 const onboardingStepNumbers = [1, 2, 3]
-
-type ProductComparisonRow = {
-  type: 'product'
-  key: string
-  product: SearchProduct
-  rankIndex: number
-  rankTotal: number
-  isCurrent: boolean
-}
-
-type CtaComparisonRow = {
-  type: 'cta'
-  key: string
-}
-
-type ComparisonRow = ProductComparisonRow | CtaComparisonRow
 
 const loadingShimmerBaseClass = "relative overflow-hidden border border-white/10 bg-white/5 before:absolute before:inset-0 before:content-[''] before:bg-gradient-to-r before:from-transparent before:via-white/20 before:to-transparent before:bg-[length:200%_100%] before:animate-shimmer"
 const loadingShimmerPanelClass = `${loadingShimmerBaseClass} rounded-2xl`
 const loadingShimmerLineClass = `${loadingShimmerBaseClass} rounded`
 const loadingShimmerPillClass = `${loadingShimmerBaseClass} rounded-full`
-const INITIAL_VISIBLE_PRODUCT_COUNT = 5
-const LOAD_MORE_PRODUCT_COUNT = 5
-const visibleComparisonProductsCount = ref(INITIAL_VISIBLE_PRODUCT_COUNT)
 
 // Keep the product onboarding banner aligned with step 2 visual language.
 const onboardingDisplayStep = computed(() => {
@@ -152,69 +132,28 @@ const setAddComparisonProductToList = (product: SearchProduct, isCurrent: boolea
   lists.setProductInCurrentList(product)
 }
 
-const getPriceSortValue = (price: number | null) => {
-  return typeof price === 'number' ? price : Number.POSITIVE_INFINITY
-}
-
 const sortedComparisonProducts = computed(() => {
-  const mergedProducts = [
-    ...(productDetails.product ? [productDetails.product] : []),
-    ...productDetails.otherStoreProducts
-  ]
-  const deduplicatedProducts = new Map<string, SearchProduct>()
-
-  for (const product of mergedProducts) {
-    if (!deduplicatedProducts.has(product.id)) {
-      deduplicatedProducts.set(product.id, product)
-    }
-  }
-
-  return [...deduplicatedProducts.values()].sort((a, b) => {
-    const priceDiff = getPriceSortValue(a.price_num) - getPriceSortValue(b.price_num)
-
-    if (priceDiff !== 0) {
-      return priceDiff
-    }
-
-    return a.store.localeCompare(b.store)
-  })
-})
-
-const visibleComparisonProducts = computed(() => {
-  return sortedComparisonProducts.value.slice(0, visibleComparisonProductsCount.value)
+  return productDetails.getSortedComparisonProducts
 })
 
 const getRemainingComparisonProductsCount = computed(() => {
-  return Math.max(sortedComparisonProducts.value.length - visibleComparisonProductsCount.value, 0)
+  return productDetails.getRemainingComparisonProductsCount
 })
 
 const getHasMoreComparisonProducts = computed(() => {
-  return getRemainingComparisonProductsCount.value > 0
+  return productDetails.getHasMoreComparisonProducts
 })
 
 const getLoadMoreBatchCount = computed(() => {
-  return Math.min(LOAD_MORE_PRODUCT_COUNT, getRemainingComparisonProductsCount.value)
+  return productDetails.getLoadMoreBatchCount
 })
 
 const setShowMoreComparisonProducts = () => {
-  const currentCount = visibleComparisonProductsCount.value
-  const nextCount = Math.min(
-    sortedComparisonProducts.value.length,
-    currentCount + LOAD_MORE_PRODUCT_COUNT
-  )
-
-  // Debug log intentionally kept while progressive ranking disclosure is monitored.
-  console.log('[comparison] load more clicked:', {
-    previousVisibleCount: currentCount,
-    nextVisibleCount: nextCount,
-    totalCount: sortedComparisonProducts.value.length
-  })
-
-  visibleComparisonProductsCount.value = nextCount
+  productDetails.setShowMoreComparisonProducts()
 }
 
 const getComparisonProductImageDisplay = (product: SearchProduct) => {
-  return getImageDisplay(product.image_url || null, product.title)
+  return productDetails.getComparisonProductImageDisplay(product)
 }
 
 const getCurrentProductRankTier = (rankIndex: number, rankTotal: number) => {
@@ -263,46 +202,8 @@ const getCurrentProductAccentClasses = (rankIndex: number, rankTotal: number) =>
   return 'bg-amber-300 shadow-[0_0_12px_rgba(251,191,36,0.8)]'
 }
 
-const comparisonRows = computed<ComparisonRow[]>(() => {
-  const rankedProducts = sortedComparisonProducts.value
-  const visibleProducts = visibleComparisonProducts.value
-
-  if (visibleProducts.length === 0) {
-    return []
-  }
-
-  const rows: ComparisonRow[] = []
-  const currentProductId = productDetails.product?.id || null
-  const ctaInsertIndex = getShowGuestProductCta.value ? Math.ceil(visibleProducts.length / 2) : -1
-
-  visibleProducts.forEach((product, visibleIndex) => {
-    if (visibleIndex === ctaInsertIndex) {
-      rows.push({
-        type: 'cta',
-        key: `cta-${visibleIndex}`
-      })
-    }
-
-    const rankIndex = rankedProducts.findIndex((entry) => entry.id === product.id)
-
-    rows.push({
-      type: 'product',
-      key: product.id,
-      product,
-      rankIndex,
-      rankTotal: rankedProducts.length,
-      isCurrent: product.id === currentProductId
-    })
-  })
-
-  if (getShowGuestProductCta.value && ctaInsertIndex >= visibleProducts.length) {
-    rows.push({
-      type: 'cta',
-      key: 'cta-end'
-    })
-  }
-
-  return rows
+const comparisonRows = computed(() => {
+  return productDetails.getComparisonRows(getShowGuestProductCta.value)
 })
 
 const searchMoreProductsPath = computed(() => {
@@ -320,16 +221,7 @@ const searchMoreProductsPath = computed(() => {
 })
 
 const marketAveragePrice = computed(() => {
-  const prices = sortedComparisonProducts.value
-    .map((product) => product.price_num)
-    .filter((price): price is number => typeof price === 'number')
-
-  if (prices.length === 0) {
-    return null
-  }
-
-  const sum = prices.reduce((acc, price) => acc + price, 0)
-  return sum / prices.length
+  return productDetails.getMarketAveragePrice
 })
 
 const loadProductPage = async (
@@ -409,14 +301,6 @@ onMounted(() => {
     currentStep: onboardingStore.currentStep
   })
 })
-
-watch(
-  () => productDetails.product?.id,
-  () => {
-    visibleComparisonProductsCount.value = INITIAL_VISIBLE_PRODUCT_COUNT
-  },
-  { immediate: true }
-)
 
 const canonicalPath = computed(() => {
   if (productDetails.canonicalPath) {
@@ -649,7 +533,7 @@ useHead(() => {
 
               <div :class="[loadingShimmerLineClass, 'h-8 w-24 justify-self-end md:col-span-2 md:justify-self-start']"></div>
               <div :class="[loadingShimmerLineClass, 'col-span-2 h-3 w-16 md:col-span-2 md:justify-self-center']"></div>
-              <div :class="[loadingShimmerPillClass, 'col-start-3 row-start-2 h-6 w-16 justify-self-end md:col-span-1 md:row-auto md:justify-self-center']"></div>
+              <div :class="[loadingShimmerPillClass, 'col-start-3 row-start-2 h-6 w-16 justify-self-end md:col-start-auto md:col-span-1 md:row-auto md:justify-self-center']"></div>
 
               <div class="col-span-3 mt-1 flex gap-2 md:col-span-2 md:mt-0 md:justify-end">
                 <div :class="[loadingShimmerPillClass, 'h-9 w-20 sm:h-10 sm:w-24']"></div>
@@ -800,7 +684,7 @@ useHead(() => {
                   {{ row.product.price_text || 'N/A' }}
                 </p>
 
-                <div class="col-start-3 row-start-2 flex justify-end md:col-span-1 md:flex md:justify-center">
+                <div class="col-start-3 row-start-2 flex justify-end md:col-start-auto md:row-start-auto md:col-span-1 md:justify-center">
                   <span
                     v-if="row.rankIndex === 0"
                     class="inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[9px] uppercase tracking-[0.26em] text-white"
@@ -838,9 +722,9 @@ useHead(() => {
 
               <template v-else>
                 <div class="col-span-3 md:col-span-8">
-                  <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Alerte specials</p>
+                  <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Alerte prix</p>
                   <p class="mt-2 text-sm leading-relaxed text-white/80 sm:text-base">
-                    Gardez ce produit en tete et recevez un rappel quand il revient en special.
+                    Recevez une alerte des que le prix baisse ou que ce produit revient en special.
                   </p>
                 </div>
 
