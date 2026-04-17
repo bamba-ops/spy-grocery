@@ -86,6 +86,16 @@ export const useProductDetailsStore = defineStore('productDetails', {
       return Math.min(LOAD_MORE_COMPARISON_PRODUCTS_COUNT, this.getRemainingComparisonProductsCount)
     },
 
+    getCurrentProductComparisonIndex(): number {
+      const currentProductId = this.product?.id || null
+
+      if (!currentProductId) {
+        return -1
+      }
+
+      return this.getSortedComparisonProducts.findIndex((product) => product.id === currentProductId)
+    },
+
     getMarketAveragePrice(): number | null {
       const prices = this.getSortedComparisonProducts
         .map((product) => product.price_num)
@@ -155,7 +165,15 @@ export const useProductDetailsStore = defineStore('productDetails', {
     },
 
     setComparisonVisibleProductsReset() {
-      this.visibleComparisonProductsCount = INITIAL_VISIBLE_COMPARISON_PRODUCTS_COUNT
+      const currentProductIndex = this.getCurrentProductComparisonIndex
+      const minimumVisibleCount = currentProductIndex >= 0
+        ? currentProductIndex + 1
+        : INITIAL_VISIBLE_COMPARISON_PRODUCTS_COUNT
+
+      this.visibleComparisonProductsCount = Math.min(
+        this.getSortedComparisonProducts.length,
+        Math.max(INITIAL_VISIBLE_COMPARISON_PRODUCTS_COUNT, minimumVisibleCount)
+      )
     },
 
     setShowMoreComparisonProducts() {

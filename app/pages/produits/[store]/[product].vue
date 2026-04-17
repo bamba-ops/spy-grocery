@@ -206,6 +206,77 @@ const comparisonRows = computed(() => {
   return productDetails.getComparisonRows(getShowGuestProductCta.value)
 })
 
+const lastAutoScrolledProductId = ref<string | null>(null)
+const pendingScrollTimerId = ref<ReturnType<typeof setTimeout> | null>(null)
+
+const getCurrentProductRowElement = () => {
+  return document.querySelector<HTMLElement>('[data-current-product-row="true"]')
+}
+
+const getWaitForNextAnimationFrame = () => {
+  return new Promise<void>((resolve) => {
+    window.requestAnimationFrame(() => {
+      resolve()
+    })
+  })
+}
+
+const setScrollToCurrentProductRow = async () => {
+  if (!process.client || productDetails.loading || !productDetails.product) {
+    return false
+  }
+
+  const currentProductId = productDetails.product.id
+
+  if (lastAutoScrolledProductId.value === currentProductId) {
+    return true
+  }
+
+  const shouldReduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  const maxAttempts = 12
+
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    await nextTick()
+    await getWaitForNextAnimationFrame()
+
+    const currentProductRowElement = getCurrentProductRowElement()
+
+    if (!currentProductRowElement) {
+      continue
+    }
+
+    const rowRect = currentProductRowElement.getBoundingClientRect()
+    const targetTop = Math.max(
+      window.scrollY + rowRect.top - (window.innerHeight / 2) + (rowRect.height / 2),
+      0
+    )
+
+    window.scrollTo({
+      top: targetTop,
+      behavior: shouldReduceMotion ? 'auto' : 'smooth'
+    })
+
+    lastAutoScrolledProductId.value = currentProductId
+    return true
+  }
+
+  return false
+}
+
+const setScheduleScrollToCurrentProductRow = () => {
+  if (!process.client) {
+    return
+  }
+
+  if (pendingScrollTimerId.value) {
+    clearTimeout(pendingScrollTimerId.value)
+  }
+
+  pendingScrollTimerId.value = setTimeout(() => {
+    void setScrollToCurrentProductRow()
+  }, 120)
+}
+
 const searchMoreProductsPath = computed(() => {
   const productTitle = productDetails.product?.title?.trim() || ''
 
@@ -290,6 +361,8 @@ if (!productDetails.product) {
 }
 
 onMounted(() => {
+  setScheduleScrollToCurrentProductRow()
+
   if (!getIsOnboardingContext.value || !productDetails.product) {
     return
   }
@@ -300,6 +373,15 @@ onMounted(() => {
     storeSlug: productDetails.product.store_slug || storeSlug.value,
     currentStep: onboardingStore.currentStep
   })
+})
+
+onBeforeUnmount(() => {
+  if (!pendingScrollTimerId.value) {
+    return
+  }
+
+  clearTimeout(pendingScrollTimerId.value)
+  pendingScrollTimerId.value = null
 })
 
 const canonicalPath = computed(() => {
@@ -412,6 +494,14 @@ watch(
     void loadProductPage(nextStoreSlug, nextProductSlug)
   },
   { immediate: false }
+)
+
+watch(
+  () => [productDetails.product?.id, productDetails.loading, comparisonRows.value.length] as const,
+  () => {
+    setScheduleScrollToCurrentProductRow()
+  },
+  { immediate: true, flush: 'post' }
 )
 
 useHead(() => {
@@ -612,6 +702,7 @@ useHead(() => {
             <article
               v-for="row in comparisonRows"
               :key="row.key"
+              :data-current-product-row="row.type === 'product' && row.isCurrent ? 'true' : undefined"
               :class="[
                 'grid grid-cols-[auto_minmax(0,1fr)_auto] gap-x-3 gap-y-2 rounded-xl border p-3 transition sm:rounded-2xl md:grid-cols-12 md:items-center md:gap-3 md:px-5 md:py-5',
                 row.type === 'product'
