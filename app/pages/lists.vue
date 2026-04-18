@@ -9,7 +9,7 @@ const authStore = useAuthStore()
 const onboardingStore = useOnboardingStore()
 const route = useRoute()
 const runtimeConfig = useRuntimeConfig()
-const siteUrl = (runtimeConfig.public.siteUrl || 'https://spygrocery.com').replace(/\/$/, '')
+const siteUrl = (runtimeConfig.public.siteUrl || 'https://www.spygrocery.com').replace(/\/$/, '')
 
 const onboardingStepNumbers = [1, 2, 3]
 

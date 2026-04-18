@@ -1,4 +1,5 @@
 import type { SitemapUrlInput } from '#sitemap/types'
+import { parseProductRouteParts } from '#shared/utils/productRoute'
 import type { SitemapProductRow } from '../../repositories/sitemapRepository'
 import { fetchSitemapProductRows } from '../../repositories/sitemapRepository'
 
@@ -18,8 +19,16 @@ const getCanonicalProductPath = (row: SitemapProductRow) => {
     return null
   }
 
-  const productSlug = `${row.title_slug}-${row.external_id}`
-  return `/produits/${encodeURIComponent(row.store_slug)}/${encodeURIComponent(productSlug)}`
+  const routeParts = parseProductRouteParts(
+    row.store_slug,
+    `${row.title_slug}-${row.external_id}`
+  )
+
+  if (!routeParts) {
+    return null
+  }
+
+  return `/produits/${encodeURIComponent(routeParts.storeSlug)}/${encodeURIComponent(routeParts.productSlug)}`
 }
 
 const getGlobalLastmod = (rows: SitemapProductRow[]) => {

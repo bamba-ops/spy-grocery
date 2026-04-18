@@ -21,7 +21,7 @@ const TURNSTILE_RETRY_DELAY_MS = 150
 
 const authStore = useAuthStore()
 const runtimeConfig = useRuntimeConfig()
-const siteUrl = (runtimeConfig.public.siteUrl || 'https://spygrocery.com').replace(/\/$/, '')
+const siteUrl = (runtimeConfig.public.siteUrl || 'https://www.spygrocery.com').replace(/\/$/, '')
 const isTurnstileEnabled = computed(() => authStore.getIsLoginCaptchaEnabled)
 const turnstileSiteKey = (runtimeConfig.public.turnstileSiteKey || '').trim()
 const turnstileContainerRef = ref<HTMLElement | null>(null)

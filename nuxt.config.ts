@@ -1,5 +1,7 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
-const DEFAULT_SITE_URL = 'https://spygrocery.com'
+const PRIMARY_HOSTNAME = 'www.spygrocery.com'
+const APEX_HOSTNAME = 'spygrocery.com'
+const DEFAULT_SITE_URL = `https://${PRIMARY_HOSTNAME}`
 
 const getNormalizedSiteUrl = (value: string | undefined) => {
   const trimmed = value?.trim()
@@ -11,8 +13,12 @@ const getNormalizedSiteUrl = (value: string | undefined) => {
   try {
     const parsed = new URL(trimmed)
 
-    if (parsed.hostname === 'www.spygrocery.com') {
-      parsed.hostname = 'spygrocery.com'
+    if (parsed.hostname === APEX_HOSTNAME) {
+      parsed.hostname = PRIMARY_HOSTNAME
+    }
+
+    if (parsed.hostname === PRIMARY_HOSTNAME && parsed.protocol !== 'https:') {
+      parsed.protocol = 'https:'
     }
 
     return parsed.toString().replace(/\/$/, '')
@@ -87,6 +93,16 @@ export default defineNuxtConfig({
     url: SITE_URL
   },
   sitemap: {
+    includeAppSources: false,
+    exclude: [
+      '/search',
+      '/lists',
+      '/login',
+      '/confirm',
+      '/onboarding',
+      '/auth/**',
+      '/products/**'
+    ],
     sources: ['/api/__sitemap__/urls']
   },
   robots: {

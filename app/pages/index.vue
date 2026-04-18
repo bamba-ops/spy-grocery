@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const runtimeConfig = useRuntimeConfig()
-const siteUrl = (runtimeConfig.public.siteUrl || 'https://spygrocery.com').replace(/\/$/, '')
+const siteUrl = (runtimeConfig.public.siteUrl || 'https://www.spygrocery.com').replace(/\/$/, '')
 
 const seoTitle = 'SpyGrocery - Comparez les prix en epicerie au Quebec'
 const seoDescription = 'SpyGrocery vous aide a comparer les aubaines en epicerie, reduire le total du panier et economiser selon les prix par magasin au Quebec.'

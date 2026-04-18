@@ -9,7 +9,7 @@ import { useSearchStore } from '~/stores/search'
 const onboardingStore = useOnboardingStore()
 const searchStore = useSearchStore()
 const runtimeConfig = useRuntimeConfig()
-const siteUrl = (runtimeConfig.public.siteUrl || 'https://spygrocery.com').replace(/\/$/, '')
+const siteUrl = (runtimeConfig.public.siteUrl || 'https://www.spygrocery.com').replace(/\/$/, '')
 
 const searchInput = ref('')
 const stepNumbers = [1, 2, 3]

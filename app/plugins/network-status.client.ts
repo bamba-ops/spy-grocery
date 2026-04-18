@@ -12,7 +12,7 @@ export default defineNuxtPlugin(() => {
   }
 
   const runtimeConfig = useRuntimeConfig()
-  const healthcheckBaseUrl = (runtimeConfig.public.siteUrl || 'https://spygrocery.com').replace(/\/$/, '')
+  const healthcheckBaseUrl = (runtimeConfig.public.siteUrl || 'https://www.spygrocery.com').replace(/\/$/, '')
   const NETWORK_TOAST_ID = 'network-status'
   const HEALTHCHECK_INTERVAL_MS = 10000
   const HEALTHCHECK_TIMEOUT_MS = 4000

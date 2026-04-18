@@ -794,6 +794,54 @@ export const getProductRowByStoreAndExternalId = async (
   return (data as DbProduct | null) ?? null
 }
 
+export const getLatestProductRowByStoreAndTitleSlug = async (
+  supabase: any,
+  storeSlug: string,
+  titleSlug: string
+): Promise<DbProduct | null> => {
+  const { data, error } = await supabase
+    .from('products')
+    .select(SELECT_FIELDS)
+    .eq('store_slug', storeSlug)
+    .eq('title_slug', titleSlug)
+    .order('scraped_at', { ascending: false, nullsFirst: false })
+    .order('id', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (error) {
+    throw createError({
+      statusCode: 500,
+      message: `Failed to fetch product by store/title slug: ${error.message}`
+    })
+  }
+
+  return (data as DbProduct | null) ?? null
+}
+
+export const getLatestProductRowByExternalId = async (
+  supabase: any,
+  externalId: string
+): Promise<DbProduct | null> => {
+  const { data, error } = await supabase
+    .from('products')
+    .select(SELECT_FIELDS)
+    .eq('external_id', externalId)
+    .order('scraped_at', { ascending: false, nullsFirst: false })
+    .order('id', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (error) {
+    throw createError({
+      statusCode: 500,
+      message: `Failed to fetch product by external id fallback: ${error.message}`
+    })
+  }
+
+  return (data as DbProduct | null) ?? null
+}
+
 export const getSimilarProductsRows = async (supabase: any, params: SimilarProductsRowsParams): Promise<DbProduct[]> => {
   let dbQuery = supabase
     .from('products')

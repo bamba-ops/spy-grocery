@@ -15,7 +15,7 @@ const onboardingApi = useOnboarding()
 const route = useRoute()
 const supabase = useSupabaseClient()
 const runtimeConfig = useRuntimeConfig()
-const siteUrl = (runtimeConfig.public.siteUrl || 'https://spygrocery.com').replace(/\/$/, '')
+const siteUrl = (runtimeConfig.public.siteUrl || 'https://www.spygrocery.com').replace(/\/$/, '')
 
 const statusMessage = ref('Connexion en cours...')
 

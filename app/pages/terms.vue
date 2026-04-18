@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const lastUpdated = '31 mars 2026'
 const runtimeConfig = useRuntimeConfig()
-const siteUrl = (runtimeConfig.public.siteUrl || 'https://spygrocery.com').replace(/\/$/, '')
+const siteUrl = (runtimeConfig.public.siteUrl || 'https://www.spygrocery.com').replace(/\/$/, '')
 
 useHead({
   title: 'Conditions de service - SpyGrocery',

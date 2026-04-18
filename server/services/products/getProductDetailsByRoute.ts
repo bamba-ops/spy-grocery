@@ -1,6 +1,10 @@
 import { getProductRoutePath, parseProductRouteParts } from '#shared/utils/productRoute'
 import type { ProductDetailsByRouteResponse } from '#shared/types/product-details'
-import { getProductRowByStoreAndExternalId } from '../../repositories/productsRepository'
+import {
+  getLatestProductRowByExternalId,
+  getLatestProductRowByStoreAndTitleSlug,
+  getProductRowByStoreAndExternalId
+} from '../../repositories/productsRepository'
 import { getProductDetails } from './getProductDetails'
 
 interface GetProductDetailsByRouteParams {
@@ -23,11 +27,26 @@ export const getProductDetailsByRoute = async ({
     })
   }
 
-  const row = await getProductRowByStoreAndExternalId(
+  let row = await getProductRowByStoreAndExternalId(
     supabase,
     routeParts.storeSlug,
     routeParts.externalId
   )
+
+  if (!row) {
+    row = await getLatestProductRowByStoreAndTitleSlug(
+      supabase,
+      routeParts.storeSlug,
+      routeParts.titleSlug
+    )
+  }
+
+  if (!row) {
+    row = await getLatestProductRowByExternalId(
+      supabase,
+      routeParts.externalId
+    )
+  }
 
   if (!row) {
     throw createError({

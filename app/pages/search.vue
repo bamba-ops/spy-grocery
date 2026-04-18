@@ -3,7 +3,7 @@ import { useSearchStore } from '~/stores/search'
 
 const searchStore = useSearchStore()
 const runtimeConfig = useRuntimeConfig()
-const siteUrl = (runtimeConfig.public.siteUrl || 'https://spygrocery.com').replace(/\/$/, '')
+const siteUrl = (runtimeConfig.public.siteUrl || 'https://www.spygrocery.com').replace(/\/$/, '')
 
 definePageMeta({
   layout: 'bottom-nav',

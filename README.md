@@ -73,7 +73,7 @@ NUXT_AI_GATEWAY_API_KEY=<ai-gateway-key>
 NUXT_AI_GATEWAY_MODEL=<optional-model>
 NUXT_PUBLIC_TURNSTILE_ENABLED=true
 NUXT_PUBLIC_TURNSTILE_SITE_KEY=<turnstile-site-key>
-NUXT_PUBLIC_SITE_URL=https://spygrocery.com
+NUXT_PUBLIC_SITE_URL=https://www.spygrocery.com
 ```
 
 ## Scripts utiles
