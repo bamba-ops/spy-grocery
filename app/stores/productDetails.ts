@@ -25,7 +25,7 @@ type ComparisonRow = ProductComparisonRow | CtaComparisonRow
 
 const INITIAL_VISIBLE_COMPARISON_PRODUCTS_COUNT = 5
 const LOAD_MORE_COMPARISON_PRODUCTS_COUNT = 5
-const CTA_INSERT_INDEX = 1
+const DEFAULT_CTA_INSERT_INDEX = 0
 
 const getPriceSortValue = (price: number | null) => {
   return typeof price === 'number' ? price : Number.POSITIVE_INFINITY
@@ -120,16 +120,17 @@ export const useProductDetailsStore = defineStore('productDetails', {
 
         const rows: ComparisonRow[] = []
         const currentProductId = this.product?.id || null
-        const ctaInsertIndex = showGuestProductCta ? CTA_INSERT_INDEX : -1
+        const currentVisibleIndex = currentProductId
+          ? visibleProducts.findIndex((product) => product.id === currentProductId)
+          : -1
+        const ctaInsertAfterIndex = showGuestProductCta
+          ? (currentVisibleIndex >= 0 ? currentVisibleIndex : DEFAULT_CTA_INSERT_INDEX)
+          : -1
+        const ctaRowKey = currentVisibleIndex >= 0
+          ? 'cta-after-current'
+          : `cta-after-${ctaInsertAfterIndex}`
 
         visibleProducts.forEach((product, visibleIndex) => {
-          if (visibleIndex === ctaInsertIndex) {
-            rows.push({
-              type: 'cta',
-              key: `cta-${visibleIndex}`
-            })
-          }
-
           const rankIndex = rankedProducts.findIndex((entry) => entry.id === product.id)
 
           rows.push({
@@ -140,9 +141,16 @@ export const useProductDetailsStore = defineStore('productDetails', {
             rankTotal: rankedProducts.length,
             isCurrent: product.id === currentProductId
           })
+
+          if (showGuestProductCta && visibleIndex === ctaInsertAfterIndex) {
+            rows.push({
+              type: 'cta',
+              key: ctaRowKey
+            })
+          }
         })
 
-        if (showGuestProductCta && ctaInsertIndex >= visibleProducts.length) {
+        if (showGuestProductCta && !rows.some((row) => row.type === 'cta')) {
           rows.push({
             type: 'cta',
             key: 'cta-end'

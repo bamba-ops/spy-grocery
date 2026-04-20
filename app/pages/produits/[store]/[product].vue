@@ -213,6 +213,10 @@ const getCurrentProductRowElement = () => {
   return document.querySelector<HTMLElement>('[data-current-product-row="true"]')
 }
 
+const getGuestCtaRowElement = () => {
+  return document.querySelector<HTMLElement>('[data-guest-cta-row="true"]')
+}
+
 const getWaitForNextAnimationFrame = () => {
   return new Promise<void>((resolve) => {
     window.requestAnimationFrame(() => {
@@ -234,6 +238,8 @@ const setScrollToCurrentProductRow = async () => {
 
   const shouldReduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   const maxAttempts = 12
+  const ctaBottomGutterPx = 24
+  const minCurrentRowTopOffsetPx = 16
 
   for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
     await nextTick()
@@ -246,10 +252,32 @@ const setScrollToCurrentProductRow = async () => {
     }
 
     const rowRect = currentProductRowElement.getBoundingClientRect()
-    const targetTop = Math.max(
-      window.scrollY + rowRect.top - (window.innerHeight / 2) + (rowRect.height / 2),
-      0
+    const currentScrollY = window.scrollY
+    const desiredCurrentRowTopOffset = Math.min(
+      Math.max(Math.round(window.innerHeight * 0.18), 96),
+      180
     )
+    let targetTop = currentScrollY + rowRect.top - desiredCurrentRowTopOffset
+
+    const guestCtaRowElement = getGuestCtaRowElement()
+
+    if (guestCtaRowElement) {
+      const ctaRect = guestCtaRowElement.getBoundingClientRect()
+      const projectedCtaBottom = ctaRect.bottom - (targetTop - currentScrollY)
+      const maxVisibleCtaBottom = window.innerHeight - ctaBottomGutterPx
+
+      if (projectedCtaBottom > maxVisibleCtaBottom) {
+        targetTop += projectedCtaBottom - maxVisibleCtaBottom
+      }
+    }
+
+    const projectedCurrentRowTop = rowRect.top - (targetTop - currentScrollY)
+
+    if (projectedCurrentRowTop < minCurrentRowTopOffsetPx) {
+      targetTop = currentScrollY + rowRect.top - minCurrentRowTopOffsetPx
+    }
+
+    targetTop = Math.max(targetTop, 0)
 
     window.scrollTo({
       top: targetTop,
@@ -703,8 +731,9 @@ useHead(() => {
               v-for="row in comparisonRows"
               :key="row.key"
               :data-current-product-row="row.type === 'product' && row.isCurrent ? 'true' : undefined"
+              :data-guest-cta-row="row.type === 'cta' ? 'true' : undefined"
               :class="[
-                'grid grid-cols-[auto_minmax(0,1fr)_auto] gap-x-3 gap-y-2 rounded-xl border p-3 transition sm:rounded-2xl md:grid-cols-12 md:items-center md:gap-3 md:px-5 md:py-5',
+                'grid grid-cols-[auto_minmax(0,1fr)_auto] gap-x-3 gap-y-2 rounded-xl border p-3 transition sm:rounded-2xl md:grid-cols-12 md:items-center md:gap-4 md:px-6 md:py-6 lg:px-7',
                 row.type === 'product'
                   ? (row.isCurrent
                       ? getCurrentProductGlowClasses(row.rankIndex, row.rankTotal)
@@ -716,7 +745,7 @@ useHead(() => {
                 <div class="row-span-2 md:col-span-2 md:row-span-1">
                   <NuxtLink
                     :to="getProductRoutePath(row.product)"
-                    class="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-xl border border-white/15 bg-black transition hover:border-white/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:h-16 sm:w-16 md:h-20 md:w-20"
+                    class="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-xl border border-white/15 bg-black transition hover:border-white/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:h-16 sm:w-16 md:h-24 md:w-24 lg:h-28 lg:w-28"
                     :aria-label="`Ouvrir ${row.product.title}`"
                   >
                     <template v-if="getComparisonProductImageDisplay(row.product).type === 'url'">
@@ -747,44 +776,44 @@ useHead(() => {
                     <NuxtLink
                       v-if="row.product.store_slug"
                       :to="`/magasins/${encodeURIComponent(row.product.store_slug)}`"
-                      class="text-xs font-semibold uppercase tracking-[0.18em] text-white/85 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:text-sm md:text-base"
+                      class="text-xs font-semibold uppercase tracking-[0.18em] text-white/85 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:text-sm md:text-lg"
                     >
                       {{ row.product.store }}
                     </NuxtLink>
-                    <p v-else class="text-xs font-semibold uppercase tracking-[0.18em] text-white/85 sm:text-sm md:text-base">
+                    <p v-else class="text-xs font-semibold uppercase tracking-[0.18em] text-white/85 sm:text-sm md:text-lg">
                       {{ row.product.store }}
                     </p>
 
                     <NuxtLink
                       :to="getProductRoutePath(row.product)"
-                      class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/20 text-white/70 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                      class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/20 text-white/70 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black md:h-9 md:w-9"
                       :aria-label="`Ouvrir ${row.product.title}`"
                     >
                       <ArrowUpRight class="h-4 w-4" />
                     </NuxtLink>
                   </div>
 
-                  <p class="mt-1 text-[11px] leading-tight text-white/65 md:mt-2 md:text-xs">{{ row.product.title }}</p>
+                  <p class="mt-1 text-[11px] leading-tight text-white/65 sm:text-sm md:mt-2 md:text-base md:leading-snug">{{ row.product.title }}</p>
                 </div>
 
-                <p class="self-start text-right font-display text-2xl font-semibold italic tracking-tight text-white sm:text-3xl md:col-span-2 md:text-left">
+                <p class="self-start text-right font-display text-2xl font-semibold italic tracking-tight text-white sm:text-3xl md:col-span-2 md:text-left md:text-4xl">
                   {{ getCadPriceLabel(row.product.price_num) }}
                 </p>
 
-                <p class="col-span-2 text-[11px] text-white/70 sm:text-sm md:col-span-2 md:text-center">
+                <p class="col-span-2 text-[11px] text-white/70 sm:text-sm md:col-span-2 md:text-center md:text-base md:font-medium">
                   {{ row.product.price_text || 'N/A' }}
                 </p>
 
                 <div class="col-start-3 row-start-2 flex justify-end md:col-start-auto md:row-start-auto md:col-span-1 md:justify-center">
                   <span
                     v-if="row.rankIndex === 0"
-                    class="inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[9px] uppercase tracking-[0.26em] text-white"
+                    class="inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[9px] uppercase tracking-[0.26em] text-white md:text-[10px]"
                   >
                     Meilleur
                   </span>
                   <span
                     v-else
-                    class="inline-flex rounded-full border border-white/15 px-3 py-1 text-[9px] uppercase tracking-[0.26em] text-white/70"
+                    class="inline-flex rounded-full border border-white/15 px-3 py-1 text-[9px] uppercase tracking-[0.26em] text-white/70 md:text-[10px]"
                   >
                     Alt
                   </span>
@@ -796,14 +825,14 @@ useHead(() => {
                     :href="getSafeProductUrl(row.product.url)!"
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="inline-flex h-9 items-center justify-center rounded-full border border-white/20 px-3 text-[9px] uppercase tracking-[0.3em] text-white/85 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:h-10 sm:px-4 sm:text-[10px]"
+                    class="inline-flex h-9 items-center justify-center rounded-full border border-white/20 px-3 text-[9px] uppercase tracking-[0.3em] text-white/85 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:h-10 sm:px-4 sm:text-[10px] md:h-11 md:px-5 md:text-[11px]"
                   >
                     Magasin
                   </a>
 
                   <button
                     type="button"
-                    class="inline-flex h-9 items-center justify-center rounded-full border border-white/20 bg-white px-3 text-[9px] uppercase tracking-[0.3em] text-black transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:h-10 sm:px-4 sm:text-[10px]"
+                    class="inline-flex h-9 items-center justify-center rounded-full border border-white/20 bg-white px-3 text-[9px] uppercase tracking-[0.3em] text-black transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:h-10 sm:px-4 sm:text-[10px] md:h-11 md:px-5 md:text-[11px]"
                     @click="setAddComparisonProductToList(row.product, row.isCurrent)"
                   >
                     Ajouter
@@ -814,7 +843,7 @@ useHead(() => {
               <template v-else>
                 <div class="col-span-3 md:col-span-8">
                   <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Alerte prix</p>
-                  <p class="mt-2 text-sm leading-relaxed text-white/80 sm:text-base">
+                  <p class="mt-2 text-sm leading-relaxed text-white/80 sm:text-base md:text-lg">
                     Recevez une alerte des que le prix baisse ou que ce produit revient en special.
                   </p>
                 </div>
@@ -822,7 +851,7 @@ useHead(() => {
                 <div class="col-span-3 flex flex-wrap gap-2 md:col-span-4 md:justify-end">
                   <button
                     type="button"
-                    class="inline-flex h-9 items-center justify-center rounded-full border border-white/20 bg-white px-3 text-[9px] uppercase tracking-[0.3em] text-black transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:h-10 sm:px-4 sm:text-[10px]"
+                    class="inline-flex h-9 items-center justify-center rounded-full border border-white/20 bg-white px-3 text-[9px] uppercase tracking-[0.3em] text-black transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:h-10 sm:px-4 sm:text-[10px] md:h-11 md:px-5 md:text-[11px]"
                     @click="setAddCurrentProductToList"
                   >
                     Ajouter a ma liste
@@ -830,7 +859,7 @@ useHead(() => {
 
                   <button
                     type="button"
-                    class="inline-flex h-9 items-center justify-center rounded-full border border-white/20 px-3 text-[9px] uppercase tracking-[0.3em] text-white/85 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:h-10 sm:px-4 sm:text-[10px]"
+                    class="inline-flex h-9 items-center justify-center rounded-full border border-white/20 px-3 text-[9px] uppercase tracking-[0.3em] text-white/85 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:h-10 sm:px-4 sm:text-[10px] md:h-11 md:px-5 md:text-[11px]"
                     @click="setNotifySpecialFromProductCta"
                   >
                     Notifie-moi
