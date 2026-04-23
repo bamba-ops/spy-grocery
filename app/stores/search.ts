@@ -21,11 +21,14 @@ export const useSearchStore = defineStore('search', {
     hasFetchedSearchResults: false,
     total: 0,
     page: 1,
-    limit: 50,
+    limit: 24,
     sortBy: 'relevance' as SearchSort,
     loading: false,
     error: null as string | null,
     selectedStoreId: 'all',
+    MOBILE_SEARCH_LIMIT: 12,
+    DESKTOP_SEARCH_LIMIT: 24,
+    SEARCH_MOBILE_BREAKPOINT: 640,
     SEARCH_DEBOUNCE_MS: 400
   }),
 
@@ -136,6 +139,26 @@ export const useSearchStore = defineStore('search', {
       scrollToTop()
     },
 
+    getResponsiveSearchLimit() {
+      if (process.client && window.innerWidth < this.SEARCH_MOBILE_BREAKPOINT) {
+        return this.MOBILE_SEARCH_LIMIT
+      }
+
+      return this.DESKTOP_SEARCH_LIMIT
+    },
+
+    setResponsiveSearchLimit() {
+      const nextLimit = this.getResponsiveSearchLimit()
+
+      if (this.limit === nextLimit) {
+        return false
+      }
+
+      this.limit = nextLimit
+      this.page = 1
+      return true
+    },
+
     async getStores() {
       if (this.storesLoaded) return
 
@@ -151,7 +174,9 @@ export const useSearchStore = defineStore('search', {
     async setSearchPageInitialized() {
       await this.getStores()
 
-      if (!this.results.length && !this.loading) {
+      const hasLimitChanged = this.setResponsiveSearchLimit()
+
+      if ((!this.results.length && !this.loading) || hasLimitChanged) {
         await this.getSearchResults()
       }
     },
