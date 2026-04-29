@@ -1,6 +1,6 @@
 import { defineStore, setActivePinia } from 'pinia'
 import type { SearchProduct, StoreFacet } from '#shared/types'
-import type { ProductsQueryParams, SearchSort } from '#shared/types/search'
+import type { ProductsQueryParams, SearchAvailability, SearchSort } from '#shared/types/search'
 
 let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null
 let heroSearchDebounceTimer: ReturnType<typeof setTimeout> | null = null
@@ -23,6 +23,7 @@ export const useSearchStore = defineStore('search', {
     page: 1,
     limit: 24,
     sortBy: 'relevance' as SearchSort,
+    availability: 'active' as SearchAvailability,
     loading: false,
     error: null as string | null,
     selectedStoreId: 'all',
@@ -70,6 +71,7 @@ export const useSearchStore = defineStore('search', {
           limit: this.HERO_SEARCH_LIMIT,
           offset: 0,
           sort: 'relevance',
+          availability: 'active',
           store: 'all'
         })
 
@@ -110,6 +112,7 @@ export const useSearchStore = defineStore('search', {
           q: this.query || undefined,
           store: this.selectedStoreId,
           sort: this.sortBy,
+          availability: this.availability,
           limit: this.limit,
           offset: this.offset
         })
@@ -211,11 +214,18 @@ export const useSearchStore = defineStore('search', {
       void this.getSearchResults()
     },
 
+    setAvailability(availability: SearchAvailability) {
+      this.availability = availability
+      this.page = 1
+      void this.getSearchResults()
+    },
+
     setFiltersCleared() {
       this.searchInput = ''
       this.query = ''
       this.selectedStoreId = 'all'
       this.sortBy = 'relevance'
+      this.availability = 'active'
       this.page = 1
 
       void this.getSearchResults()

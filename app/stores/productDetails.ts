@@ -60,6 +60,10 @@ export const useProductDetailsStore = defineStore('productDetails', {
       }
 
       return [...deduplicatedProducts.values()].sort((a, b) => {
+        if (a.is_active !== b.is_active) {
+          return a.is_active ? -1 : 1
+        }
+
         const priceDiff = getPriceSortValue(a.price_num) - getPriceSortValue(b.price_num)
 
         if (priceDiff !== 0) {
@@ -98,6 +102,7 @@ export const useProductDetailsStore = defineStore('productDetails', {
 
     getMarketAveragePrice(): number | null {
       const prices = this.getSortedComparisonProducts
+        .filter((product) => product.is_active)
         .map((product) => product.price_num)
         .filter((price): price is number => typeof price === 'number')
 

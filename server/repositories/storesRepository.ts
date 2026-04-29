@@ -27,7 +27,9 @@ const STORE_PRODUCT_FIELDS = [
   'price_text',
   'pre_price_text',
   'on_sale',
-  'scraped_at'
+  'scraped_at',
+  'valid_from',
+  'valid_to'
 ].join(',')
 
 export const fetchProductStoreRows = async (supabase: any): Promise<ProductStoreRow[]> => {

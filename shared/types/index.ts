@@ -23,6 +23,9 @@ export interface SearchProduct {
   pre_price_text: string | null
   on_sale: boolean | null
   scraped_at: string | null
+  valid_from: string | null
+  valid_to: string | null
+  is_active: boolean
 }
 
 // Temporary alias to ease migration in stores/components.

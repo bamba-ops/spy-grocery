@@ -1,6 +1,7 @@
 import { convertToModelMessages, createGateway, stepCountIs, streamText, tool } from 'ai'
 import { z } from 'zod'
 import type { ListProduct } from '#shared/types/lists'
+import { getIsProductActive } from '#shared/utils/productAvailability'
 import {
   QUERY_PRODUCTS_SQL_TOOL_NAME,
   SUBMIT_LIST_ITEMS_TOOL_NAME
@@ -101,13 +102,16 @@ const toListProductFromDbRow = (row: any, quantity: number): ListProduct => {
       uom: row.uom ?? null,
       price_num: row.price_num ?? null,
       was_price_num: row.was_price_num ?? null,
-      price_text: row.price_text ?? null,
-      pre_price_text: row.pre_price_text ?? null,
-      on_sale: row.on_sale ?? null,
-      scraped_at: row.scraped_at ?? null
-    },
-    quantity
-  }
+        price_text: row.price_text ?? null,
+        pre_price_text: row.pre_price_text ?? null,
+        on_sale: row.on_sale ?? null,
+        scraped_at: row.scraped_at ?? null,
+        valid_from: row.valid_from ?? null,
+        valid_to: row.valid_to ?? null,
+        is_active: getIsProductActive(row.valid_from, row.valid_to)
+      },
+      quantity
+    }
 }
 
 export const streamChatWithProductsDb = async ({

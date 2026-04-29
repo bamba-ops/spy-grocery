@@ -2,6 +2,7 @@
 import { ArrowUpRight, Plus } from 'lucide-vue-next'
 import { getRouteParam } from '#shared/utils/getRouteParam'
 import { ONBOARDING_MAX_STEP } from '#shared/utils/onboarding'
+import { getProductValidityLabel } from '#shared/utils/productAvailability'
 import { getProductRoutePath } from '#shared/utils/productRoute'
 import { toPageError } from '#shared/utils/toPageError'
 import { useAuthStore } from '~/stores/auth'
@@ -63,6 +64,10 @@ const getSafeProductUrl = (url: string | null) => {
   if (!trimmed) return null
   if (!/^https?:\/\//i.test(trimmed)) return null
   return trimmed
+}
+
+const getProductValidityText = (validFrom: string | null, validTo: string | null) => {
+  return getProductValidityLabel(validFrom, validTo)
 }
 
 watch(
@@ -419,6 +424,9 @@ useHead(() => ({
               <p class="mt-2 font-display text-3xl font-semibold italic text-white">
                 ${{ storeOverview.getFormattedPrice(product.price_num) }}
               </p>
+              <p v-if="getProductValidityText(product.valid_from, product.valid_to)" class="mt-2 text-[10px] uppercase tracking-[0.28em] text-white/50">
+                {{ getProductValidityText(product.valid_from, product.valid_to) }}
+              </p>
 
               <div class="mt-3 flex flex-wrap items-center gap-2">
                 <button
@@ -466,6 +474,9 @@ useHead(() => ({
               <div>
                 <p class="text-sm font-semibold uppercase tracking-[0.18em] text-white/80 sm:text-base">{{ product.store }}</p>
                 <p class="mt-1 text-sm text-white/90 sm:text-base">{{ product.title }}</p>
+                <p v-if="getProductValidityText(product.valid_from, product.valid_to)" class="mt-2 text-[10px] uppercase tracking-[0.28em] text-white/50">
+                  {{ getProductValidityText(product.valid_from, product.valid_to) }}
+                </p>
               </div>
 
               <div class="flex items-center gap-3">

@@ -1,4 +1,5 @@
 import type { SearchProduct } from '#shared/types'
+import { getIsProductActive } from '#shared/utils/productAvailability'
 import type { ListStorage, ResultListStorage } from '#shared/types/lists'
 
 const LISTS_STORAGE_KEY = 'spygrocery:saved-lists'
@@ -53,10 +54,12 @@ const normalizeProduct = (value: unknown): SearchProduct | null => {
   return {
     id,
     slug,
+    title_slug: toStringOrNull(raw.title_slug),
     title,
     description: toStringOrNull(raw.description),
     brand: toStringOrNull(raw.brand),
     store,
+    store_slug: toStringOrNull(raw.store_slug),
     store_id: toStringOrNull(raw.store_id) || toStringOrNull(rawStoreObject?.id),
     image_url: toStringOrNull(raw.image_url),
     url: toStringOrNull(raw.url) || toStringOrNull(raw.link),
@@ -66,7 +69,10 @@ const normalizeProduct = (value: unknown): SearchProduct | null => {
     price_text: toStringOrNull(raw.price_text) || toStringOrNull(raw.price_unit),
     pre_price_text: toStringOrNull(raw.pre_price_text),
     on_sale: toBooleanOrNull(raw.on_sale) ?? toBooleanOrNull(raw.is_promo),
-    scraped_at: toStringOrNull(raw.scraped_at)
+    scraped_at: toStringOrNull(raw.scraped_at),
+    valid_from: toStringOrNull(raw.valid_from),
+    valid_to: toStringOrNull(raw.valid_to),
+    is_active: getIsProductActive(toStringOrNull(raw.valid_from), toStringOrNull(raw.valid_to))
   }
 }
 

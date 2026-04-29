@@ -1,5 +1,7 @@
-import type { DbProduct, SearchProduct, StoreOverviewResponse } from '#shared/types'
+import type { DbProduct, StoreOverviewResponse } from '#shared/types'
+import { getIsProductActive } from '#shared/utils/productAvailability'
 import { fetchStoreProductRowsByStoreSlug } from '../../repositories/storesRepository'
+import { toSearchProduct } from '../products/toSearchProduct'
 
 const MAX_LATEST_PROMOS = 12
 const MAX_BEST_PRODUCTS = 12
@@ -15,28 +17,6 @@ const normalizeText = (value: string | null) => {
     .toLowerCase()
     .trim()
 }
-
-const toSearchProduct = (row: DbProduct): SearchProduct => ({
-  id: row.id,
-  external_id: row.external_id,
-  slug: row.slug,
-  title_slug: row.title_slug,
-  title: row.title || '',
-  description: row.description ?? null,
-  brand: row.brand,
-  store: row.store,
-  store_slug: row.store_slug,
-  store_id: row.store_id,
-  image_url: row.image_url,
-  url: row.url,
-  uom: row.uom,
-  price_num: row.price_num,
-  was_price_num: row.was_price_num,
-  price_text: row.price_text,
-  pre_price_text: row.pre_price_text,
-  on_sale: row.on_sale,
-  scraped_at: row.scraped_at || null
-})
 
 const getTimestamp = (value: string | null) => {
   if (!value) {
@@ -113,6 +93,7 @@ export const getStoreOverview = async (
   storeSlug: string
 ): Promise<StoreOverviewResponse> => {
   const rows = await fetchStoreProductRowsByStoreSlug(supabase, storeSlug)
+  const activeRows = rows.filter((row) => getIsProductActive(row.valid_from, row.valid_to))
 
   if (rows.length === 0) {
     throw createError({
@@ -122,10 +103,9 @@ export const getStoreOverview = async (
   }
 
   const storeName = rows[0]?.store || storeSlug
-  const explicitOnSaleCount = rows.filter((row) => row.on_sale === true).length
-  const activeSpecialsCount = explicitOnSaleCount > 0 ? explicitOnSaleCount : rows.length
-  const latestPromos = getLatestPromos(rows)
-  const bestProducts = getBestProducts(rows)
+  const activeSpecialsCount = activeRows.length
+  const latestPromos = getLatestPromos(activeRows)
+  const bestProducts = getBestProducts(activeRows)
 
   return {
     store: {

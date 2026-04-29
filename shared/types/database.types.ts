@@ -271,6 +271,8 @@ export type Database = {
           unit_price_full: string | null
           uom: string | null
           url: string | null
+          valid_from: string | null
+          valid_to: string | null
           was_price_num: number | null
           was_price_raw: string | null
         }
@@ -316,6 +318,8 @@ export type Database = {
           unit_price_full?: string | null
           uom?: string | null
           url?: string | null
+          valid_from?: string | null
+          valid_to?: string | null
           was_price_num?: number | null
           was_price_raw?: string | null
         }
@@ -361,6 +365,8 @@ export type Database = {
           unit_price_full?: string | null
           uom?: string | null
           url?: string | null
+          valid_from?: string | null
+          valid_to?: string | null
           was_price_num?: number | null
           was_price_raw?: string | null
         }

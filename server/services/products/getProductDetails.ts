@@ -1,7 +1,8 @@
-import type { DbProduct, SearchProduct } from '#shared/types'
+import type { DbProduct } from '#shared/types'
 import type { ProductDetailsResponse } from '#shared/types/product-details'
 import { toSlug } from '#shared/utils/toSlug'
 import { getBroadSimilarProductsRows, getProductRowBySlug, getSimilarProductsRows } from '../../repositories/productsRepository'
+import { toSearchProduct } from './toSearchProduct'
 
 interface GetProductDetailsParams {
   supabase: any
@@ -27,28 +28,6 @@ const toNullableTrimmed = (value: string | null) => {
   const trimmed = value.trim()
   return trimmed || null
 }
-
-const toSearchProduct = (row: DbProduct): SearchProduct => ({
-  id: row.id,
-  external_id: row.external_id,
-  slug: row.slug,
-  title_slug: row.title_slug,
-  title: row.title || '',
-  description: row.description ?? null,
-  brand: row.brand,
-  store: row.store,
-  store_slug: row.store_slug,
-  store_id: row.store_id,
-  image_url: row.image_url,
-  url: row.url,
-  uom: row.uom,
-  price_num: row.price_num,
-  was_price_num: row.was_price_num,
-  price_text: row.price_text,
-  pre_price_text: row.pre_price_text,
-  on_sale: row.on_sale,
-  scraped_at: row.scraped_at || null
-})
 
 const normalizeSearchText = (value: string | null | undefined) => {
   if (!value) {

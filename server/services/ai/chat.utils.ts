@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import type { UIMessage } from 'ai'
 import type { ListProduct } from '#shared/types/lists'
+import { getIsProductActive } from '#shared/utils/productAvailability'
 import {
   ALLOWED_PRODUCTS_TABLES,
   DISALLOWED_SQL_KEYWORDS_REGEX,
@@ -301,9 +302,12 @@ export const listProductInputSchema = z.object({
   product: z.object({
     id: z.string().min(1),
     slug: z.string().min(1),
+    title_slug: z.string().nullable().optional(),
     title: z.string().min(1),
+    description: z.string().nullable().optional(),
     brand: z.string().nullable(),
     store: z.string().min(1),
+    store_slug: z.string().nullable().optional(),
     store_id: z.string().nullable(),
     image_url: z.string().nullable(),
     url: z.string().nullable(),
@@ -313,30 +317,39 @@ export const listProductInputSchema = z.object({
     price_text: z.string().nullable(),
     pre_price_text: z.string().nullable(),
     on_sale: z.boolean().nullable(),
-    scraped_at: z.string().nullable()
+    scraped_at: z.string().nullable(),
+    valid_from: z.string().nullable().optional(),
+    valid_to: z.string().nullable().optional(),
+    is_active: z.boolean().optional()
   }),
   quantity: z.number().int().min(1)
 })
 
 export const normalizeListItem = (item: z.infer<typeof listProductInputSchema>): ListProduct => {
   return {
-    product: {
-      id: item.product.id,
-      slug: item.product.slug,
-      title: item.product.title,
-      brand: item.product.brand ?? null,
-      store: item.product.store,
-      store_id: item.product.store_id ?? null,
-      image_url: item.product.image_url ?? null,
-      url: item.product.url ?? null,
-      uom: item.product.uom ?? null,
+      product: {
+        id: item.product.id,
+        slug: item.product.slug,
+        title_slug: item.product.title_slug ?? null,
+        title: item.product.title,
+        description: item.product.description ?? null,
+        brand: item.product.brand ?? null,
+        store: item.product.store,
+        store_slug: item.product.store_slug ?? null,
+        store_id: item.product.store_id ?? null,
+        image_url: item.product.image_url ?? null,
+        url: item.product.url ?? null,
+        uom: item.product.uom ?? null,
       price_num: item.product.price_num ?? null,
       was_price_num: item.product.was_price_num ?? null,
-      price_text: item.product.price_text ?? null,
-      pre_price_text: item.product.pre_price_text ?? null,
-      on_sale: item.product.on_sale ?? null,
-      scraped_at: item.product.scraped_at ?? null
-    },
-    quantity: item.quantity
-  }
+        price_text: item.product.price_text ?? null,
+        pre_price_text: item.product.pre_price_text ?? null,
+        on_sale: item.product.on_sale ?? null,
+        scraped_at: item.product.scraped_at ?? null,
+        valid_from: item.product.valid_from ?? null,
+        valid_to: item.product.valid_to ?? null,
+        is_active: item.product.is_active ?? getIsProductActive(item.product.valid_from ?? null, item.product.valid_to ?? null)
+      },
+      quantity: item.quantity
+    }
 }

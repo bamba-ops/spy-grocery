@@ -1,11 +1,12 @@
 import type { DbProduct } from '#shared/types'
-import type { SearchSort } from '#shared/types/search'
+import type { SearchAvailability, SearchSort } from '#shared/types/search'
 import { toSlug } from '#shared/utils/toSlug'
 
 interface SearchProductsRowsParams {
   searchQuery: string
   store: string
   sortBy: SearchSort
+  availability: SearchAvailabilityMode
   limit: number
   offset: number
 }
@@ -50,10 +51,16 @@ interface BuildSingleStoreListRowsResult {
 }
 
 type NonRelevanceSort = Exclude<SearchSort, 'relevance'>
+type SearchAvailabilityMode = Exclude<SearchAvailability, 'all'>
 
 interface RankedSearchRow {
   row: DbProduct
   score: number
+}
+
+interface SearchProductsRowsResult {
+  rows: DbProduct[]
+  count: number
 }
 
 interface SearchFilterParams {
@@ -85,7 +92,9 @@ const SELECT_FIELDS = [
   'price_text',
   'pre_price_text',
   'on_sale',
-  'scraped_at'
+  'scraped_at',
+  'valid_from',
+  'valid_to'
 ].join(',')
 
 const MIN_RELEVANCE_QUERY_LENGTH = 2
@@ -240,6 +249,18 @@ const getResolvedDbSort = (sortBy: SearchSort): NonRelevanceSort => {
   }
 
   return sortBy
+}
+
+const applyAvailabilityFilter = (
+  dbQuery: any,
+  availability: SearchAvailabilityMode,
+  nowIso: string
+) => {
+  if (availability === 'active') {
+    return dbQuery.gte('valid_to', nowIso)
+  }
+
+  return dbQuery.lt('valid_to', nowIso)
 }
 
 const compareRowsBySort = (a: DbProduct, b: DbProduct, sortBy: NonRelevanceSort) => {
@@ -532,14 +553,17 @@ const getSearchCount = async (
   supabase: any,
   params: SearchFilterParams,
   store: string,
+  availability: SearchAvailabilityMode,
   mode: SearchFilterMode = 'strict'
 ) => {
+  const nowIso = new Date().toISOString()
   let countQuery = supabase
     .from('products')
     .select('id', { count: 'exact', head: true })
 
   countQuery = applySearchFilter(countQuery, params, mode)
   countQuery = applyStoreFilter(countQuery, store)
+  countQuery = applyAvailabilityFilter(countQuery, availability, nowIso)
 
   const { error, count } = await countQuery
 
@@ -557,15 +581,18 @@ const getSearchCandidateRows = async (
   supabase: any,
   params: SearchFilterParams,
   store: string,
+  availability: SearchAvailabilityMode,
   limit: number,
   mode: SearchFilterMode = 'strict'
 ) => {
+  const nowIso = new Date().toISOString()
   let dbQuery = supabase
     .from('products')
     .select(SELECT_FIELDS)
 
   dbQuery = applySearchFilter(dbQuery, params, mode)
   dbQuery = applyStoreFilter(dbQuery, store)
+  dbQuery = applyAvailabilityFilter(dbQuery, availability, nowIso)
   dbQuery = dbQuery
     .order('scraped_at', { ascending: false })
     .order('title', { ascending: true })
@@ -637,6 +664,7 @@ const getRowsByRequestedItem = async (
 ): Promise<DbProduct[]> => {
   const requestedItemSearchParams = buildSearchFilterParams(requestedItem)
   const normalizedPreferredStore = preferredStore?.trim() || ''
+  const nowIso = new Date().toISOString()
 
   const getRowsForMode = async (mode: SearchFilterMode): Promise<DbProduct[]> => {
     let dbQuery = supabase
@@ -645,6 +673,7 @@ const getRowsByRequestedItem = async (
       .not('price_num', 'is', null)
 
     dbQuery = applySearchFilter(dbQuery, requestedItemSearchParams, mode)
+    dbQuery = applyAvailabilityFilter(dbQuery, 'active', nowIso)
 
     if (normalizedPreferredStore) {
       if (getIsStoreIdQuery(normalizedPreferredStore)) {
@@ -686,7 +715,10 @@ const getRowsByRequestedItem = async (
   return getRowsForMode('expanded')
 }
 
-export const searchProductsRows = async (supabase: any, params: SearchProductsRowsParams) => {
+export const searchProductsRows = async (
+  supabase: any,
+  params: SearchProductsRowsParams
+): Promise<SearchProductsRowsResult> => {
   const searchParams = buildSearchFilterParams(params.searchQuery)
 
   const hasSearchQuery = searchParams.normalizedSearchQuery.length > 0
@@ -695,11 +727,23 @@ export const searchProductsRows = async (supabase: any, params: SearchProductsRo
     && (params.offset + params.limit) <= MAX_CANDIDATE_ROWS
 
   if (canUseRelevanceRanking) {
-    const strictCount = await getSearchCount(supabase, searchParams, params.store, 'strict')
+    const strictCount = await getSearchCount(
+      supabase,
+      searchParams,
+      params.store,
+      params.availability,
+      'strict'
+    )
     const canUseExpandedSearch = searchParams.expandedSearchTokens.length > searchParams.searchTokens.length
     const activeMode: SearchFilterMode = strictCount === 0 && canUseExpandedSearch ? 'expanded' : 'strict'
     const count = activeMode === 'expanded'
-      ? await getSearchCount(supabase, searchParams, params.store, 'expanded')
+      ? await getSearchCount(
+          supabase,
+          searchParams,
+          params.store,
+          params.availability,
+          'expanded'
+        )
       : strictCount
 
     if (count === 0) {
@@ -710,7 +754,14 @@ export const searchProductsRows = async (supabase: any, params: SearchProductsRo
     }
 
     const candidateLimit = Math.min(getSearchCandidateLimit(params.offset, params.limit), count)
-    const candidateRows = await getSearchCandidateRows(supabase, searchParams, params.store, candidateLimit, activeMode)
+    const candidateRows = await getSearchCandidateRows(
+      supabase,
+      searchParams,
+      params.store,
+      params.availability,
+      candidateLimit,
+      activeMode
+    )
     const rankedRows = getRankedSearchRows(
       candidateRows,
       searchParams.normalizedSearchQuery,
@@ -734,6 +785,7 @@ export const searchProductsRows = async (supabase: any, params: SearchProductsRo
   }
 
   dbQuery = applyStoreFilter(dbQuery, params.store)
+  dbQuery = applyAvailabilityFilter(dbQuery, params.availability, new Date().toISOString())
 
   dbQuery = applySort(dbQuery, params.sortBy)
   dbQuery = dbQuery.range(params.offset, params.offset + params.limit - 1)

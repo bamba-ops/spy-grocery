@@ -7,7 +7,7 @@ const searchStore = useSearchStore()
 
 <template>
   <div class="rounded-2xl border border-white/10 bg-black/70 px-4 py-4">
-    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       <div class="flex h-10 items-center gap-2 rounded-full border border-white/15 px-3 text-white/70">
         <Search class="h-4 w-4 shrink-0 text-white/70" />
         <input
@@ -28,6 +28,16 @@ const searchStore = useSearchStore()
         <option value="price_desc">Prix : plus haut</option>
         <option value="title_asc">Titre : A-Z</option>
         <option value="recent">Plus recent</option>
+      </select>
+
+      <select
+        :value="searchStore.availability"
+        class="h-10 rounded-full border border-white/15 bg-black px-3 text-[10px] uppercase tracking-[0.3em] text-white/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+        @change="searchStore.setAvailability(($event.target as HTMLSelectElement).value as 'active' | 'inactive' | 'all')"
+      >
+        <option value="active">Promos en cours</option>
+        <option value="all">Toutes</option>
+        <option value="inactive">Non valides</option>
       </select>
 
       <select

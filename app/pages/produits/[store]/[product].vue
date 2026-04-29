@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ArrowRight, ArrowUpRight } from 'lucide-vue-next'
 import { getRouteParam } from '#shared/utils/getRouteParam'
+import { getProductValidityLabel } from '#shared/utils/productAvailability'
 import { ONBOARDING_MAX_STEP } from '#shared/utils/onboarding'
 import { getProductRoutePath } from '#shared/utils/productRoute'
 import { toSlug } from '#shared/utils/toSlug'
@@ -439,6 +440,34 @@ const getCadPriceLabel = (price: number | null) => {
   return `${formattedPrice} $ CA`
 }
 
+const getProductValidityText = (product: SearchProduct | null | undefined) => {
+  if (!product) {
+    return null
+  }
+
+  return getProductValidityLabel(product.valid_from, product.valid_to)
+}
+
+const getDisplayProductPrice = (product: SearchProduct | null | undefined) => {
+  if (!product || !product.is_active) {
+    return null
+  }
+
+  return product.price_num
+}
+
+const getComparisonStatusLabel = (product: SearchProduct, rankIndex: number) => {
+  if (!product.is_active) {
+    return 'Terminee'
+  }
+
+  if (rankIndex === 0) {
+    return 'Meilleur prix'
+  }
+
+  return 'En cours'
+}
+
 const seoTitle = computed(() => {
   const product = productDetails.product
 
@@ -456,7 +485,11 @@ const seoDescription = computed(() => {
     return 'Consultez les details du produit et comparez les prix en epicerie au Quebec.'
   }
 
-  const priceLabel = getCadPriceLabel(product.price_num)
+  if (!product.is_active) {
+    return `Consultez ${product.title} chez ${product.store}, les dates de validite de cette promo et les options encore en cours dans les autres magasins.`
+  }
+
+  const priceLabel = getCadPriceLabel(getDisplayProductPrice(product))
   return `Consultez ${product.title} chez ${product.store}, prix actuel ${priceLabel}, et comparez les options dans les autres magasins.`
 })
 
@@ -478,9 +511,9 @@ const seoJsonLd = computed(() => {
     offers: {
       '@type': 'Offer',
       priceCurrency: 'CAD',
-      price: typeof product.price_num === 'number' ? product.price_num : undefined,
+      price: typeof getDisplayProductPrice(product) === 'number' ? getDisplayProductPrice(product) : undefined,
       url: canonicalUrl.value,
-      availability: product.on_sale === false ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock'
+      availability: product.is_active ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock'
     }
   }
 
@@ -695,6 +728,22 @@ useHead(() => {
         </section>
 
         <section
+          v-if="!productDetails.product.is_active"
+          class="rounded-2xl border border-white/20 bg-white/[0.03] p-5 sm:p-6"
+        >
+          <p class="text-[10px] uppercase tracking-[0.35em] text-white/55">Promotion terminee</p>
+          <h2 class="mt-2 font-display text-3xl font-semibold italic tracking-tight text-white sm:text-4xl">
+            Cette offre n'est plus valide pour le moment.
+          </h2>
+          <p class="mt-3 max-w-3xl text-sm leading-relaxed text-white/75 sm:text-base">
+            Le prix n'est plus affiche pour eviter de laisser croire que la promo est encore en cours.
+          </p>
+          <p v-if="getProductValidityText(productDetails.product)" class="mt-3 text-[10px] uppercase tracking-[0.3em] text-white/55">
+            {{ getProductValidityText(productDetails.product) }}
+          </p>
+        </section>
+
+        <section
           v-if="sortedComparisonProducts.length > 0"
           class="rounded-[30px] border border-white/10 bg-black/60 p-3 sm:p-5 lg:p-6"
         >
@@ -704,6 +753,9 @@ useHead(() => {
               <h2 class="mt-2 font-display text-2xl font-semibold italic tracking-tight text-white sm:text-3xl lg:text-4xl">
                 Classement du moins cher au plus cher
               </h2>
+              <p class="mt-2 text-sm text-white/65">
+                Les promotions en cours apparaissent toujours avant celles qui ne sont plus valides.
+              </p>
             </div>
 
             <span class="text-[10px] uppercase tracking-[0.35em] text-white/60">
@@ -716,7 +768,7 @@ useHead(() => {
             <p class="col-span-3">Magasin</p>
             <p class="col-span-2">Prix</p>
             <p class="col-span-2 text-center">Prix unite</p>
-            <p class="col-span-1 text-center">Status</p>
+            <p class="col-span-1 text-center">Etat</p>
             <p class="col-span-2 text-right">Action</p>
           </div>
 
@@ -752,7 +804,10 @@ useHead(() => {
                       <img
                         :src="getComparisonProductImageDisplay(row.product).value"
                         :alt="row.product.title"
-                        class="h-full w-full object-contain brightness-90 contrast-110"
+                        :class="[
+                          'h-full w-full object-contain brightness-90 contrast-110',
+                          row.product.is_active ? '' : 'grayscale opacity-65'
+                        ]"
                         loading="lazy"
                       >
                     </template>
@@ -796,26 +851,29 @@ useHead(() => {
                   <p class="mt-1 text-[11px] leading-tight text-white/65 sm:text-sm md:mt-2 md:text-base md:leading-snug">{{ row.product.title }}</p>
                 </div>
 
-                <p class="self-start text-right font-display text-2xl font-semibold italic tracking-tight text-white sm:text-3xl md:col-span-2 md:text-left md:text-4xl">
-                  {{ getCadPriceLabel(row.product.price_num) }}
+                <p :class="['self-start text-right font-display text-2xl font-semibold italic tracking-tight sm:text-3xl md:col-span-2 md:text-left md:text-4xl', row.product.is_active ? 'text-white' : 'text-white/65']">
+                  {{ row.product.is_active ? getCadPriceLabel(getDisplayProductPrice(row.product)) : 'Promo terminee' }}
                 </p>
 
-                <p class="col-span-2 text-[11px] text-white/70 sm:text-sm md:col-span-2 md:text-center md:text-base md:font-medium">
-                  {{ row.product.price_text || 'N/A' }}
-                </p>
+                <div class="col-span-2 md:col-span-2 md:text-center">
+                  <p :class="['text-[11px] sm:text-sm md:text-base md:font-medium', row.product.is_active ? 'text-white/70' : 'text-white/55']">
+                    {{ row.product.is_active ? (row.product.price_text || 'N/A') : 'Prix masque' }}
+                  </p>
+                  <p v-if="getProductValidityText(row.product)" class="mt-2 text-[10px] uppercase tracking-[0.28em] text-white/45">
+                    {{ getProductValidityText(row.product) }}
+                  </p>
+                </div>
 
                 <div class="col-start-3 row-start-2 flex justify-end md:col-start-auto md:row-start-auto md:col-span-1 md:justify-center">
                   <span
-                    v-if="row.rankIndex === 0"
-                    class="inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[9px] uppercase tracking-[0.26em] text-white md:text-[10px]"
+                    :class="[
+                      'inline-flex rounded-full px-3 py-1 text-[9px] uppercase tracking-[0.26em] md:text-[10px]',
+                      row.product.is_active
+                        ? 'border border-white/20 bg-white/10 text-white'
+                        : 'border border-white/15 text-white/70'
+                    ]"
                   >
-                    Meilleur
-                  </span>
-                  <span
-                    v-else
-                    class="inline-flex rounded-full border border-white/15 px-3 py-1 text-[9px] uppercase tracking-[0.26em] text-white/70 md:text-[10px]"
-                  >
-                    Alt
+                    {{ getComparisonStatusLabel(row.product, row.rankIndex) }}
                   </span>
                 </div>
 

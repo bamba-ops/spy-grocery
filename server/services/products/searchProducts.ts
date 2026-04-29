@@ -1,12 +1,13 @@
-import type { DbProduct, SearchProduct } from '#shared/types'
-import type { SearchSort } from '#shared/types/search'
+import type { SearchAvailability, SearchSort } from '#shared/types/search'
 import { searchProductsRows } from '../../repositories/productsRepository'
+import { toSearchProduct } from './toSearchProduct'
 
 interface SearchProductsParams {
   supabase: any
   searchQuery: string
   store: string
   sortBy: SearchSort
+  availability: SearchAvailability
   limit: number
   offset: number
 }
@@ -17,43 +18,116 @@ const toPagination = (offset: number, limit: number, total: number) => ({
   totalPages: Math.ceil(total / limit)
 })
 
-const toSearchProduct = (row: DbProduct): SearchProduct => ({
-  id: row.id,
-  external_id: row.external_id,
-  slug: row.slug,
-  title_slug: row.title_slug,
-  title: row.title || '',
-  description: row.description ?? null,
-  brand: row.brand,
-  store: row.store,
-  store_slug: row.store_slug,
-  store_id: row.store_id,
-  image_url: row.image_url,
-  url: row.url,
-  uom: row.uom,
-  price_num: row.price_num,
-  was_price_num: row.was_price_num,
-  price_text: row.price_text,
-  pre_price_text: row.pre_price_text,
-  on_sale: row.on_sale,
-  scraped_at: row.scraped_at || null
-})
+const getSearchRowsByAvailability = (
+  supabase: any,
+  params: Omit<SearchProductsParams, 'availability'>,
+  availability: Exclude<SearchAvailability, 'all'>
+) => {
+  return searchProductsRows(supabase, {
+    searchQuery: params.searchQuery,
+    store: params.store,
+    sortBy: params.sortBy,
+    availability,
+    limit: params.limit,
+    offset: params.offset
+  })
+}
 
 export const searchProducts = async ({
   supabase,
   searchQuery,
   store,
   sortBy,
+  availability,
   limit,
   offset
 }: SearchProductsParams) => {
-  const { rows, count } = await searchProductsRows(supabase, {
+  const baseParams = {
     searchQuery,
     store,
     sortBy,
     limit,
     offset
-  })
+  }
+
+  let rows
+  let count
+
+  if (availability === 'all') {
+    const [activeCountResult, inactiveCountResult] = await Promise.all([
+      getSearchRowsByAvailability(
+        supabase,
+        {
+          ...baseParams,
+          limit: 1,
+          offset: 0
+        },
+        'active'
+      ),
+      getSearchRowsByAvailability(
+        supabase,
+        {
+          ...baseParams,
+          limit: 1,
+          offset: 0
+        },
+        'inactive'
+      )
+    ])
+
+    const activeCount = activeCountResult.count
+    const inactiveCount = inactiveCountResult.count
+    count = activeCount + inactiveCount
+
+    if (count === 0) {
+      rows = []
+    } else if (offset < activeCount) {
+      const activeLimit = Math.min(limit, activeCount - offset)
+      const activeResult = await getSearchRowsByAvailability(
+        supabase,
+        {
+          ...baseParams,
+          limit: activeLimit,
+          offset
+        },
+        'active'
+      )
+
+      if (activeResult.rows.length >= limit) {
+        rows = activeResult.rows
+      } else {
+        const inactiveLimit = limit - activeResult.rows.length
+        const inactiveResult = inactiveLimit > 0
+          ? await getSearchRowsByAvailability(
+              supabase,
+              {
+                ...baseParams,
+                limit: inactiveLimit,
+                offset: 0
+              },
+              'inactive'
+            )
+          : { rows: [] }
+
+        rows = [...activeResult.rows, ...inactiveResult.rows]
+      }
+    } else {
+      const inactiveResult = await getSearchRowsByAvailability(
+        supabase,
+        {
+          ...baseParams,
+          offset: offset - activeCount
+        },
+        'inactive'
+      )
+
+      rows = inactiveResult.rows
+    }
+  } else {
+    const result = await getSearchRowsByAvailability(supabase, baseParams, availability)
+    rows = result.rows
+    count = result.count
+  }
 
   const items = rows.map(toSearchProduct)
 

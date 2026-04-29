@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { Plus } from 'lucide-vue-next'
+import type { SearchProduct } from '#shared/types'
+import { getProductValidityLabel } from '#shared/utils/productAvailability'
 import { getProductRoutePath } from '#shared/utils/productRoute'
 import { useSearchStore } from '~/stores/search'
 import { useListsStore } from '~/stores/lists'
@@ -45,6 +47,10 @@ const setNotifySpecialRequest = () => {
     nextPath: getNotifySpecialNextPath(),
     ctaLabel: 'Connexion pour activer l\'alerte'
   })
+}
+
+const getProductValidityText = (product: SearchProduct) => {
+  return getProductValidityLabel(product.valid_from, product.valid_to)
 }
 </script>
 
@@ -114,11 +120,22 @@ const setNotifySpecialRequest = () => {
         <div
           v-for="product in searchStore.getProducts"
           :key="product.id"
-          class="flex h-full flex-col rounded-2xl border border-white/10 bg-white/5"
+          :class="[
+            'flex h-full flex-col rounded-2xl border',
+            product.is_active
+              ? 'border-white/10 bg-white/5'
+              : 'border-white/20 bg-white/[0.03]'
+          ]"
         >
           <div class="relative">
             <div v-if="product.on_sale" class="absolute left-4 top-4 z-10 rounded-full border border-white/20 bg-black/80 px-3 py-1 text-[10px] uppercase tracking-[0.3em] text-white/80">
               En promo
+            </div>
+            <div
+              v-else-if="!product.is_active"
+              class="absolute left-4 top-4 z-10 rounded-full border border-white/20 bg-black/85 px-3 py-1 text-[10px] uppercase tracking-[0.3em] text-white/70"
+            >
+              Terminee
             </div>
             <NuxtLink
               :to="getProductRoutePath(product)"
@@ -128,27 +145,33 @@ const setNotifySpecialRequest = () => {
                 <img
                   :src="searchStore.getProductImageDisplay(product.image_url, product.title).value"
                   :alt="product.title"
-                  class="h-full w-full object-contain brightness-90 contrast-110"
+                  :class="[
+                    'h-full w-full object-contain brightness-90 contrast-110',
+                    product.is_active ? '' : 'grayscale opacity-65'
+                  ]"
                   loading="lazy"
                 />
               </template>
               <template v-else>
-                <div class="flex h-full w-full items-center justify-center text-5xl text-white/60">
+                <div :class="['flex h-full w-full items-center justify-center text-5xl', product.is_active ? 'text-white/60' : 'text-white/35']">
                   {{ searchStore.getProductImageDisplay(product.image_url, product.title).value }}
                 </div>
               </template>
-              <div class="pointer-events-none absolute inset-0 z-0 bg-black/40"></div>
+              <div :class="['pointer-events-none absolute inset-0 z-0', product.is_active ? 'bg-black/40' : 'bg-black/60']"></div>
             </NuxtLink>
           </div>
           <div class="flex flex-1 flex-col p-3 sm:p-5">
-            <p class="text-sm font-semibold uppercase tracking-[0.18em] text-white/85 sm:text-base sm:tracking-[0.2em]">{{ product.store }}</p>
+            <p :class="['text-sm font-semibold uppercase tracking-[0.18em] sm:text-base sm:tracking-[0.2em]', product.is_active ? 'text-white/85' : 'text-white/65']">{{ product.store }}</p>
             <NuxtLink
               :to="getProductRoutePath(product)"
               class="mt-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:mt-2"
             >
               <h3
                 :title="product.title"
-                class="h-[3.8rem] overflow-hidden font-display text-lg font-semibold italic leading-tight [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2] transition hover:text-white sm:h-[5.8rem] sm:text-2xl sm:[-webkit-line-clamp:3]"
+                :class="[
+                  'h-[3.8rem] overflow-hidden font-display text-lg font-semibold italic leading-tight [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2] transition sm:h-[5.8rem] sm:text-2xl sm:[-webkit-line-clamp:3]',
+                  product.is_active ? 'hover:text-white' : 'text-white/75 hover:text-white/85'
+                ]"
               >
                 {{ product.title }}
               </h3>
@@ -160,9 +183,17 @@ const setNotifySpecialRequest = () => {
             </div>
             <div class="mt-auto flex items-end justify-between pt-4 sm:pt-6">
               <div class="flex flex-col items-start">
-                <span class="font-display text-xl font-semibold italic sm:text-3xl">
-                  ${{ searchStore.getFormattedPrice(product.price_num) }}
+                <span
+                  :class="[
+                    'font-display text-xl font-semibold italic sm:text-3xl',
+                    product.is_active ? 'text-white' : 'text-white/65'
+                  ]"
+                >
+                  {{ product.is_active ? `$${searchStore.getFormattedPrice(product.price_num)}` : 'Promo terminee' }}
                 </span>
+                <p v-if="getProductValidityText(product)" class="mt-2 text-[10px] uppercase tracking-[0.28em] text-white/50">
+                  {{ getProductValidityText(product) }}
+                </p>
                 <div class="mt-2 min-h-7">
                   <a
                     v-if="getSafeProductUrl(product.url)"
