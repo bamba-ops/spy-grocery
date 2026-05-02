@@ -73,7 +73,7 @@ const pillBase = 'inline-flex h-10 items-center justify-center rounded-full bord
           :value="modelValue.query"
           type="text"
           placeholder="Rechercher des listes enregistrees..."
-          class="h-10 w-full rounded-full border border-white/15 bg-white/5 pl-11 pr-4 text-sm text-white placeholder:text-white/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+          class="h-11 w-full rounded-full border border-white/15 bg-white/5 pl-11 pr-4 text-base text-white placeholder:text-white/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black md:h-10 md:text-sm"
           @input="setQuery(($event.target as HTMLInputElement).value)"
         />
       </div>

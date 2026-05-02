@@ -77,7 +77,7 @@ const onSave = () => {
               v-model="name"
               type="text"
               :placeholder="props.placeholder ?? 'ex. Epicerie du week-end'"
-              class="mt-2 w-full rounded-full border border-white/15 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+              class="mt-2 w-full rounded-full border border-white/15 bg-white/5 px-4 py-3 text-base text-white placeholder:text-white/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
               @keydown.enter.prevent="onSave"
             />
             <p v-if="displayError" class="mt-2 text-xs text-white/70">{{ displayError }}</p>

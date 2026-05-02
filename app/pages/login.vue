@@ -243,7 +243,7 @@ useHead({
                 type="email"
                 autocomplete="email"
                 placeholder="name@domain.com"
-                class="h-full w-full bg-transparent text-sm text-white placeholder:text-white/35 focus:outline-none sm:text-base"
+                class="h-full w-full bg-transparent text-base text-white placeholder:text-white/35 focus:outline-none"
               >
             </div>
           </label>

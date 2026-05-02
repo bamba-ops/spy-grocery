@@ -423,7 +423,7 @@ watch(
               ref="inputRef"
               v-model="input"
               type="text"
-              class="h-10 flex-1 bg-transparent px-2 text-sm text-white placeholder:text-white/35 focus:outline-none sm:text-base"
+              class="h-10 flex-1 bg-transparent px-2 text-base text-white placeholder:text-white/35 focus:outline-none"
               placeholder="Demandez a Spy AI..."
               :disabled="chatStore.isBusy || chatStore.isHydratingSession"
             >
