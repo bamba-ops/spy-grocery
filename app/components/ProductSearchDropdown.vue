@@ -235,11 +235,11 @@ onBeforeUnmount(() => {
             <button
               v-if="enableQuickAdd"
               type="button"
-              class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/20 text-white/80 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+              class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/[0.04] text-white/72 shadow-[0_0_0_1px_rgba(255,255,255,0.04)] transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
               :aria-label="`Ajouter ${product.title} a la liste`"
               @click="setQuickAddProduct(product)"
             >
-              <Plus class="h-5 w-5" />
+              <Plus class="h-4 w-4" />
             </button>
           </div>
         </li>

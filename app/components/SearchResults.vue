@@ -208,13 +208,13 @@ const getProductValidityText = (product: SearchProduct) => {
               </div>
               <button
                 :class="[
-                  'inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 text-white/80 transition duration-200 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black',
-                  lists.lastAddedProductId === product.id ? 'scale-110 ring-2 ring-white/40' : 'scale-100'
+                  'inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-white/[0.04] text-white/72 shadow-[0_0_0_1px_rgba(255,255,255,0.04)] transition duration-200 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black',
+                  lists.lastAddedProductId === product.id ? 'scale-105 ring-2 ring-white/30' : 'scale-100'
                 ]"
                 @click="lists.setProductInCurrentList(product)"
                 aria-label="Ajouter a la liste"
               >
-                <Plus class="h-7 w-7" />
+                <Plus class="h-5 w-5" />
               </button>
             </div>
           </div>

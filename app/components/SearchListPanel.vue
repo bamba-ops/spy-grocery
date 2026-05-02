@@ -50,17 +50,17 @@ const lists = useListsStore()
               <div class="mt-3 flex items-center gap-3">
                 <div class="flex items-center rounded-full border border-white/20">
                   <button
-                    class="px-2 py-1 text-white/70 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                    class="inline-flex h-8 w-8 items-center justify-center rounded-full text-white/70 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
                     @click="lists.setProductQuantityInCurrentList(item.product.id, item.quantity - 1)"
                   >
                     <Minus class="h-3 w-3" />
                   </button>
                   <span class="px-2 text-xs uppercase tracking-[0.3em] text-white/80">{{ item.quantity }}</span>
                   <button
-                    class="px-2 py-1 text-white/70 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                    class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/[0.04] text-white/72 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
                     @click="lists.setProductInCurrentList(item.product)"
                   >
-                    <Plus class="h-3 w-3" />
+                    <Plus class="h-3.5 w-3.5" />
                   </button>
                 </div>
                 <button

@@ -97,6 +97,10 @@ const getShowGuestProductCta = computed(() => {
   return authStore.isReady && !authStore.user
 })
 
+const getCurrentProductWasJustAdded = computed(() => {
+  return Boolean(productDetails.product && lists.lastAddedProductId === productDetails.product.id)
+})
+
 const setAddCurrentProductToList = async () => {
   if (!productDetails.product) {
     return
@@ -131,6 +135,15 @@ const setAddComparisonProductToList = (product: SearchProduct, isCurrent: boolea
   }
 
   lists.setProductInCurrentList(product)
+}
+
+type ProductComparisonDisplayRow = {
+  type: 'product'
+  key: string
+  product: SearchProduct
+  rankIndex: number
+  rankTotal: number
+  isCurrent: boolean
 }
 
 const sortedComparisonProducts = computed(() => {
@@ -179,132 +192,35 @@ const getCurrentProductGlowClasses = (rankIndex: number, rankTotal: number) => {
   const tier = getCurrentProductRankTier(rankIndex, rankTotal)
 
   if (tier === 'top') {
-    return 'border-emerald-300/60 bg-emerald-500/10 shadow-[0_0_0_1px_rgba(110,231,183,0.35),0_0_30px_rgba(16,185,129,0.35)]'
+    return 'border-white/35 bg-white/[0.08] shadow-[0_0_0_1px_rgba(255,255,255,0.18),0_0_28px_rgba(255,255,255,0.08)]'
   }
 
   if (tier === 'bottom') {
-    return 'border-rose-300/60 bg-rose-500/10 shadow-[0_0_0_1px_rgba(251,113,133,0.35),0_0_30px_rgba(244,63,94,0.35)]'
+    return 'border-white/15 bg-white/[0.03] shadow-[0_0_0_1px_rgba(255,255,255,0.05)]'
   }
 
-  return 'border-amber-300/60 bg-amber-500/10 shadow-[0_0_0_1px_rgba(252,211,77,0.35),0_0_30px_rgba(245,158,11,0.35)]'
+  return 'border-white/24 bg-white/[0.05] shadow-[0_0_0_1px_rgba(255,255,255,0.1)]'
 }
 
 const getCurrentProductAccentClasses = (rankIndex: number, rankTotal: number) => {
   const tier = getCurrentProductRankTier(rankIndex, rankTotal)
 
   if (tier === 'top') {
-    return 'bg-emerald-300 shadow-[0_0_12px_rgba(52,211,153,0.8)]'
+    return 'bg-white shadow-[0_0_12px_rgba(255,255,255,0.7)]'
   }
 
   if (tier === 'bottom') {
-    return 'bg-rose-300 shadow-[0_0_12px_rgba(251,113,133,0.8)]'
+    return 'bg-white/40 shadow-[0_0_10px_rgba(255,255,255,0.2)]'
   }
 
-  return 'bg-amber-300 shadow-[0_0_12px_rgba(251,191,36,0.8)]'
+  return 'bg-white/70 shadow-[0_0_10px_rgba(255,255,255,0.35)]'
 }
 
-const comparisonRows = computed(() => {
-  return productDetails.getComparisonRows(getShowGuestProductCta.value)
+const comparisonRows = computed<ProductComparisonDisplayRow[]>(() => {
+  return productDetails.getComparisonRows(false).filter(
+    (row): row is ProductComparisonDisplayRow => row.type === 'product'
+  )
 })
-
-const lastAutoScrolledProductId = ref<string | null>(null)
-const pendingScrollTimerId = ref<ReturnType<typeof setTimeout> | null>(null)
-
-const getCurrentProductRowElement = () => {
-  return document.querySelector<HTMLElement>('[data-current-product-row="true"]')
-}
-
-const getGuestCtaRowElement = () => {
-  return document.querySelector<HTMLElement>('[data-guest-cta-row="true"]')
-}
-
-const getWaitForNextAnimationFrame = () => {
-  return new Promise<void>((resolve) => {
-    window.requestAnimationFrame(() => {
-      resolve()
-    })
-  })
-}
-
-const setScrollToCurrentProductRow = async () => {
-  if (!process.client || productDetails.loading || !productDetails.product) {
-    return false
-  }
-
-  const currentProductId = productDetails.product.id
-
-  if (lastAutoScrolledProductId.value === currentProductId) {
-    return true
-  }
-
-  const shouldReduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  const maxAttempts = 12
-  const ctaBottomGutterPx = 24
-  const minCurrentRowTopOffsetPx = 16
-
-  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-    await nextTick()
-    await getWaitForNextAnimationFrame()
-
-    const currentProductRowElement = getCurrentProductRowElement()
-
-    if (!currentProductRowElement) {
-      continue
-    }
-
-    const rowRect = currentProductRowElement.getBoundingClientRect()
-    const currentScrollY = window.scrollY
-    const desiredCurrentRowTopOffset = Math.min(
-      Math.max(Math.round(window.innerHeight * 0.18), 96),
-      180
-    )
-    let targetTop = currentScrollY + rowRect.top - desiredCurrentRowTopOffset
-
-    const guestCtaRowElement = getGuestCtaRowElement()
-
-    if (guestCtaRowElement) {
-      const ctaRect = guestCtaRowElement.getBoundingClientRect()
-      const projectedCtaBottom = ctaRect.bottom - (targetTop - currentScrollY)
-      const maxVisibleCtaBottom = window.innerHeight - ctaBottomGutterPx
-
-      if (projectedCtaBottom > maxVisibleCtaBottom) {
-        targetTop += projectedCtaBottom - maxVisibleCtaBottom
-      }
-    }
-
-    const projectedCurrentRowTop = rowRect.top - (targetTop - currentScrollY)
-
-    if (projectedCurrentRowTop < minCurrentRowTopOffsetPx) {
-      targetTop = currentScrollY + rowRect.top - minCurrentRowTopOffsetPx
-    }
-
-    targetTop = Math.max(targetTop, 0)
-
-    window.scrollTo({
-      top: targetTop,
-      behavior: shouldReduceMotion ? 'auto' : 'smooth'
-    })
-
-    lastAutoScrolledProductId.value = currentProductId
-    return true
-  }
-
-  return false
-}
-
-const setScheduleScrollToCurrentProductRow = () => {
-  if (!process.client) {
-    return
-  }
-
-  if (pendingScrollTimerId.value) {
-    clearTimeout(pendingScrollTimerId.value)
-  }
-
-  pendingScrollTimerId.value = setTimeout(() => {
-    void setScrollToCurrentProductRow()
-  }, 120)
-}
 
 const searchMoreProductsPath = computed(() => {
   const productTitle = productDetails.product?.title?.trim() || ''
@@ -322,6 +238,36 @@ const searchMoreProductsPath = computed(() => {
 
 const marketAveragePrice = computed(() => {
   return productDetails.getMarketAveragePrice
+})
+
+const currentProductRankLabel = computed(() => {
+  const currentIndex = productDetails.getCurrentProductComparisonIndex
+  const totalCount = sortedComparisonProducts.value.length
+
+  if (currentIndex < 0 || totalCount <= 0) {
+    return null
+  }
+
+  return `Rang ${currentIndex + 1} sur ${totalCount}`
+})
+
+const productHeroMetaChips = computed(() => {
+  const product = productDetails.product
+  if (!product) {
+    return []
+  }
+
+  const chips = [] as string[]
+
+  if (product.brand) {
+    chips.push(product.brand)
+  }
+
+  if (product.uom) {
+    chips.push(product.uom)
+  }
+
+  return chips
 })
 
 const loadProductPage = async (
@@ -390,8 +336,6 @@ if (!productDetails.product) {
 }
 
 onMounted(() => {
-  setScheduleScrollToCurrentProductRow()
-
   if (!getIsOnboardingContext.value || !productDetails.product) {
     return
   }
@@ -402,15 +346,6 @@ onMounted(() => {
     storeSlug: productDetails.product.store_slug || storeSlug.value,
     currentStep: onboardingStore.currentStep
   })
-})
-
-onBeforeUnmount(() => {
-  if (!pendingScrollTimerId.value) {
-    return
-  }
-
-  clearTimeout(pendingScrollTimerId.value)
-  pendingScrollTimerId.value = null
 })
 
 const canonicalPath = computed(() => {
@@ -555,14 +490,6 @@ watch(
     void loadProductPage(nextStoreSlug, nextProductSlug)
   },
   { immediate: false }
-)
-
-watch(
-  () => [productDetails.product?.id, productDetails.loading, comparisonRows.value.length] as const,
-  () => {
-    setScheduleScrollToCurrentProductRow()
-  },
-  { immediate: true, flush: 'post' }
 )
 
 useHead(() => {
@@ -727,25 +654,147 @@ useHead(() => {
           </div>
         </section>
 
-        <section
-          v-if="!productDetails.product.is_active"
-          class="rounded-2xl border border-white/20 bg-white/[0.03] p-5 sm:p-6"
-        >
-          <p class="text-[10px] uppercase tracking-[0.35em] text-white/55">Promotion terminee</p>
-          <h2 class="mt-2 font-display text-3xl font-semibold italic tracking-tight text-white sm:text-4xl">
-            Cette offre n'est plus valide pour le moment.
-          </h2>
-          <p class="mt-3 max-w-3xl text-sm leading-relaxed text-white/75 sm:text-base">
-            Le prix n'est plus affiche pour eviter de laisser croire que la promo est encore en cours.
-          </p>
-          <p v-if="getProductValidityText(productDetails.product)" class="mt-3 text-[10px] uppercase tracking-[0.3em] text-white/55">
-            {{ getProductValidityText(productDetails.product) }}
-          </p>
+        <section class="overflow-hidden rounded-[30px] border border-white/10 bg-black/60">
+          <div class="grid gap-6 p-4 sm:p-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-8 lg:p-8">
+            <div class="order-2 lg:order-1">
+              <div class="flex flex-wrap items-center gap-2">
+                <NuxtLink
+                  v-if="storePath"
+                  :to="storePath"
+                  class="inline-flex rounded-full border border-white/15 px-3 py-1 text-[10px] uppercase tracking-[0.32em] text-white/75 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                >
+                  {{ productDetails.product.store }}
+                </NuxtLink>
+                <p v-else class="inline-flex rounded-full border border-white/15 px-3 py-1 text-[10px] uppercase tracking-[0.32em] text-white/75">
+                  {{ productDetails.product.store }}
+                </p>
+
+                <span class="inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[10px] uppercase tracking-[0.32em] text-white/85">
+                  {{ productDetails.product.is_active ? 'Promo en cours' : 'Promotion terminee' }}
+                </span>
+
+                <span
+                  v-if="currentProductRankLabel"
+                  class="inline-flex rounded-full border border-white/15 px-3 py-1 text-[10px] uppercase tracking-[0.32em] text-white/65"
+                >
+                  {{ currentProductRankLabel }}
+                </span>
+              </div>
+
+              <h1 class="mt-4 font-display text-4xl font-semibold italic tracking-tight text-white sm:text-5xl lg:max-w-4xl">
+                {{ productDetails.product.title }}
+              </h1>
+
+              <p
+                v-if="productDetails.product.description"
+                class="mt-4 max-w-3xl text-sm leading-relaxed text-white/75 sm:text-base"
+              >
+                {{ productDetails.product.description }}
+              </p>
+
+              <div v-if="productHeroMetaChips.length > 0" class="mt-4 flex flex-wrap gap-2 text-[10px] uppercase tracking-[0.28em] text-white/60">
+                <span
+                  v-for="chip in productHeroMetaChips"
+                  :key="`product-hero-chip-${chip}`"
+                  class="rounded-full border border-white/15 px-3 py-1"
+                >
+                  {{ chip }}
+                </span>
+              </div>
+
+              <div class="mt-8 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+                <div class="min-w-0">
+                  <p class="text-[10px] uppercase tracking-[0.35em] text-white/55">
+                    {{ productDetails.product.is_active ? 'Prix observe' : 'Disponibilite' }}
+                  </p>
+                  <p class="mt-2 font-display text-4xl font-semibold italic tracking-tight text-white sm:text-5xl">
+                    {{ productDetails.product.is_active ? getCadPriceLabel(getDisplayProductPrice(productDetails.product)) : 'Promotion terminee' }}
+                  </p>
+                  <p
+                    v-if="getProductValidityText(productDetails.product)"
+                    class="mt-3 text-[10px] uppercase tracking-[0.3em] text-white/50"
+                  >
+                    {{ getProductValidityText(productDetails.product) }}
+                  </p>
+                  <p
+                    v-if="productDetails.product.is_active && productDetails.product.price_text"
+                    class="mt-3 text-sm text-white/70 sm:text-base"
+                  >
+                    {{ productDetails.product.price_text }}
+                  </p>
+                  <p
+                    v-else-if="!productDetails.product.is_active"
+                    class="mt-3 max-w-xl text-sm leading-relaxed text-white/65 sm:text-base"
+                  >
+                    Le prix n'est plus affiche pour eviter de laisser croire que la promo est encore en cours.
+                  </p>
+                </div>
+
+                <div class="flex flex-col gap-2 sm:flex-row lg:flex-col lg:items-end">
+                  <button
+                    type="button"
+                    :class="[
+                      'inline-flex h-11 w-full items-center justify-center rounded-full border border-white/20 bg-white px-5 text-[10px] uppercase tracking-[0.32em] text-black transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:w-auto',
+                      getCurrentProductWasJustAdded
+                        ? 'scale-[1.02] ring-2 ring-white/35 shadow-[0_0_24px_rgba(255,255,255,0.18)]'
+                        : 'hover:bg-white/90'
+                    ]"
+                    @click="setAddCurrentProductToList"
+                  >
+                    {{ getCurrentProductWasJustAdded ? 'Ajoute a la liste' : 'Ajouter a ma liste' }}
+                  </button>
+
+                  <a
+                    v-if="getSafeProductUrl(productDetails.product.url)"
+                    :href="getSafeProductUrl(productDetails.product.url)!"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="inline-flex h-11 w-full items-center justify-center rounded-full border border-white/20 px-5 text-[10px] uppercase tracking-[0.32em] text-white/85 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:w-auto"
+                  >
+                    Voir en magasin
+                  </a>
+
+                  <button
+                    v-if="getShowGuestProductCta"
+                    type="button"
+                    class="inline-flex h-11 w-full items-center justify-center rounded-full border border-white/20 px-5 text-[10px] uppercase tracking-[0.32em] text-white/85 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:w-auto"
+                    @click="setNotifySpecialFromProductCta"
+                  >
+                    Notifie-moi
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="order-1 lg:order-2">
+              <div :class="['relative mx-auto flex aspect-square max-w-[280px] items-center justify-center overflow-hidden rounded-[28px] border bg-black p-4 sm:max-w-[340px] lg:max-w-none', productDetails.product.is_active ? 'border-white/10' : 'border-white/20']">
+                <template v-if="productDetails.getComparisonProductImageDisplay(productDetails.product).type === 'url'">
+                  <img
+                    :src="productDetails.getComparisonProductImageDisplay(productDetails.product).value"
+                    :alt="productDetails.product.title"
+                    :class="[
+                      'h-full w-full object-contain brightness-95 contrast-110',
+                      productDetails.product.is_active ? '' : 'grayscale opacity-65'
+                    ]"
+                    loading="lazy"
+                  >
+                </template>
+
+                <template v-else>
+                  <span :class="['text-7xl sm:text-8xl', productDetails.product.is_active ? 'text-white/70' : 'text-white/40']">
+                    {{ productDetails.getComparisonProductImageDisplay(productDetails.product).value }}
+                  </span>
+                </template>
+
+                <div class="pointer-events-none absolute inset-0 bg-black/30"></div>
+              </div>
+            </div>
+          </div>
         </section>
 
         <section
           v-if="sortedComparisonProducts.length > 0"
-          class="rounded-[30px] border border-white/10 bg-black/60 p-3 sm:p-5 lg:p-6"
+          class="rounded-[30px] border border-white/10 bg-black/60 p-4 sm:p-5 lg:p-6"
         >
           <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
@@ -763,13 +812,11 @@ useHead(() => {
             </span>
           </div>
 
-          <div class="mt-6 hidden grid-cols-12 gap-4 px-4 text-[10px] uppercase tracking-[0.28em] text-white/55 md:grid">
-            <p class="col-span-2">Produit</p>
-            <p class="col-span-3">Magasin</p>
-            <p class="col-span-2">Prix</p>
-            <p class="col-span-2 text-center">Prix unite</p>
-            <p class="col-span-1 text-center">Etat</p>
-            <p class="col-span-2 text-right">Action</p>
+          <div class="mt-6 hidden grid-cols-[112px_minmax(0,1.45fr)_minmax(0,0.95fr)_auto] gap-6 px-2 text-[10px] uppercase tracking-[0.28em] text-white/55 lg:grid">
+            <p>Visuel</p>
+            <p>Magasin et produit</p>
+            <p>Prix et validite</p>
+            <p class="text-right">Action</p>
           </div>
 
           <TransitionGroup
@@ -782,89 +829,117 @@ useHead(() => {
             <article
               v-for="row in comparisonRows"
               :key="row.key"
-              :data-current-product-row="row.type === 'product' && row.isCurrent ? 'true' : undefined"
-              :data-guest-cta-row="row.type === 'cta' ? 'true' : undefined"
               :class="[
-                'grid grid-cols-[auto_minmax(0,1fr)_auto] gap-x-3 gap-y-2 rounded-xl border p-3 transition sm:rounded-2xl md:grid-cols-12 md:items-center md:gap-4 md:px-6 md:py-6 lg:px-7',
-                row.type === 'product'
-                  ? (row.isCurrent
-                      ? getCurrentProductGlowClasses(row.rankIndex, row.rankTotal)
-                      : 'border-white/10 bg-white/5 hover:bg-white/[0.07]')
-                  : 'border-white/20 bg-black/70'
+                'rounded-2xl border p-4 transition sm:p-5 lg:grid lg:grid-cols-[112px_minmax(0,1.45fr)_minmax(0,0.95fr)_auto] lg:items-center lg:gap-6 lg:px-6 lg:py-6',
+                row.isCurrent
+                  ? getCurrentProductGlowClasses(row.rankIndex, row.rankTotal)
+                  : (row.product.is_active
+                      ? 'border-white/10 bg-white/5 hover:bg-white/[0.07]'
+                      : 'border-white/15 bg-white/[0.03]')
               ]"
             >
-              <template v-if="row.type === 'product'">
-                <div class="row-span-2 md:col-span-2 md:row-span-1">
+              <NuxtLink
+                :to="getProductRoutePath(row.product)"
+                class="relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-xl border border-white/15 bg-black transition hover:border-white/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:h-24 sm:w-24 lg:h-28 lg:w-28"
+                :aria-label="`Ouvrir ${row.product.title}`"
+              >
+                <template v-if="getComparisonProductImageDisplay(row.product).type === 'url'">
+                  <img
+                    :src="getComparisonProductImageDisplay(row.product).value"
+                    :alt="row.product.title"
+                    :class="[
+                      'h-full w-full object-contain brightness-90 contrast-110',
+                      row.product.is_active ? '' : 'grayscale opacity-65'
+                    ]"
+                    loading="lazy"
+                  >
+                </template>
+
+                <template v-else>
+                  <span :class="['text-3xl sm:text-4xl', row.product.is_active ? 'text-white/70' : 'text-white/40']">
+                    {{ getComparisonProductImageDisplay(row.product).value }}
+                  </span>
+                </template>
+
+                <span
+                  v-if="row.isCurrent"
+                  :class="[
+                    'absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full',
+                    getCurrentProductAccentClasses(row.rankIndex, row.rankTotal)
+                  ]"
+                />
+              </NuxtLink>
+
+              <div class="mt-4 min-w-0 lg:mt-0">
+                <div class="flex flex-wrap items-center gap-2">
+                  <NuxtLink
+                    v-if="row.product.store_slug"
+                    :to="`/magasins/${encodeURIComponent(row.product.store_slug)}`"
+                    class="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/80 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:text-xs lg:text-sm"
+                  >
+                    {{ row.product.store }}
+                  </NuxtLink>
+                  <p v-else class="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/80 sm:text-xs lg:text-sm">
+                    {{ row.product.store }}
+                  </p>
+
+                  <span
+                    v-if="row.isCurrent"
+                    class="inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[9px] uppercase tracking-[0.26em] text-white"
+                  >
+                    Produit consulte
+                  </span>
+
+                  <span
+                    v-else-if="row.rankIndex === 0 && row.product.is_active"
+                    class="inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[9px] uppercase tracking-[0.26em] text-white"
+                  >
+                    Meilleur prix
+                  </span>
+                </div>
+
+                <div class="mt-3 flex items-start justify-between gap-3">
                   <NuxtLink
                     :to="getProductRoutePath(row.product)"
-                    class="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-xl border border-white/15 bg-black transition hover:border-white/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:h-16 sm:w-16 md:h-24 md:w-24 lg:h-28 lg:w-28"
+                    class="block min-w-0 flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                  >
+                    <h3
+                      :title="row.product.title"
+                      class="overflow-hidden font-display text-lg font-semibold italic leading-tight text-white transition hover:text-white/90 [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:4] sm:text-xl lg:max-w-[22ch] lg:text-[1.65rem] lg:[-webkit-line-clamp:5]"
+                    >
+                      {{ row.product.title }}
+                    </h3>
+                  </NuxtLink>
+
+                  <NuxtLink
+                    :to="getProductRoutePath(row.product)"
+                    class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/20 text-white/70 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
                     :aria-label="`Ouvrir ${row.product.title}`"
                   >
-                    <template v-if="getComparisonProductImageDisplay(row.product).type === 'url'">
-                      <img
-                        :src="getComparisonProductImageDisplay(row.product).value"
-                        :alt="row.product.title"
-                        :class="[
-                          'h-full w-full object-contain brightness-90 contrast-110',
-                          row.product.is_active ? '' : 'grayscale opacity-65'
-                        ]"
-                        loading="lazy"
-                      >
-                    </template>
-
-                    <template v-else>
-                      <span class="text-2xl text-white/70">{{ getComparisonProductImageDisplay(row.product).value }}</span>
-                    </template>
-
-                    <span
-                      v-if="row.isCurrent"
-                      :class="[
-                        'absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full',
-                        getCurrentProductAccentClasses(row.rankIndex, row.rankTotal)
-                      ]"
-                    />
+                    <ArrowUpRight class="h-4 w-4" />
                   </NuxtLink>
                 </div>
 
-                <div class="min-w-0 md:col-span-3">
-                  <div class="flex items-center gap-3">
-                    <NuxtLink
-                      v-if="row.product.store_slug"
-                      :to="`/magasins/${encodeURIComponent(row.product.store_slug)}`"
-                      class="text-xs font-semibold uppercase tracking-[0.18em] text-white/85 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:text-sm md:text-lg"
-                    >
-                      {{ row.product.store }}
-                    </NuxtLink>
-                    <p v-else class="text-xs font-semibold uppercase tracking-[0.18em] text-white/85 sm:text-sm md:text-lg">
-                      {{ row.product.store }}
-                    </p>
-
-                    <NuxtLink
-                      :to="getProductRoutePath(row.product)"
-                      class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/20 text-white/70 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black md:h-9 md:w-9"
-                      :aria-label="`Ouvrir ${row.product.title}`"
-                    >
-                      <ArrowUpRight class="h-4 w-4" />
-                    </NuxtLink>
-                  </div>
-
-                  <p class="mt-1 text-[11px] leading-tight text-white/65 sm:text-sm md:mt-2 md:text-base md:leading-snug">{{ row.product.title }}</p>
+                <div class="mt-3 flex flex-wrap gap-2 text-[10px] uppercase tracking-[0.28em] text-white/55">
+                  <span v-if="row.product.uom" class="rounded-full border border-white/15 px-3 py-1">{{ row.product.uom }}</span>
+                  <span v-if="getProductValidityText(row.product)" class="rounded-full border border-white/15 px-3 py-1">{{ getProductValidityText(row.product) }}</span>
                 </div>
+              </div>
 
-                <p :class="['self-start text-right font-display text-2xl font-semibold italic tracking-tight sm:text-3xl md:col-span-2 md:text-left md:text-4xl', row.product.is_active ? 'text-white' : 'text-white/65']">
-                  {{ row.product.is_active ? getCadPriceLabel(getDisplayProductPrice(row.product)) : 'Promo terminee' }}
-                </p>
-
-                <div class="col-span-2 md:col-span-2 md:text-center">
-                  <p :class="['text-[11px] sm:text-sm md:text-base md:font-medium', row.product.is_active ? 'text-white/70' : 'text-white/55']">
-                    {{ row.product.is_active ? (row.product.price_text || 'N/A') : 'Prix masque' }}
+              <div class="mt-4 flex flex-col gap-3 border-t border-white/10 pt-4 lg:mt-0 lg:border-t-0 lg:pt-0">
+                <div>
+                  <p class="text-[10px] uppercase tracking-[0.32em] text-white/55">
+                    {{ row.product.is_active ? 'Prix observe' : 'Disponibilite' }}
                   </p>
-                  <p v-if="getProductValidityText(row.product)" class="mt-2 text-[10px] uppercase tracking-[0.28em] text-white/45">
-                    {{ getProductValidityText(row.product) }}
+                  <p :class="['mt-2 font-display text-3xl font-semibold italic tracking-tight sm:text-4xl', row.product.is_active ? 'text-white' : 'text-white/65']">
+                    {{ row.product.is_active ? getCadPriceLabel(getDisplayProductPrice(row.product)) : 'Promotion terminee' }}
+                  </p>
+                  <p :class="['mt-2 text-sm leading-relaxed', row.product.is_active ? 'text-white/70' : 'text-white/55']">
+                    {{ row.product.is_active ? (row.product.price_text || 'Prix observe en magasin') : 'Prix masque pour eviter un signal trompeur.' }}
                   </p>
                 </div>
 
-                <div class="col-start-3 row-start-2 flex justify-end md:col-start-auto md:row-start-auto md:col-span-1 md:justify-center">
+                <div>
                   <span
                     :class="[
                       'inline-flex rounded-full px-3 py-1 text-[9px] uppercase tracking-[0.26em] md:text-[10px]',
@@ -876,54 +951,27 @@ useHead(() => {
                     {{ getComparisonStatusLabel(row.product, row.rankIndex) }}
                   </span>
                 </div>
+              </div>
 
-                <div class="col-span-3 mt-1 flex flex-wrap gap-2 md:col-span-2 md:mt-0 md:justify-end">
-                  <a
-                    v-if="getSafeProductUrl(row.product.url)"
-                    :href="getSafeProductUrl(row.product.url)!"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="inline-flex h-9 items-center justify-center rounded-full border border-white/20 px-3 text-[9px] uppercase tracking-[0.3em] text-white/85 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:h-10 sm:px-4 sm:text-[10px] md:h-11 md:px-5 md:text-[11px]"
-                  >
-                    Magasin
-                  </a>
+              <div class="mt-4 flex flex-col gap-2 sm:flex-row lg:mt-0 lg:flex-col lg:items-end">
+                <a
+                  v-if="getSafeProductUrl(row.product.url)"
+                  :href="getSafeProductUrl(row.product.url)!"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="inline-flex h-11 w-full items-center justify-center rounded-full border border-white/20 px-4 text-[10px] uppercase tracking-[0.3em] text-white/85 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:w-auto lg:min-w-[156px]"
+                >
+                  Voir en magasin
+                </a>
 
-                  <button
-                    type="button"
-                    class="inline-flex h-9 items-center justify-center rounded-full border border-white/20 bg-white px-3 text-[9px] uppercase tracking-[0.3em] text-black transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:h-10 sm:px-4 sm:text-[10px] md:h-11 md:px-5 md:text-[11px]"
-                    @click="setAddComparisonProductToList(row.product, row.isCurrent)"
-                  >
-                    Ajouter
-                  </button>
-                </div>
-              </template>
-
-              <template v-else>
-                <div class="col-span-3 md:col-span-8">
-                  <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Alerte prix</p>
-                  <p class="mt-2 text-sm leading-relaxed text-white/80 sm:text-base md:text-lg">
-                    Recevez une alerte des que le prix baisse ou que ce produit revient en special.
-                  </p>
-                </div>
-
-                <div class="col-span-3 flex flex-wrap gap-2 md:col-span-4 md:justify-end">
-                  <button
-                    type="button"
-                    class="inline-flex h-9 items-center justify-center rounded-full border border-white/20 bg-white px-3 text-[9px] uppercase tracking-[0.3em] text-black transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:h-10 sm:px-4 sm:text-[10px] md:h-11 md:px-5 md:text-[11px]"
-                    @click="setAddCurrentProductToList"
-                  >
-                    Ajouter a ma liste
-                  </button>
-
-                  <button
-                    type="button"
-                    class="inline-flex h-9 items-center justify-center rounded-full border border-white/20 px-3 text-[9px] uppercase tracking-[0.3em] text-white/85 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:h-10 sm:px-4 sm:text-[10px] md:h-11 md:px-5 md:text-[11px]"
-                    @click="setNotifySpecialFromProductCta"
-                  >
-                    Notifie-moi
-                  </button>
-                </div>
-              </template>
+                <button
+                  type="button"
+                  class="inline-flex h-11 w-full items-center justify-center rounded-full border border-white/20 bg-white px-4 text-[10px] uppercase tracking-[0.3em] text-black transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:w-auto lg:min-w-[156px]"
+                  @click="setAddComparisonProductToList(row.product, row.isCurrent)"
+                >
+                  {{ row.isCurrent ? 'Ajouter ce produit' : 'Ajouter au panier' }}
+                </button>
+              </div>
             </article>
           </TransitionGroup>
 
