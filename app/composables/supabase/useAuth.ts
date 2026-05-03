@@ -1,22 +1,10 @@
-const AUTH_CONFIRM_PATH = '/auth/confirm'
-const DEFAULT_NEXT_PATH = '/search'
-
-const getSafeNextPath = (value: string | undefined): string => {
-  if (!value) {
-    return DEFAULT_NEXT_PATH
-  }
-
-  const trimmed = value.trim()
-
-  if (!trimmed.startsWith('/') || trimmed.startsWith('//')) {
-    return DEFAULT_NEXT_PATH
-  }
-
-  return trimmed
-}
+import {
+  AUTH_CONFIRM_PATH,
+  getSafeAuthNextPath
+} from '#shared/utils/authRedirect'
 
 const getAuthRedirectUrl = (nextPath?: string) => {
-  const safeNextPath = getSafeNextPath(nextPath)
+  const safeNextPath = getSafeAuthNextPath(nextPath)
 
   if (!import.meta.client) {
     return `${AUTH_CONFIRM_PATH}?next=${encodeURIComponent(safeNextPath)}`

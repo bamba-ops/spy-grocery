@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { LogIn, LogOut } from 'lucide-vue-next'
+import { DEFAULT_AUTH_NEXT_PATH, getSafeAuthNextPath } from '#shared/utils/authRedirect'
 import { useAuthStore } from '~/stores/auth'
-
-const DEFAULT_NEXT_PATH = '/search'
 
 const authStore = useAuthStore()
 const route = useRoute()
@@ -15,14 +14,6 @@ const authLabel = computed(() => {
   return isAuthenticated.value ? 'Deconnexion' : 'Connexion'
 })
 
-const getSafeNextPath = (value: string) => {
-  if (!value.startsWith('/') || value.startsWith('//')) {
-    return DEFAULT_NEXT_PATH
-  }
-
-  return value
-}
-
 const setHandleAuthAction = async () => {
   if (authStore.isLoading) {
     return
@@ -33,7 +24,7 @@ const setHandleAuthAction = async () => {
     return
   }
 
-  const nextPath = getSafeNextPath(route.fullPath || DEFAULT_NEXT_PATH)
+  const nextPath = getSafeAuthNextPath(route.fullPath || DEFAULT_AUTH_NEXT_PATH)
   await navigateTo(`/login?next=${encodeURIComponent(nextPath)}`)
 }
 </script>

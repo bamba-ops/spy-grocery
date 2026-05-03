@@ -1,19 +1,22 @@
 <script setup lang="ts">
+import type { EmailOtpType } from '@supabase/supabase-js'
 import { Loader2 } from 'lucide-vue-next'
 import {
-  getIsBlockingOnboardingState,
-  ONBOARDING_ROUTE_PATH
-} from '#shared/utils/onboarding'
-import { useOnboarding } from '~/composables/api/useOnboarding'
+  clearStoredAuthNextPath,
+  clearStoredLoginProvider,
+  getAuthNextPath,
+  getSingleQueryValue,
+  getStoredAuthNextPath,
+  getStoredLoginProvider
+} from '#shared/utils/authRedirect'
+import { usePostLoginDestination } from '~/composables/auth/usePostLoginDestination'
 import { useAuthStore } from '~/stores/auth'
 
-const DEFAULT_NEXT_PATH = '/search'
-const LOGIN_NEXT_STORAGE_KEY = 'spygrocery:auth:next-path'
-const LOGIN_PROVIDER_STORAGE_KEY = 'spygrocery:auth:provider'
+const EMAIL_OTP_TYPES = ['signup', 'invite', 'magiclink', 'recovery', 'email_change', 'email'] as const
 
 const authStore = useAuthStore()
 const analytics = useAnalytics()
-const onboardingApi = useOnboarding()
+const { getPostLoginDestination } = usePostLoginDestination()
 const route = useRoute()
 const supabase = useSupabaseClient()
 const runtimeConfig = useRuntimeConfig()
@@ -21,119 +24,59 @@ const siteUrl = (runtimeConfig.public.siteUrl || 'https://www.spygrocery.com').r
 
 const statusMessage = ref('Connexion en cours...')
 
-const getSingleQueryValue = (value: string | string[] | undefined) => {
-  if (Array.isArray(value)) {
-    return value.find((entry) => typeof entry === 'string') || null
+const getEmailOtpType = (value: string | null): EmailOtpType => {
+  const normalizedValue = value?.trim() || ''
+
+  if ((EMAIL_OTP_TYPES as readonly string[]).includes(normalizedValue)) {
+    return normalizedValue as EmailOtpType
   }
 
-  return typeof value === 'string' ? value : null
-}
-
-const getSafeNextPath = (value: string | null) => {
-  if (!value) {
-    return DEFAULT_NEXT_PATH
-  }
-
-  const trimmed = value.trim()
-
-  if (!trimmed.startsWith('/') || trimmed.startsWith('//')) {
-    return DEFAULT_NEXT_PATH
-  }
-
-  return trimmed
-}
-
-const getStoredNextPath = () => {
-  if (!import.meta.client) {
-    return null
-  }
-
-  const value = window.sessionStorage.getItem(LOGIN_NEXT_STORAGE_KEY)
-
-  if (!value) {
-    return null
-  }
-
-  return value
-}
-
-const clearStoredNextPath = () => {
-  if (!import.meta.client) {
-    return
-  }
-
-  window.sessionStorage.removeItem(LOGIN_NEXT_STORAGE_KEY)
-}
-
-const getStoredLoginProvider = () => {
-  if (!import.meta.client) {
-    return null
-  }
-
-  const value = window.sessionStorage.getItem(LOGIN_PROVIDER_STORAGE_KEY)
-
-  if (value === 'magic_link' || value === 'google') {
-    return value
-  }
-
-  return null
-}
-
-const clearStoredLoginProvider = () => {
-  if (!import.meta.client) {
-    return
-  }
-
-  window.sessionStorage.removeItem(LOGIN_PROVIDER_STORAGE_KEY)
+  return 'email' as EmailOtpType
 }
 
 const nextPath = computed(() => {
-  const nextFromQuery = getSingleQueryValue(route.query.next as string | string[] | undefined)
+  const nextFromQuery = getSingleQueryValue(route.query.next)
 
   if (nextFromQuery) {
-    return getSafeNextPath(nextFromQuery)
+    return getAuthNextPath(nextFromQuery)
   }
 
-  return getSafeNextPath(getStoredNextPath())
+  const redirectTo = getSingleQueryValue(route.query.redirect_to) || getSingleQueryValue(route.query.redirectTo)
+
+  if (redirectTo) {
+    return getAuthNextPath(redirectTo)
+  }
+
+  return getAuthNextPath(getStoredAuthNextPath())
 })
 
 const wait = async (ms: number) => {
   await new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-const getPostLoginPath = async () => {
-  const intendedPath = nextPath.value
-
-  if (intendedPath.startsWith(ONBOARDING_ROUTE_PATH)) {
-    return intendedPath
-  }
-
-  for (let attempt = 0; attempt < 4; attempt += 1) {
-    try {
-      const onboardingState = await onboardingApi.getOnboardingState()
-
-      if (getIsBlockingOnboardingState(onboardingState.status, onboardingState.current_step)) {
-        return ONBOARDING_ROUTE_PATH
-      }
-
-      return intendedPath
-    } catch (error) {
-      if (attempt === 3) {
-        console.error('[onboarding] auth confirm onboarding check failed:', error)
-        break
-      }
-
-      await wait(200)
-    }
-  }
-
-  return intendedPath
-}
-
 const setFinalizeAuth = async () => {
-  const authCode = getSingleQueryValue(route.query.code as string | string[] | undefined)
+  const authCode = getSingleQueryValue(route.query.code)
+  const tokenHash = getSingleQueryValue(route.query.token_hash)
 
-  if (authCode) {
+  if (tokenHash) {
+    statusMessage.value = 'Verification du lien en cours...'
+    const otpType = getEmailOtpType(getSingleQueryValue(route.query.type))
+    const { error: verifyError } = await supabase.auth.verifyOtp({
+      token_hash: tokenHash,
+      type: otpType
+    })
+
+    if (verifyError) {
+      await authStore.initAuth()
+      await authStore.refreshUser()
+
+      if (!authStore.user) {
+        console.error('[auth] token hash verification failed:', verifyError)
+        await navigateTo('/login?error=auth_failed', { replace: true })
+        return
+      }
+    }
+  } else if (authCode) {
     const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(authCode)
 
     if (exchangeError) {
@@ -154,7 +97,11 @@ const setFinalizeAuth = async () => {
 
     if (authStore.user) {
       statusMessage.value = 'Session restauree. Redirection en cours...'
-      const destinationPath = await getPostLoginPath()
+      const destinationPath = await getPostLoginDestination(nextPath.value, {
+        attempts: 4,
+        retryDelayMs: 200,
+        source: 'auth_confirm'
+      })
       const userEmail = typeof authStore.user.email === 'string'
         ? authStore.user.email.trim().toLowerCase()
         : ''
@@ -169,7 +116,7 @@ const setFinalizeAuth = async () => {
         source: 'auth_confirm'
       })
 
-      clearStoredNextPath()
+      clearStoredAuthNextPath()
       clearStoredLoginProvider()
       await navigateTo(destinationPath, { replace: true })
       return

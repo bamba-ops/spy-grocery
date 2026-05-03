@@ -1,18 +1,4 @@
-const DEFAULT_NEXT_PATH = '/search'
-
-const getSafeNextPath = (value: string | null | undefined) => {
-  if (!value) {
-    return DEFAULT_NEXT_PATH
-  }
-
-  const trimmed = value.trim()
-
-  if (!trimmed.startsWith('/') || trimmed.startsWith('//')) {
-    return DEFAULT_NEXT_PATH
-  }
-
-  return trimmed
-}
+import { getSafeAuthNextPath } from '#shared/utils/authRedirect'
 
 export default defineNuxtRouteMiddleware((to) => {
   const user = useSupabaseUser()
@@ -21,7 +7,7 @@ export default defineNuxtRouteMiddleware((to) => {
     return
   }
 
-  const nextPath = getSafeNextPath(to.fullPath)
+  const nextPath = getSafeAuthNextPath(to.fullPath)
 
   return navigateTo(`/login?next=${encodeURIComponent(nextPath)}`)
 })
