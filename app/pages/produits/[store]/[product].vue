@@ -70,10 +70,17 @@ const setNotifySpecialFromProductCta = () => {
 const setAddCurrentProductToList = async () => {
   if (!productDetails.product) return
 
+  const wasFirstProduct = lists.productList.length === 0
+
   await lists.setAddCurrentProductToList(productDetails.product, {
     isOnboardingContext: getIsOnboardingContext.value,
     analytics: setCaptureProductAddedToList
   })
+
+  // Ouvre le panel si c'est le premier produit ajoute (hors onboarding qui redirige deja)
+  if (wasFirstProduct && !getIsOnboardingContext.value) {
+    lists.setShoppingListDrawerOpen()
+  }
 }
 
 const setAddComparisonProductToList = (product: SearchProduct, isCurrent: boolean) => {
