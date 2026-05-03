@@ -1,9 +1,10 @@
 import type { SitemapUrlInput } from '#sitemap/types'
+import { getIsProductActive } from '#shared/utils/productAvailability'
 import { parseProductRouteParts } from '#shared/utils/productRoute'
 import type { SitemapProductRow } from '../../repositories/sitemapRepository'
 import { fetchSitemapProductRows } from '../../repositories/sitemapRepository'
 
-const STATIC_PATHS = ['/', '/privacy', '/terms', '/licenses']
+const STATIC_PATHS = ['/', '/magasins', '/privacy', '/terms', '/licenses']
 
 const getTimestamp = (value: string | null | undefined) => {
   if (!value) {
@@ -82,10 +83,30 @@ const getStoreLastmodEntries = (rows: SitemapProductRow[]) => {
     }))
 }
 
+const getIsProductSitemapEligible = (row: SitemapProductRow) => {
+  if (!row.store_slug || !row.title_slug || !row.external_id) {
+    return false
+  }
+
+  if (typeof row.price_num !== 'number') {
+    return false
+  }
+
+  if (!row.valid_to) {
+    return false
+  }
+
+  return getIsProductActive(row.valid_from, row.valid_to)
+}
+
 const getProductEntries = (rows: SitemapProductRow[]) => {
   const productMap = new Map<string, string | undefined>()
 
   rows.forEach((row) => {
+    if (!getIsProductSitemapEligible(row)) {
+      return
+    }
+
     const loc = getCanonicalProductPath(row)
     if (!loc) {
       return

@@ -283,7 +283,7 @@ useHead(() => ({
         Retour a la recherche
       </NuxtLink>
 
-      <header class="mt-6 border-b border-white/10 pb-6">
+       <header class="mt-6 border-b border-white/10 pb-6">
         <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Page magasin</p>
         <h1 class="mt-2 font-display text-4xl font-semibold italic tracking-tight text-white sm:text-5xl">
           {{ storeOverview.storeName || storeSlug }}
@@ -301,6 +301,17 @@ useHead(() => ({
           </span>
         </div>
       </header>
+
+      <section class="mt-6 border-b border-white/10 pb-6">
+        <p class="text-sm leading-relaxed text-white/70">
+          Chez {{ storeOverview.storeName || storeSlug }}, SpyGrocery suit actuellement
+          {{ storeOverview.productCount }} produits et
+          {{ storeOverview.activeSpecialsCount }} aubaines actives<template v-if="storeOverview.formattedLastUpdated">
+            (mis a jour {{ storeOverview.formattedLastUpdated }})</template>.
+          Les prix sont compares avec les autres epiceries suivies au Quebec
+          afin d'aider a reperer les produits les moins chers par magasin.
+        </p>
+      </section>
 
       <section
         v-if="showOnboardingProgress"

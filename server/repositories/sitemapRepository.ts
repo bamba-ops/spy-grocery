@@ -4,6 +4,9 @@ export interface SitemapProductRow {
   title_slug: string | null
   external_id: string
   scraped_at: string
+  price_num: number | null
+  valid_from: string | null
+  valid_to: string | null
 }
 
 const SITEMAP_ROWS_PAGE_SIZE = 1000
@@ -16,7 +19,7 @@ export const fetchSitemapProductRows = async (supabase: any): Promise<SitemapPro
     const to = from + SITEMAP_ROWS_PAGE_SIZE - 1
     const { data, error } = await supabase
       .from('products')
-      .select('slug,store_slug,title_slug,external_id,scraped_at')
+      .select('slug,store_slug,title_slug,external_id,scraped_at,price_num,valid_from,valid_to')
       .order('id', { ascending: true })
       .range(from, to)
 

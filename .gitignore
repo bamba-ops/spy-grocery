@@ -26,3 +26,6 @@ logs
 # docs
 docs/marc-lou/*
 docs/sprint/*
+
+# GSC Audit
+docs/GSC_AUDIT_*.md

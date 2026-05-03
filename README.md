@@ -14,11 +14,13 @@ Application web Nuxt pour comparer les prix en epicerie au Quebec, construire de
 
 - Recherche de produits avec tri, pagination et filtre magasin (`/search`)
 - Fiche produit canonique (`/produits/[store]/[product]`) avec alternatives inter-magasins
-- Pages magasins (`/magasins/[store]`)
+- Pages magasins (`/magasins/[store]`) avec aubaines et meilleurs prix
+- Hub magasins (`/magasins`) avec filtre local par nom
 - Listes sauvegardees avec sync locale + cloud (`/lists`)
 - Auth Supabase (magic link + Google) (`/login`, `/auth/confirm`)
 - Chat IA (mode normal + mode creation de liste) disponible en option (`/api/ai/chat`)
 - Onboarding product-first en 3 etapes (`/onboarding` -> `/produits`/`/magasins` -> `/lists`)
+- Sitemap selectif : seuls les produits actifs avec prix et fenetre de validite
 
 ## Stack technique
 

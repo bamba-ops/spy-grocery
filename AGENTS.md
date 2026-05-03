@@ -96,6 +96,9 @@ Current concrete API flows:
   - Legacy compat: Component/Page -> `useProductDetailsStore` -> `useProducts().getBySlug()` -> `GET /api/products/[slug]` -> `getProductDetails` service -> `getProductRowBySlug/getSimilarProductsRows` repository -> Supabase `products`
 - Stores filter list:
   - Component/Page -> `useSearchStore` -> `useStores().fetchStores()` -> `GET /api/stores` -> `listStores` service -> `fetchProductStoreRows` repository -> Supabase `products`
+- Store hub page:
+  - Page -> `useStores().fetchStores()` via `useAsyncData('stores-hub')` -> `GET /api/stores` -> `listStores` service -> `fetchProductStoreRows` repository -> Supabase `products`
+  - Client-side text filter on store name (no API call).
 - Saved lists (local-first + cloud sync):
   - Component/Page -> `useListsStore` -> `useListsStorage` (local keys) + `useLists` (API transport) -> `GET/POST/PATCH/DELETE /api/lists*` -> `listsService` -> `listsRepository` -> Supabase `lists`
   - Save/update actions are auth-gated in UI (`useAuthStore` prompt), then write local + sync cloud.
@@ -108,6 +111,10 @@ Current concrete API flows:
 - AI chat (list mode):
   - `app/components/ai/AiChatbot.vue` toggle (`createListMode`) -> `useChatStore` -> `useChat` -> `POST /api/ai/chat` -> same SQL tool flow + `submit_list_items` tool -> server emits `data-grocery-list` stream part (`items: ListProduct[]`)
   - End-of-stream snapshot persistence writes full `UIMessage[]` to `ai_chat_sessions.messages_json`.
+- Sitemap generation:
+  - `@nuxtjs/sitemap` module -> `GET /api/__sitemap__/urls` -> `listSitemapUrls` service -> `fetchSitemapProductRows` repository -> Supabase `products`
+  - Static paths (`/`, `/magasins`, `/privacy`, `/terms`, `/licenses`) + store pages + eligible product pages only.
+  - Product eligibility: must have `store_slug`, `title_slug`, `external_id`, numeric `price_num`, non-null `valid_to`, and `getIsProductActive() === true`.
 
 Rules:
 - Avoid skipping layers (for example, component calling DB logic directly).
@@ -135,6 +142,11 @@ Response shape:
 ### `GET /api/stores`
 - Returns `stores: StoreFacet[]`
 - Stores are derived from `products`, aggregated by name/id.
+
+### `GET /api/__sitemap__/urls`
+- Internal endpoint for `@nuxtjs/sitemap` module.
+- Returns `SitemapUrlInput[]` (loc + lastmod pairs).
+- Includes static paths, all store pages, and eligible product pages only (active products with price and validity window).
 
 ### `GET /api/products/[slug]`
 - Returns:

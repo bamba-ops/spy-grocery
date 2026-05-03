@@ -447,6 +447,7 @@ const seoJsonLd = computed(() => {
       '@type': 'Offer',
       priceCurrency: 'CAD',
       price: typeof getDisplayProductPrice(product) === 'number' ? getDisplayProductPrice(product) : undefined,
+      priceValidUntil: product.is_active && product.valid_to ? product.valid_to.slice(0, 10) : undefined,
       url: canonicalUrl.value,
       availability: product.is_active ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock'
     }
