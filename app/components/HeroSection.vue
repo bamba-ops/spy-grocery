@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import type { SearchProduct } from '#shared/types'
+import {
+  getAnalyticsProductProperties,
+  getAnalyticsQueryProperties
+} from '#shared/utils/analytics'
 import { ONBOARDING_MAX_INTENT_LENGTH } from '#shared/utils/onboarding'
 import { getProductRoutePath } from '#shared/utils/productRoute'
 import { useOnboardingStorage } from '~/composables/local/useOnboardingStorage'
@@ -11,6 +15,7 @@ const authStore = useAuthStore()
 const onboardingStore = useOnboardingStore()
 const onboardingStorage = useOnboardingStorage()
 const searchStore = useSearchStore()
+const analytics = useAnalytics()
 
 const popularSearches = [
   'lait 2%',
@@ -40,6 +45,16 @@ const setSubmitHeroSearch = async () => {
   searchStore.heroSearchInput = normalizedQuery
   await searchStore.getHeroSearchResultsByQuery()
 
+  const resultsCount = searchStore.getHeroSearchResults.length
+  analytics.capture('landing_hero_search_submitted', {
+    ...getAnalyticsQueryProperties(normalizedQuery),
+    results_count: resultsCount,
+    zero_results: resultsCount === 0,
+    is_authenticated: Boolean(authStore.user),
+    has_completed_onboarding: Boolean(authStore.user && onboardingStore.status === 'completed'),
+    source: 'landing_hero'
+  })
+
   // Debug log intentionally kept while landing-to-login conversion is monitored.
   console.log('[landing] hero search submitted:', {
     query: normalizedQuery,
@@ -50,6 +65,16 @@ const setSubmitHeroSearch = async () => {
 const setUsePopularSearch = async (value: string) => {
   searchStore.heroSearchInput = value
   await searchStore.getHeroSearchResultsByQuery()
+
+  const resultsCount = searchStore.getHeroSearchResults.length
+  analytics.capture('landing_popular_search_clicked', {
+    ...getAnalyticsQueryProperties(value),
+    results_count: resultsCount,
+    zero_results: resultsCount === 0,
+    is_authenticated: Boolean(authStore.user),
+    has_completed_onboarding: Boolean(authStore.user && onboardingStore.status === 'completed'),
+    source: 'landing_popular_search'
+  })
 
   // Debug log intentionally kept while top search intents are measured.
   console.log('[landing] popular search selected:', {
@@ -76,6 +101,17 @@ const setSelectSearchResult = async (product: SearchProduct) => {
   if (normalizedQuery && !hasCompletedOnboarding) {
     onboardingStorage.setOnboardingHeroPrompt(normalizedQuery)
   }
+
+  analytics.capture('landing_hero_result_clicked', {
+    ...getAnalyticsQueryProperties(normalizedQuery),
+    results_count: searchStore.getHeroSearchResults.length,
+    zero_results: searchStore.getHeroSearchResults.length === 0,
+    ...getAnalyticsProductProperties(product),
+    is_authenticated: Boolean(authStore.user),
+    has_completed_onboarding: Boolean(hasCompletedOnboarding),
+    next_path: nextPath,
+    source: 'landing_hero'
+  })
 
   // Debug log intentionally kept while landing-to-product authentication flow is monitored.
   console.log('[landing] product selected from hero dropdown:', {

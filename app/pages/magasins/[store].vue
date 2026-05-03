@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ArrowUpRight, Plus } from 'lucide-vue-next'
 import { getRouteParam } from '#shared/utils/getRouteParam'
+import { getAnalyticsProductProperties } from '#shared/utils/analytics'
 import { ONBOARDING_MAX_STEP } from '#shared/utils/onboarding'
 import { getProductValidityLabel } from '#shared/utils/productAvailability'
 import { getProductRoutePath } from '#shared/utils/productRoute'
@@ -22,8 +23,10 @@ const storeOverview = useStoreOverviewStore()
 const onboardingStore = useOnboardingStore()
 const authStore = useAuthStore()
 const listsStore = useListsStore()
+const analytics = useAnalytics()
 
 const onboardingStepNumbers = [1, 2, 3]
+const lastStorePageViewKey = ref('')
 
 const storeSlug = computed(() => {
   return getRouteParam(route.params.store as string | string[] | undefined)
@@ -72,14 +75,15 @@ const getProductValidityText = (validFrom: string | null, validTo: string | null
 
 watch(
   storeSlug,
-  (nextStoreSlug, previousStoreSlug) => {
+  async (nextStoreSlug, previousStoreSlug) => {
     if (nextStoreSlug === previousStoreSlug) {
       return
     }
 
     storeOverview.setResetStoreSearch()
 
-    void storeOverview.loadStoreOverview(nextStoreSlug)
+    await storeOverview.loadStoreOverview(nextStoreSlug)
+    setCaptureStorePageViewed('store_page_route_change')
   },
   { immediate: false }
 )
@@ -99,8 +103,54 @@ const setGoToOnboardingLists = async () => {
   await navigateTo('/lists?source=onboarding')
 }
 
-const setAddStoreProductToList = (product: Parameters<typeof listsStore.setProductInCurrentList>[0]) => {
-  listsStore.setProductInCurrentList(product)
+const getStorePageAnalyticsProperties = (source: string) => {
+  return {
+    store_slug: storeOverview.storeSlug || storeSlug.value,
+    store_name: storeOverview.storeName || null,
+    product_count: storeOverview.productCount,
+    active_specials_count: storeOverview.activeSpecialsCount,
+    latest_promos_count: storeOverview.latestPromos.length,
+    best_products_count: storeOverview.bestProducts.length,
+    last_updated_at: storeOverview.lastUpdatedAt,
+    source
+  }
+}
+
+const setCaptureStorePageViewed = (source = 'store_page') => {
+  const resolvedStoreSlug = storeOverview.storeSlug || storeSlug.value
+
+  if (!resolvedStoreSlug) {
+    return
+  }
+
+  const viewKey = `${resolvedStoreSlug}:${route.fullPath}`
+  if (lastStorePageViewKey.value === viewKey) {
+    return
+  }
+
+  lastStorePageViewKey.value = viewKey
+  analytics.capture('store_page_viewed', getStorePageAnalyticsProperties(source))
+}
+
+const setCaptureStoreProductClicked = (
+  product: Parameters<typeof listsStore.setProductInCurrentList>[0],
+  source: string
+) => {
+  analytics.capture('store_product_clicked', {
+    ...getStorePageAnalyticsProperties(source),
+    ...getAnalyticsProductProperties(product)
+  })
+}
+
+const setAddStoreProductToList = (
+  product: Parameters<typeof listsStore.setProductInCurrentList>[0],
+  source = 'store_page'
+) => {
+  listsStore.setProductInCurrentList(product, { source })
+  analytics.capture('store_product_added_to_list', {
+    ...getStorePageAnalyticsProperties(source),
+    ...getAnalyticsProductProperties(product)
+  })
 
   console.log('[onboarding] product added from store page:', {
     productId: product.id,
@@ -109,6 +159,8 @@ const setAddStoreProductToList = (product: Parameters<typeof listsStore.setProdu
 }
 
 const setOpenStoreSearchProduct = async (product: Parameters<typeof listsStore.setProductInCurrentList>[0]) => {
+  setCaptureStoreProductClicked(product, 'store_local_search')
+
   console.log('[store-search] open product from dropdown:', {
     productId: product.id,
     productSlug: product.slug,
@@ -119,6 +171,8 @@ const setOpenStoreSearchProduct = async (product: Parameters<typeof listsStore.s
 }
 
 onMounted(async () => {
+  setCaptureStorePageViewed()
+
   if (!authStore.isReady) {
     await authStore.initAuth()
   }
@@ -386,7 +440,7 @@ useHead(() => ({
             :enable-quick-add="true"
             @submit="storeOverview.setSearchProductsInStore"
             @select-product="setOpenStoreSearchProduct"
-            @quick-add-product="setAddStoreProductToList"
+            @quick-add-product="(product) => setAddStoreProductToList(product, 'store_local_search')"
           />
         </section>
 
@@ -409,6 +463,7 @@ useHead(() => ({
               <NuxtLink
                 :to="getProductRoutePath(product)"
                 class="relative block overflow-hidden rounded-xl border border-white/10 bg-black"
+                @click="setCaptureStoreProductClicked(product, 'store_latest_promos')"
               >
                 <div class="relative aspect-square">
                   <img
@@ -423,7 +478,11 @@ useHead(() => ({
                 </div>
               </NuxtLink>
 
-              <NuxtLink :to="getProductRoutePath(product)" class="mt-3">
+              <NuxtLink
+                :to="getProductRoutePath(product)"
+                class="mt-3"
+                @click="setCaptureStoreProductClicked(product, 'store_latest_promos')"
+              >
                 <h3
                   :title="product.title"
                   class="font-display text-xl font-semibold italic leading-tight text-white transition hover:text-white/90"
@@ -444,7 +503,7 @@ useHead(() => ({
                   type="button"
                   class="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-white/[0.04] text-white/72 shadow-[0_0_0_1px_rgba(255,255,255,0.04)] transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
                   aria-label="Ajouter a la liste"
-                  @click="setAddStoreProductToList(product)"
+                  @click="setAddStoreProductToList(product, 'store_latest_promos')"
                 >
                   <Plus class="h-5 w-5" />
                 </button>
@@ -481,6 +540,7 @@ useHead(() => ({
               :key="product.id"
               :to="getProductRoutePath(product)"
               class="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-black/40 px-4 py-3 transition hover:bg-black/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+              @click="setCaptureStoreProductClicked(product, 'store_best_products')"
             >
               <div>
                 <p class="text-sm font-semibold uppercase tracking-[0.18em] text-white/80 sm:text-base">{{ product.store }}</p>

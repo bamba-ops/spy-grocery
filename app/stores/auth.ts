@@ -6,9 +6,12 @@ import { useAuth } from '~/composables/supabase/useAuth'
 const DEFAULT_ERROR_MESSAGE = 'Une erreur est survenue. Veuillez reessayer.'
 const DEFAULT_NEXT_PATH = '/search'
 const LOGIN_NEXT_STORAGE_KEY = 'spygrocery:auth:next-path'
+const LOGIN_PROVIDER_STORAGE_KEY = 'spygrocery:auth:provider'
 const DEFAULT_AUTH_PROMPT_TITLE = 'Connexion requise'
 const DEFAULT_AUTH_PROMPT_DESCRIPTION = 'Creez un compte pour debloquer cette fonctionnalite.'
 const DEFAULT_AUTH_PROMPT_CTA_LABEL = 'Aller a la connexion'
+
+type LoginProvider = 'magic_link' | 'google'
 
 const setStoredNextPath = (value: string) => {
   if (!import.meta.client) {
@@ -38,6 +41,14 @@ const clearStoredNextPath = () => {
   }
 
   window.sessionStorage.removeItem(LOGIN_NEXT_STORAGE_KEY)
+}
+
+const setStoredLoginProvider = (provider: LoginProvider) => {
+  if (!import.meta.client) {
+    return
+  }
+
+  window.sessionStorage.setItem(LOGIN_PROVIDER_STORAGE_KEY, provider)
 }
 
 const getIsMissingAuthSessionError = (message: string | undefined, name: string | undefined) => {
@@ -131,6 +142,7 @@ export const useAuthStore = defineStore('auth', () => {
   const authPromptDescription = ref(DEFAULT_AUTH_PROMPT_DESCRIPTION)
   const authPromptNextPath = ref(DEFAULT_NEXT_PATH)
   const authPromptCtaLabel = ref(DEFAULT_AUTH_PROMPT_CTA_LABEL)
+  const authPromptSource = ref('auth_prompt')
 
   let stopLoginRouteWatcher: (() => void) | null = null
   let stopLoginUserWatcher: (() => void) | null = null
@@ -221,12 +233,20 @@ export const useAuthStore = defineStore('auth', () => {
     description?: string
     nextPath?: string
     ctaLabel?: string
+    source?: string
   }) => {
     authPromptTitle.value = options?.title?.trim() || DEFAULT_AUTH_PROMPT_TITLE
     authPromptDescription.value = options?.description?.trim() || DEFAULT_AUTH_PROMPT_DESCRIPTION
     authPromptNextPath.value = getSafeNextPath(options?.nextPath?.trim() || null)
     authPromptCtaLabel.value = options?.ctaLabel?.trim() || DEFAULT_AUTH_PROMPT_CTA_LABEL
+    authPromptSource.value = options?.source?.trim() || 'auth_prompt'
     authPromptOpen.value = true
+
+    const analytics = useAnalytics()
+    analytics.capture('auth_prompt_opened', {
+      next_path: authPromptNextPath.value,
+      source: authPromptSource.value
+    })
   }
 
   const setCloseAuthPrompt = () => {
@@ -235,6 +255,13 @@ export const useAuthStore = defineStore('auth', () => {
 
   const setContinueAuthPromptToLogin = async () => {
     const nextPath = getSafeNextPath(authPromptNextPath.value)
+    const analytics = useAnalytics()
+
+    analytics.capture('auth_prompt_cta_clicked', {
+      next_path: nextPath,
+      source: authPromptSource.value
+    })
+
     setStoredNextPath(nextPath)
     setCloseAuthPrompt()
     await navigateTo(`/login?next=${encodeURIComponent(nextPath)}`)
@@ -365,6 +392,18 @@ export const useAuthStore = defineStore('auth', () => {
   const setSubmitLoginMagicLink = async () => {
     loginMagicLinkSent.value = false
     setStoredNextPath(loginNextPath.value)
+    setStoredLoginProvider('magic_link')
+
+    const analytics = useAnalytics()
+    const loginProperties = {
+      next_path: loginNextPath.value,
+      has_auth_failed: loginHasAuthFailed.value,
+      has_captcha_token: Boolean(loginCaptchaToken.value?.trim()),
+      provider: 'magic_link',
+      source: 'login_page'
+    }
+
+    analytics.capture('magic_link_requested', loginProperties)
 
     const ok = await loginWithMagicLink(loginEmail.value, loginNextPath.value, loginCaptchaToken.value)
     if (!ok) {
@@ -373,11 +412,23 @@ export const useAuthStore = defineStore('auth', () => {
 
     loginMagicLinkSent.value = true
     setClearLoginCaptchaToken()
+    analytics.capture('magic_link_sent', loginProperties)
     return true
   }
 
   const setContinueLoginWithGoogle = async () => {
     setStoredNextPath(loginNextPath.value)
+    setStoredLoginProvider('google')
+
+    const analytics = useAnalytics()
+    analytics.capture('google_login_clicked', {
+      next_path: loginNextPath.value,
+      has_auth_failed: loginHasAuthFailed.value,
+      has_captcha_token: Boolean(loginCaptchaToken.value?.trim()),
+      provider: 'google',
+      source: 'login_page'
+    })
+
     return loginWithGoogle(loginNextPath.value)
   }
 
@@ -392,6 +443,12 @@ export const useAuthStore = defineStore('auth', () => {
         setErrorMessage(signOutError.message, 'Impossible de vous deconnecter.')
         return false
       }
+
+      const analytics = useAnalytics()
+      analytics.capture('logout', {
+        source: 'auth_store'
+      })
+      analytics.reset()
 
       user.value = null
       setSignedOutToast()
@@ -415,6 +472,7 @@ export const useAuthStore = defineStore('auth', () => {
     loginEmail,
     loginMagicLinkSent,
     loginCaptchaToken,
+    loginNextPath,
     loginHasAuthFailed,
     getIsLoginCaptchaEnabled,
     getCanSubmitLoginEmail,

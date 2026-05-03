@@ -1,6 +1,10 @@
 import { defineStore, setActivePinia } from 'pinia'
 import type { SearchProduct, StoreFacet } from '#shared/types'
 import type { ProductsQueryParams, SearchAvailability, SearchSort } from '#shared/types/search'
+import {
+  getAnalyticsQueryProperties,
+  getAnalyticsTopProductsProperties
+} from '#shared/utils/analytics'
 
 let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null
 let heroSearchDebounceTimer: ReturnType<typeof setTimeout> | null = null
@@ -54,6 +58,11 @@ export const useSearchStore = defineStore('search', {
     },
 
     async getHeroSearchResultsByQuery() {
+      if (heroSearchDebounceTimer) {
+        clearTimeout(heroSearchDebounceTimer)
+        heroSearchDebounceTimer = null
+      }
+
       const query = this.heroSearchInput.trim()
       if (!query) {
         this.heroSearchResults = []
@@ -104,25 +113,71 @@ export const useSearchStore = defineStore('search', {
     },
 
     async getSearchResults() {
+      const startedAt = Date.now()
+      const requestOffset = this.offset
+      const requestPage = this.page
+      const requestQuery = this.query
+      const requestSort = this.sortBy
+      const requestAvailability = this.availability
+      const requestStoreId = this.selectedStoreId
+      const analytics = useAnalytics()
+
       this.loading = true
       this.error = null
 
       try {
         const response = await this.getProductsByParams({
-          q: this.query || undefined,
-          store: this.selectedStoreId,
-          sort: this.sortBy,
-          availability: this.availability,
+          q: requestQuery || undefined,
+          store: requestStoreId,
+          sort: requestSort,
+          availability: requestAvailability,
           limit: this.limit,
-          offset: this.offset
+          offset: requestOffset
         })
 
         this.results = response?.items || []
         this.total = response?.total || 0
+
+        const resultsCount = this.results.length
+        const zeroResults = resultsCount === 0
+        const searchProperties = {
+          ...getAnalyticsQueryProperties(requestQuery),
+          source: 'search_page',
+          results_count: resultsCount,
+          total_results: this.total,
+          zero_results: zeroResults,
+          page: requestPage,
+          limit: this.limit,
+          offset: requestOffset,
+          sort: requestSort,
+          availability: requestAvailability,
+          selected_store_id: requestStoreId,
+          duration_ms: Date.now() - startedAt,
+          ...getAnalyticsTopProductsProperties(this.results)
+        }
+
+        analytics.capture('product_search_performed', searchProperties)
+
+        if (zeroResults) {
+          analytics.capture('search_zero_results', searchProperties)
+        }
       } catch (error: unknown) {
         this.error = error instanceof Error ? error.message : 'La recherche a echoue'
         this.results = []
         this.total = 0
+
+        analytics.capture('search_failed', {
+          ...getAnalyticsQueryProperties(requestQuery),
+          source: 'search_page',
+          page: requestPage,
+          limit: this.limit,
+          offset: requestOffset,
+          sort: requestSort,
+          availability: requestAvailability,
+          selected_store_id: requestStoreId,
+          duration_ms: Date.now() - startedAt,
+          error_message: this.error
+        })
       } finally {
         this.hasFetchedSearchResults = true
         this.loading = false
@@ -198,8 +253,25 @@ export const useSearchStore = defineStore('search', {
     },
 
     setStoreFilter(storeId: string) {
-      this.selectedStoreId = storeId || 'all'
+      const nextStoreId = storeId || 'all'
+      if (this.selectedStoreId === nextStoreId) {
+        return
+      }
+
+      const previousStoreId = this.selectedStoreId
+      this.selectedStoreId = nextStoreId
       this.page = 1
+
+      const analytics = useAnalytics()
+      analytics.capture('search_store_filter_changed', {
+        ...getAnalyticsQueryProperties(this.query),
+        source: 'search_page',
+        previous_store_id: previousStoreId,
+        selected_store_id: this.selectedStoreId,
+        sort: this.sortBy,
+        availability: this.availability
+      })
+
       void this.getSearchResults()
     },
 
@@ -209,14 +281,46 @@ export const useSearchStore = defineStore('search', {
     },
 
     setSortBy(sort: SearchSort) {
+      if (this.sortBy === sort) {
+        return
+      }
+
+      const previousSort = this.sortBy
       this.sortBy = sort
       this.page = 1
+
+      const analytics = useAnalytics()
+      analytics.capture('search_sort_changed', {
+        ...getAnalyticsQueryProperties(this.query),
+        source: 'search_page',
+        previous_sort: previousSort,
+        sort: this.sortBy,
+        availability: this.availability,
+        selected_store_id: this.selectedStoreId
+      })
+
       void this.getSearchResults()
     },
 
     setAvailability(availability: SearchAvailability) {
+      if (this.availability === availability) {
+        return
+      }
+
+      const previousAvailability = this.availability
       this.availability = availability
       this.page = 1
+
+      const analytics = useAnalytics()
+      analytics.capture('search_availability_changed', {
+        ...getAnalyticsQueryProperties(this.query),
+        source: 'search_page',
+        previous_availability: previousAvailability,
+        availability: this.availability,
+        sort: this.sortBy,
+        selected_store_id: this.selectedStoreId
+      })
+
       void this.getSearchResults()
     },
 

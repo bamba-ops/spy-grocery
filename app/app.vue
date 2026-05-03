@@ -5,16 +5,7 @@ import { useListsStore } from '~/stores/lists'
 
 const authStore = useAuthStore()
 const listsStore = useListsStore()
-
-const getPosthogClient = () => {
-  const { $posthog } = useNuxtApp()
-
-  if (typeof $posthog !== 'function') {
-    return null
-  }
-
-  return $posthog()
-}
+const analytics = useAnalytics()
 
 onMounted(() => {
   void authStore.initAuth()
@@ -28,17 +19,11 @@ onMounted(() => {
   watch(
     () => authStore.user,
     (user) => {
-      const posthogClient = getPosthogClient()
-
-      if (!posthogClient) {
-        return
-      }
-
       const userId = user?.id?.trim() || null
 
       if (!userId) {
         if (identifiedUserId) {
-          posthogClient.reset()
+          analytics.reset()
           identifiedUserId = null
         }
 
@@ -46,7 +31,7 @@ onMounted(() => {
       }
 
       if (identifiedUserId && identifiedUserId !== userId) {
-        posthogClient.reset()
+        analytics.reset()
       }
 
       if (identifiedUserId === userId) {
@@ -57,13 +42,10 @@ onMounted(() => {
         ? user.email.trim().toLowerCase()
         : ''
 
-      if (userEmail) {
-        posthogClient.identify(userId, {
-          email: userEmail
-        })
-      } else {
-        posthogClient.identify(userId)
-      }
+      analytics.identify(userId, {
+        email: userEmail || undefined,
+        is_authenticated: true
+      })
 
       identifiedUserId = userId
     },

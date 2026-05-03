@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ArrowRight, ArrowUpRight } from 'lucide-vue-next'
 import { getRouteParam } from '#shared/utils/getRouteParam'
+import { getAnalyticsProductProperties } from '#shared/utils/analytics'
 import { getProductValidityLabel } from '#shared/utils/productAvailability'
 import { ONBOARDING_MAX_STEP } from '#shared/utils/onboarding'
 import { getProductRoutePath } from '#shared/utils/productRoute'
@@ -24,7 +25,9 @@ const productDetails = useProductDetailsStore()
 const lists = useListsStore()
 const onboardingStore = useOnboardingStore()
 const authStore = useAuthStore()
+const analytics = useAnalytics()
 const onboardingStepNumbers = [1, 2, 3]
+const lastProductPageViewKey = ref('')
 
 const loadingShimmerBaseClass = "relative overflow-hidden border border-white/10 bg-white/5 before:absolute before:inset-0 before:content-[''] before:bg-gradient-to-r before:from-transparent before:via-white/20 before:to-transparent before:bg-[length:200%_100%] before:animate-shimmer"
 const loadingShimmerPanelClass = `${loadingShimmerBaseClass} rounded-2xl`
@@ -106,7 +109,9 @@ const setAddCurrentProductToList = async () => {
     return
   }
 
-  lists.setProductInCurrentList(productDetails.product)
+  const source = getIsOnboardingContext.value ? 'onboarding_product_page' : 'product_page'
+  lists.setProductInCurrentList(productDetails.product, { source })
+  setCaptureProductAddedToList(productDetails.product, source)
 
   if (!getIsOnboardingContext.value) {
     return
@@ -134,7 +139,8 @@ const setAddComparisonProductToList = (product: SearchProduct, isCurrent: boolea
     return
   }
 
-  lists.setProductInCurrentList(product)
+  lists.setProductInCurrentList(product, { source: 'product_comparison' })
+  setCaptureProductAddedToList(product, 'product_comparison')
 }
 
 type ProductComparisonDisplayRow = {
@@ -251,6 +257,55 @@ const currentProductRankLabel = computed(() => {
   return `Rang ${currentIndex + 1} sur ${totalCount}`
 })
 
+const getProductPageAnalyticsProperties = (product: SearchProduct, source: string) => {
+  const comparisonProducts = productDetails.getSortedComparisonProducts
+
+  return {
+    ...getAnalyticsProductProperties(product),
+    price_text: product.price_text,
+    valid_from: product.valid_from,
+    valid_to: product.valid_to,
+    has_image: Boolean(product.image_url),
+    has_description: Boolean(product.description?.trim()),
+    comparison_count: comparisonProducts.length,
+    active_comparison_count: comparisonProducts.filter((entry) => entry.is_active).length,
+    market_average_price: marketAveragePrice.value,
+    current_rank_label: currentProductRankLabel.value,
+    source
+  }
+}
+
+const setCaptureProductPageViewed = (source = 'product_page') => {
+  const product = productDetails.product
+
+  if (!product) {
+    return
+  }
+
+  const viewKey = `${product.id}:${route.fullPath}`
+  if (lastProductPageViewKey.value === viewKey) {
+    return
+  }
+
+  lastProductPageViewKey.value = viewKey
+  analytics.capture('product_page_viewed', getProductPageAnalyticsProperties(product, source))
+}
+
+const setCaptureProductStoreOutboundClicked = (
+  product: SearchProduct,
+  destinationUrl: string,
+  source = 'product_page'
+) => {
+  analytics.capture('product_store_outbound_clicked', {
+    ...getProductPageAnalyticsProperties(product, source),
+    destination_url: destinationUrl
+  })
+}
+
+const setCaptureProductAddedToList = (product: SearchProduct, source = 'product_page') => {
+  analytics.capture('product_added_to_list', getProductPageAnalyticsProperties(product, source))
+}
+
 const productHeroMetaChips = computed(() => {
   const product = productDetails.product
   if (!product) {
@@ -336,6 +391,8 @@ if (!productDetails.product) {
 }
 
 onMounted(() => {
+  setCaptureProductPageViewed()
+
   if (!getIsOnboardingContext.value || !productDetails.product) {
     return
   }
@@ -483,12 +540,13 @@ const seoJsonLd = computed(() => {
 
 watch(
   [storeSlug, productSlug],
-  ([nextStoreSlug, nextProductSlug], [prevStoreSlug, prevProductSlug]) => {
+  async ([nextStoreSlug, nextProductSlug], [prevStoreSlug, prevProductSlug]) => {
     if (nextStoreSlug === prevStoreSlug && nextProductSlug === prevProductSlug) {
       return
     }
 
-    void loadProductPage(nextStoreSlug, nextProductSlug)
+    await loadProductPage(nextStoreSlug, nextProductSlug)
+    setCaptureProductPageViewed('product_page_route_change')
   },
   { immediate: false }
 )
@@ -751,6 +809,7 @@ useHead(() => {
                     target="_blank"
                     rel="noopener noreferrer"
                     class="inline-flex h-11 w-full items-center justify-center rounded-full border border-white/20 px-5 text-[10px] uppercase tracking-[0.32em] text-white/85 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:w-auto"
+                    @click="setCaptureProductStoreOutboundClicked(productDetails.product, getSafeProductUrl(productDetails.product.url)!, 'product_page')"
                   >
                     Voir en magasin
                   </a>
@@ -961,6 +1020,7 @@ useHead(() => {
                   target="_blank"
                   rel="noopener noreferrer"
                   class="inline-flex h-11 w-full items-center justify-center rounded-full border border-white/20 px-4 text-[10px] uppercase tracking-[0.3em] text-white/85 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:w-auto lg:min-w-[156px]"
+                  @click="setCaptureProductStoreOutboundClicked(row.product, getSafeProductUrl(row.product.url)!, 'product_comparison')"
                 >
                   Voir en magasin
                 </a>

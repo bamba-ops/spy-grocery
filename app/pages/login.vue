@@ -20,6 +20,7 @@ const TURNSTILE_MAX_RENDER_ATTEMPTS = 60
 const TURNSTILE_RETRY_DELAY_MS = 150
 
 const authStore = useAuthStore()
+const analytics = useAnalytics()
 const runtimeConfig = useRuntimeConfig()
 const siteUrl = (runtimeConfig.public.siteUrl || 'https://www.spygrocery.com').replace(/\/$/, '')
 const isTurnstileEnabled = computed(() => authStore.getIsLoginCaptchaEnabled)
@@ -126,6 +127,12 @@ definePageMeta({
 
 onMounted(() => {
   authStore.setInitializeLoginPage()
+  analytics.capture('login_page_viewed', {
+    next_path: authStore.loginNextPath,
+    has_auth_failed: authStore.loginHasAuthFailed,
+    has_captcha_token: authStore.getHasLoginCaptchaToken,
+    source: 'login_page'
+  })
 
   if (!isTurnstileEnabled.value) {
     turnstileError.value = null

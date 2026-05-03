@@ -7,6 +7,10 @@ import type {
   ListsProduct,
   PersistedList
 } from '#shared/types/lists'
+import {
+  getAnalyticsListProperties,
+  getAnalyticsProductProperties
+} from '#shared/utils/analytics'
 import { useLists } from '~/composables/api/useLists'
 import { useListsStorage } from '~/composables/local/useListsStorage'
 import { useAuthStore } from '~/stores/auth'
@@ -15,6 +19,9 @@ type ListsSort = 'recent' | 'name' | 'total'
 type ListsControls = {
   sort: ListsSort
   query: string
+}
+type ListAnalyticsOptions = {
+  source?: string
 }
 
 const getListItemsSnapshot = (items: ListProduct[]) => {
@@ -372,8 +379,10 @@ export const useListsStore = defineStore('lists', {
       }
     },
 
-    setProductInCurrentList(product: Product) {
+    setProductInCurrentList(product: Product, options: ListAnalyticsOptions = {}) {
       const existingProduct = this.productList.find((item) => item.product.id === product.id)
+      const wasAlreadyInList = Boolean(existingProduct)
+
       if (existingProduct) {
         existingProduct.quantity += 1
       } else {
@@ -390,6 +399,16 @@ export const useListsStore = defineStore('lists', {
       }, this.ADD_FEEDBACK_MS)
 
       this.setPersistCurrentListDraft()
+
+      const authStore = useAuthStore()
+      const analytics = useAnalytics()
+      analytics.capture('list_product_added', {
+        ...getAnalyticsProductProperties(product),
+        ...getAnalyticsListProperties(this.productList),
+        was_already_in_list: wasAlreadyInList,
+        is_authenticated: Boolean(authStore.user),
+        source: options.source || 'list'
+      })
     },
 
     setProductAddedToast(product: Product) {
@@ -432,21 +451,35 @@ export const useListsStore = defineStore('lists', {
       })
     },
 
-    setProductQuantityInCurrentList(productId: string, quantity: number) {
+    setProductQuantityInCurrentList(productId: string, quantity: number, options: ListAnalyticsOptions = {}) {
       const item = this.productList.find((entry) => entry.product.id === productId)
       if (!item) return
       item.quantity = quantity
       if (item.quantity <= 0) {
-        this.deleteProductFromCurrentList(productId)
+        this.deleteProductFromCurrentList(productId, options)
         return
       }
 
       this.setPersistCurrentListDraft()
     },
 
-    deleteProductFromCurrentList(productId: string) {
+    deleteProductFromCurrentList(productId: string, options: ListAnalyticsOptions = {}) {
+      const removedItem = this.productList.find((item) => item.product.id === productId)
       this.productList = this.productList.filter((item) => item.product.id !== productId)
       this.setPersistCurrentListDraft()
+
+      if (!removedItem) {
+        return
+      }
+
+      const authStore = useAuthStore()
+      const analytics = useAnalytics()
+      analytics.capture('list_product_removed', {
+        ...getAnalyticsProductProperties(removedItem.product),
+        ...getAnalyticsListProperties(this.productList),
+        is_authenticated: Boolean(authStore.user),
+        source: options.source || 'list'
+      })
     },
 
     setToggleShoppingListDrawer() {
@@ -488,7 +521,8 @@ export const useListsStore = defineStore('lists', {
           title: 'Enregistrez vos listes d\'epicerie',
           description: 'Connectez-vous pour garder vos listes synchronisees, reutilisables et pretes a votre retour.',
           nextPath: '/lists',
-          ctaLabel: 'Connexion pour enregistrer'
+          ctaLabel: 'Connexion pour enregistrer',
+          source: 'list_save'
         })
 
         return false
@@ -563,6 +597,14 @@ export const useListsStore = defineStore('lists', {
 
       if (!ok) return false
 
+      const authUser = await this.getCurrentAuthUser()
+      const analytics = useAnalytics()
+      analytics.capture('list_saved', {
+        ...getAnalyticsListProperties(this.productList),
+        is_authenticated: Boolean(authUser),
+        source: 'lists'
+      })
+
       this.setCurrentListItems([])
       this.currentListSourceId = null
       this.currentListSourceName = null
@@ -579,6 +621,14 @@ export const useListsStore = defineStore('lists', {
 
       const ok = await this.setUpdatedListsStorage(this.currentListSourceName)
       if (!ok) return false
+
+      const authUser = await this.getCurrentAuthUser()
+      const analytics = useAnalytics()
+      analytics.capture('list_saved', {
+        ...getAnalyticsListProperties(this.productList),
+        is_authenticated: Boolean(authUser),
+        source: 'lists'
+      })
 
       this.currentListSourceSnapshot = getListItemsSnapshot(this.productList)
       this.setSavedFeedback()

@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { ArrowRight, Plus, Search } from 'lucide-vue-next'
 import type { SearchProduct } from '#shared/types'
+import {
+  getAnalyticsProductProperties,
+  getAnalyticsQueryProperties
+} from '#shared/utils/analytics'
 
 const props = withDefaults(defineProps<{
   modelValue: string
@@ -34,6 +38,7 @@ const emit = defineEmits<{
 }>()
 
 const { getImageDisplay } = useProducts()
+const analytics = useAnalytics()
 const dropdownContainerRef = ref<HTMLElement | null>(null)
 const isDropdownOpen = ref(false)
 
@@ -104,11 +109,23 @@ const setSubmit = () => {
 }
 
 const setSelectProduct = (product: SearchProduct) => {
+  analytics.capture('search_result_clicked', {
+    ...getAnalyticsQueryProperties(props.modelValue),
+    ...getAnalyticsProductProperties(product),
+    source: props.logPrefix
+  })
+
   setCloseDropdown('result-selected')
   emit('select-product', product)
 }
 
 const setQuickAddProduct = (product: SearchProduct) => {
+  analytics.capture('search_dropdown_quick_add_clicked', {
+    ...getAnalyticsQueryProperties(props.modelValue),
+    ...getAnalyticsProductProperties(product),
+    source: props.logPrefix
+  })
+
   // Debug log intentionally kept while quick-add behavior is monitored on store pages.
   console.log(getPrefixedLog('quick add triggered'), {
     productId: product.id,

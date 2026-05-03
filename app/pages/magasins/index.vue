@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { ArrowUpRight, Search } from 'lucide-vue-next'
+import type { StoreFacet } from '#shared/types'
+import { getAnalyticsQueryProperties } from '#shared/utils/analytics'
 import { useStores } from '~/composables/api/useStores'
 
 definePageMeta({
@@ -11,6 +13,7 @@ const siteUrl = (runtimeConfig.public.siteUrl || 'https://www.spygrocery.com').r
 const canonicalUrl = `${siteUrl}/magasins`
 
 const { fetchStores } = useStores()
+const analytics = useAnalytics()
 
 const { data: stores, error } = await useAsyncData('stores-hub', async () => {
   return fetchStores()
@@ -27,6 +30,33 @@ const filteredStores = computed(() => {
   }
 
   return list.filter((store) => store.name.toLowerCase().includes(query))
+})
+
+const getStoresHubAnalyticsProperties = (source: string) => {
+  const query = storeSearch.value.trim()
+
+  return {
+    ...getAnalyticsQueryProperties(query),
+    stores_count: stores.value?.length || 0,
+    filtered_stores_count: filteredStores.value.length,
+    has_error: Boolean(error.value),
+    source
+  }
+}
+
+const setCaptureStoreClicked = (store: StoreFacet) => {
+  analytics.capture('stores_hub_store_clicked', {
+    ...getStoresHubAnalyticsProperties('stores_hub'),
+    store_id: store.store_id || store.id,
+    store_slug: store.slug,
+    store_name: store.name,
+    store_product_count: store.product_count,
+    next_path: `/magasins/${encodeURIComponent(store.slug)}`
+  })
+}
+
+onMounted(() => {
+  analytics.capture('stores_hub_viewed', getStoresHubAnalyticsProperties('stores_hub'))
 })
 
 const seoTitle = 'Magasins - Toutes les epiceries suivies par SpyGrocery au Quebec'
@@ -158,6 +188,7 @@ useHead({
             :key="store.id"
             :to="`/magasins/${encodeURIComponent(store.slug)}`"
             class="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-white/5 px-5 py-4 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+            @click="setCaptureStoreClicked(store)"
           >
             <div class="min-w-0">
               <p class="font-display text-xl font-semibold italic tracking-tight text-white">

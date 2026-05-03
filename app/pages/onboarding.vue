@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import type { SearchProduct } from '#shared/types'
+import {
+  getAnalyticsProductProperties,
+  getAnalyticsQueryProperties
+} from '#shared/utils/analytics'
 import { ONBOARDING_MAX_INTENT_LENGTH, ONBOARDING_MAX_STEP } from '#shared/utils/onboarding'
 import { getProductRoutePath } from '#shared/utils/productRoute'
 import { toSlug } from '#shared/utils/toSlug'
@@ -8,11 +12,13 @@ import { useSearchStore } from '~/stores/search'
 
 const onboardingStore = useOnboardingStore()
 const searchStore = useSearchStore()
+const analytics = useAnalytics()
 const runtimeConfig = useRuntimeConfig()
 const siteUrl = (runtimeConfig.public.siteUrl || 'https://www.spygrocery.com').replace(/\/$/, '')
 
 const searchInput = ref('')
 const stepNumbers = [1, 2, 3]
+const hasCapturedOnboardingStarted = ref(false)
 
 definePageMeta({
   middleware: 'auth'
@@ -35,6 +41,28 @@ const onboardingSearchInput = computed({
   }
 })
 
+const getOnboardingAnalyticsProperties = (query: string, source: string) => {
+  const resultsCount = searchStore.getHeroSearchResults.length
+
+  return {
+    ...getAnalyticsQueryProperties(query),
+    current_step: onboardingStore.currentStep,
+    status: onboardingStore.status,
+    results_count: resultsCount,
+    zero_results: resultsCount === 0,
+    source
+  }
+}
+
+const setCaptureOnboardingStarted = (source = 'onboarding_page') => {
+  if (hasCapturedOnboardingStarted.value) {
+    return
+  }
+
+  hasCapturedOnboardingStarted.value = true
+  analytics.capture('onboarding_started', getOnboardingAnalyticsProperties(searchInput.value, source))
+}
+
 const setSubmitSearch = async () => {
   const normalizedIntent = searchInput.value.trim().slice(0, ONBOARDING_MAX_INTENT_LENGTH)
 
@@ -50,11 +78,15 @@ const setSubmitSearch = async () => {
 
   searchStore.heroSearchInput = normalizedIntent
   await searchStore.getHeroSearchResultsByQuery()
+
+  analytics.capture('onboarding_search_submitted', getOnboardingAnalyticsProperties(normalizedIntent, 'onboarding_search'))
 }
 
 const setUseQuickPrompt = async (prompt: string) => {
   onboardingSearchInput.value = prompt
   await searchStore.getHeroSearchResultsByQuery()
+
+  analytics.capture('onboarding_quick_prompt_clicked', getOnboardingAnalyticsProperties(prompt, 'onboarding_quick_prompt'))
 
   // Debug log intentionally kept while onboarding prompt interactions are monitored.
   console.log('[onboarding] quick prompt selected:', {
@@ -74,6 +106,13 @@ const setSelectProduct = async (product: SearchProduct) => {
   const productPath = getProductRoutePath(product)
 
   await onboardingStore.setMoveToStoreStep(resolvedStoreSlug, product.title)
+
+  analytics.capture('onboarding_product_selected', {
+    ...getOnboardingAnalyticsProperties(searchInput.value, 'onboarding_search_results'),
+    ...getAnalyticsProductProperties(product),
+    store_slug: resolvedStoreSlug,
+    next_path: productPath
+  })
 
   console.log('[onboarding] product selected from step 1:', {
     productId: product.id,
@@ -113,6 +152,8 @@ onMounted(async () => {
 
   onboardingStore.setConsumeHeroPrompt()
   const initialIntent = onboardingStore.firstIntent.trim()
+
+  setCaptureOnboardingStarted(initialIntent ? 'hero_prompt' : 'onboarding_page')
 
   if (initialIntent) {
     onboardingSearchInput.value = initialIntent

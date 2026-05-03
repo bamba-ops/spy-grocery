@@ -9,8 +9,10 @@ import { useAuthStore } from '~/stores/auth'
 
 const DEFAULT_NEXT_PATH = '/search'
 const LOGIN_NEXT_STORAGE_KEY = 'spygrocery:auth:next-path'
+const LOGIN_PROVIDER_STORAGE_KEY = 'spygrocery:auth:provider'
 
 const authStore = useAuthStore()
+const analytics = useAnalytics()
 const onboardingApi = useOnboarding()
 const route = useRoute()
 const supabase = useSupabaseClient()
@@ -61,6 +63,28 @@ const clearStoredNextPath = () => {
   }
 
   window.sessionStorage.removeItem(LOGIN_NEXT_STORAGE_KEY)
+}
+
+const getStoredLoginProvider = () => {
+  if (!import.meta.client) {
+    return null
+  }
+
+  const value = window.sessionStorage.getItem(LOGIN_PROVIDER_STORAGE_KEY)
+
+  if (value === 'magic_link' || value === 'google') {
+    return value
+  }
+
+  return null
+}
+
+const clearStoredLoginProvider = () => {
+  if (!import.meta.client) {
+    return
+  }
+
+  window.sessionStorage.removeItem(LOGIN_PROVIDER_STORAGE_KEY)
 }
 
 const nextPath = computed(() => {
@@ -131,7 +155,22 @@ const setFinalizeAuth = async () => {
     if (authStore.user) {
       statusMessage.value = 'Session restauree. Redirection en cours...'
       const destinationPath = await getPostLoginPath()
+      const userEmail = typeof authStore.user.email === 'string'
+        ? authStore.user.email.trim().toLowerCase()
+        : ''
+
+      analytics.identify(authStore.user.id, {
+        email: userEmail || undefined,
+        is_authenticated: true
+      })
+      analytics.capture('login_success', {
+        next_path: destinationPath,
+        provider: getStoredLoginProvider(),
+        source: 'auth_confirm'
+      })
+
       clearStoredNextPath()
+      clearStoredLoginProvider()
       await navigateTo(destinationPath, { replace: true })
       return
     }

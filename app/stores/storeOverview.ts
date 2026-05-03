@@ -1,5 +1,9 @@
 import { defineStore } from 'pinia'
 import type { SearchProduct, StoreOverviewResponse } from '#shared/types'
+import {
+  getAnalyticsQueryProperties,
+  getAnalyticsTopProductsProperties
+} from '#shared/utils/analytics'
 import { toSlug } from '#shared/utils/toSlug'
 
 interface LoadOptions {
@@ -89,6 +93,11 @@ export const useStoreOverviewStore = defineStore('storeOverview', {
     },
 
     async setSearchProductsInStore() {
+      if (storeSearchDebounceTimer) {
+        clearTimeout(storeSearchDebounceTimer)
+        storeSearchDebounceTimer = null
+      }
+
       const normalizedQuery = this.storeSearchInput.trim()
 
       if (!normalizedQuery) {
@@ -108,6 +117,7 @@ export const useStoreOverviewStore = defineStore('storeOverview', {
       this.storeSearchRequestId = requestId
       this.storeSearchLoading = true
       this.storeSearchError = null
+      const startedAt = Date.now()
       this.hasSearchedStore = true
 
       // Debug log intentionally kept while store-scoped search rollout is monitored.
@@ -132,6 +142,18 @@ export const useStoreOverviewStore = defineStore('storeOverview', {
         }
 
         this.storeSearchResults = response?.items || []
+
+        const resultsCount = this.storeSearchResults.length
+        const analytics = useAnalytics()
+        analytics.capture('store_local_search_performed', {
+          ...getAnalyticsQueryProperties(normalizedQuery),
+          store_slug: this.storeSlug,
+          results_count: resultsCount,
+          zero_results: resultsCount === 0,
+          duration_ms: Date.now() - startedAt,
+          ...getAnalyticsTopProductsProperties(this.storeSearchResults),
+          source: 'store_page'
+        })
 
         // Debug log intentionally kept while store-scoped search rollout is monitored.
         console.log('[store-search] search completed:', {
