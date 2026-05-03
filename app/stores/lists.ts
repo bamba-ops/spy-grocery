@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { toast } from 'vue-sonner'
-import type { Product } from '#shared/types'
+import type { Product, SearchProduct } from '#shared/types'
 import type {
   ListProduct,
   ListStorage,
@@ -11,6 +11,7 @@ import {
   getAnalyticsListProperties,
   getAnalyticsProductProperties
 } from '#shared/utils/analytics'
+import { toSlug } from '#shared/utils/toSlug'
 import { useLists } from '~/composables/api/useLists'
 import { useListsStorage } from '~/composables/local/useListsStorage'
 import { useAuthStore } from '~/stores/auth'
@@ -409,6 +410,52 @@ export const useListsStore = defineStore('lists', {
         is_authenticated: Boolean(authStore.user),
         source: options.source || 'list'
       })
+    },
+
+    // Ajoute le produit courant a la liste et gere la redirection onboarding si applicable
+    async setAddCurrentProductToList(
+      product: SearchProduct,
+      options: { isOnboardingContext: boolean; analytics?: (product: SearchProduct, source: string) => void }
+    ) {
+      const source = options.isOnboardingContext ? 'onboarding_product_page' : 'product_page'
+      this.setProductInCurrentList(product, { source })
+      options.analytics?.(product, source)
+
+      if (!options.isOnboardingContext) {
+        return
+      }
+
+      const nextStoreSlug = product.store_slug || toSlug(product.store || '')
+
+      if (!nextStoreSlug) {
+        return
+      }
+
+      // Debug log intentionally kept while onboarding first-product flow is monitored.
+      console.log('[onboarding] first product added, redirecting to store page:', {
+        productId: product.id,
+        storeSlug: nextStoreSlug
+      })
+
+      const { useOnboardingStore } = await import('~/stores/onboarding')
+      const onboardingStore = useOnboardingStore()
+      await onboardingStore.setMoveToStoreStep(nextStoreSlug)
+      await navigateTo(`/magasins/${encodeURIComponent(nextStoreSlug)}?onboarding=1`)
+    },
+
+    // Ajoute un produit de la liste de comparaison (delègue si c'est le produit courant)
+    async setAddComparisonProductToList(
+      product: SearchProduct,
+      isCurrent: boolean,
+      currentProductOptions: { isOnboardingContext: boolean; analytics?: (product: SearchProduct, source: string) => void }
+    ) {
+      if (isCurrent) {
+        await this.setAddCurrentProductToList(product, currentProductOptions)
+        return
+      }
+
+      this.setProductInCurrentList(product, { source: 'product_comparison' })
+      currentProductOptions.analytics?.(product, 'product_comparison')
     },
 
     setProductAddedToast(product: Product) {

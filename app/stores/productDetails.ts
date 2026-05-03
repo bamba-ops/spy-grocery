@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import type { SearchProduct } from '#shared/types'
 import { getProductRoutePath } from '#shared/utils/productRoute'
+import { toSlug } from '#shared/utils/toSlug'
 import type { ProductDetailsByRouteResponse, ProductDetailsResponse } from '#shared/types/product-details'
 
 interface LoadOptions {
@@ -246,6 +247,40 @@ export const useProductDetailsStore = defineStore('productDetails', {
   },
 
   actions: {
+    // Construction du path /search?intent=notify-special pour le produit courant
+    getNotifySpecialNextPath(storeSlugFallback = '') {
+      const params = new URLSearchParams()
+      params.set('intent', 'notify-special')
+
+      const productTitle = (this.product?.title || '').trim()
+      if (productTitle) {
+        params.set('q', productTitle)
+      }
+
+      const storeParam = this.product?.store_id
+        || this.product?.store_slug
+        || storeSlugFallback
+
+      if (storeParam) {
+        params.set('store', storeParam)
+      }
+
+      return `/search?${params.toString()}`
+    },
+
+    // Redirige vers login avec next=notify-special pour les visiteurs non connectes
+    async setNotifySpecialFromProductCta(storeSlugFallback = '') {
+      const nextPath = this.getNotifySpecialNextPath(storeSlugFallback)
+
+      // Debug log intentionally kept while notify-special CTA routing is monitored.
+      console.log('[notify-special] product CTA clicked, redirecting to login:', {
+        productId: this.product?.id || null,
+        nextPath
+      })
+
+      await navigateTo(`/login?next=${encodeURIComponent(nextPath)}`)
+    },
+
     getFormattedPrice(price: number | null) {
       return formatPrice(price)
     },

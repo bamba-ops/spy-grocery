@@ -5,7 +5,6 @@ import { getAnalyticsProductProperties } from '#shared/utils/analytics'
 import { getProductValidityLabel } from '#shared/utils/productAvailability'
 import { ONBOARDING_MAX_STEP } from '#shared/utils/onboarding'
 import { getProductRoutePath } from '#shared/utils/productRoute'
-import { toSlug } from '#shared/utils/toSlug'
 import { toPageError } from '#shared/utils/toPageError'
 import type { SearchProduct } from '#shared/types'
 import { useProductDetailsStore } from '~/stores/productDetails'
@@ -63,86 +62,32 @@ const getSafeProductUrl = (url: string | null) => {
   return trimmed
 }
 
-const getNotifySpecialNextPath = () => {
-  const params = new URLSearchParams()
-  params.set('intent', 'notify-special')
-
-  const productTitle = (productDetails.product?.title || '').trim()
-
-  if (productTitle) {
-    params.set('q', productTitle)
-  }
-
-  const storeParam = productDetails.product?.store_id
-    || productDetails.product?.store_slug
-    || storeSlug.value
-
-  if (storeParam) {
-    params.set('store', storeParam)
-  }
-
-  return `/search?${params.toString()}`
+// Delegations vers stores — logique metier centralisee
+const setNotifySpecialFromProductCta = () => {
+  return productDetails.setNotifySpecialFromProductCta(storeSlug.value || '')
 }
-
-const setNotifySpecialFromProductCta = async () => {
-  const nextPath = getNotifySpecialNextPath()
-
-  // Debug log intentionally kept while notify-special CTA routing is monitored.
-  console.log('[notify-special] product CTA clicked, redirecting to login:', {
-    productId: productDetails.product?.id || null,
-    nextPath
-  })
-
-  await navigateTo(`/login?next=${encodeURIComponent(nextPath)}`)
-}
-
-const getShowGuestProductCta = computed(() => {
-  return authStore.isReady && !authStore.user
-})
-
-const getCurrentProductWasJustAdded = computed(() => {
-  return Boolean(productDetails.product && lists.lastAddedProductId === productDetails.product.id)
-})
 
 const setAddCurrentProductToList = async () => {
-  if (!productDetails.product) {
-    return
-  }
+  if (!productDetails.product) return
 
-  const source = getIsOnboardingContext.value ? 'onboarding_product_page' : 'product_page'
-  lists.setProductInCurrentList(productDetails.product, { source })
-  setCaptureProductAddedToList(productDetails.product, source)
-
-  if (!getIsOnboardingContext.value) {
-    return
-  }
-
-  const nextStoreSlug = productDetails.product.store_slug
-    || toSlug(productDetails.product.store || '')
-
-  if (!nextStoreSlug) {
-    return
-  }
-
-  console.log('[onboarding] first product added, redirecting to store page:', {
-    productId: productDetails.product.id,
-    storeSlug: nextStoreSlug
+  await lists.setAddCurrentProductToList(productDetails.product, {
+    isOnboardingContext: getIsOnboardingContext.value,
+    analytics: setCaptureProductAddedToList
   })
-
-  await onboardingStore.setMoveToStoreStep(nextStoreSlug)
-  await navigateTo(`/magasins/${encodeURIComponent(nextStoreSlug)}?onboarding=1`)
 }
 
 const setAddComparisonProductToList = (product: SearchProduct, isCurrent: boolean) => {
-  if (isCurrent) {
-    void setAddCurrentProductToList()
-    return
-  }
-
-  lists.setProductInCurrentList(product, { source: 'product_comparison' })
-  setCaptureProductAddedToList(product, 'product_comparison')
+  return lists.setAddComparisonProductToList(product, isCurrent, {
+    isOnboardingContext: getIsOnboardingContext.value,
+    analytics: setCaptureProductAddedToList
+  })
 }
 
+// Etat UI local (non partage)
+const getShowGuestProductCta = computed(() => authStore.isReady && !authStore.user)
+const getCurrentProductWasJustAdded = computed(() =>
+  Boolean(productDetails.product && lists.lastAddedProductId === productDetails.product.id)
+)
 type ProductComparisonDisplayRow = {
   type: 'product'
   key: string
