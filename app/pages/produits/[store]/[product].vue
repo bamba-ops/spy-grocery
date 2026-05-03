@@ -785,10 +785,10 @@ useHead(() => {
                 </span>
 
                 <span
-                  v-if="currentProductRankLabel"
+                  v-if="currentProductRankLabel && sortedComparisonProducts.length > 1"
                   class="inline-flex rounded-full border border-white/15 px-3 py-1 text-[10px] uppercase tracking-[0.32em] text-white/65"
                 >
-                  {{ currentProductRankLabel }}
+                  {{ productDetails.product.store }} est {{ currentProductRankLabel }} pour ce produit
                 </span>
               </div>
 
@@ -893,6 +893,15 @@ useHead(() => {
 
                   <!-- CTAs secondaires -->
                   <div class="mt-1 flex flex-wrap gap-2">
+                    <!-- Anchor scroll vers classement -->
+                    <a
+                      v-if="sortedComparisonProducts.length > 1"
+                      href="#classement"
+                      class="inline-flex h-10 items-center justify-center rounded-full border border-white/15 px-4 text-[10px] uppercase tracking-[0.28em] text-white/65 transition hover:border-white/25 hover:text-white/85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                    >
+                      Voir le classement
+                    </a>
+
                     <a
                       v-if="getSafeProductUrl(productDetails.product.url)"
                       :href="getSafeProductUrl(productDetails.product.url)!"
@@ -945,6 +954,7 @@ useHead(() => {
 
         <section
           v-if="sortedComparisonProducts.length > 0"
+          id="classement"
           class="rounded-[30px] border border-white/10 bg-black/60 p-4 sm:p-5 lg:p-6"
         >
           <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -1203,6 +1213,36 @@ useHead(() => {
             Chercher d'autres produits
             <ArrowRight class="h-4 w-4" />
           </NuxtLink>
+        </section>
+
+        <!-- Bloc conversion final pour visiteurs non connectes -->
+        <section
+          v-if="getShowGuestProductCta && productDetails.product.is_active"
+          class="rounded-[30px] border border-white/10 bg-white/[0.03] p-6 sm:p-8"
+        >
+          <p class="text-[10px] uppercase tracking-[0.35em] text-white/55">Compte gratuit</p>
+          <h2 class="mt-3 font-display text-2xl font-semibold italic tracking-tight text-white sm:text-3xl">
+            Garde cette aubaine, cree ta liste.
+          </h2>
+          <p class="mt-2 text-sm leading-relaxed text-white/65 sm:text-base">
+            Avec un compte gratuit : retrouve tes aubaines, construis ta liste d'epicerie et recois un rappel avant la fin de la promo.
+          </p>
+
+          <div class="mt-4 flex flex-wrap items-center gap-4">
+            <ul class="flex flex-col gap-1.5 text-[10px] uppercase tracking-[0.28em] text-white/55">
+              <li>✓ Sauvegarde tes aubaines</li>
+              <li>✓ Cree ta liste d'epicerie</li>
+              <li>✓ Rappel avant expiration de la promo</li>
+            </ul>
+          </div>
+
+          <button
+            type="button"
+            class="mt-6 inline-flex h-12 items-center justify-center rounded-full border border-white/20 bg-white px-8 text-[10px] uppercase tracking-[0.32em] text-black transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+            @click="setAddCurrentProductToList"
+          >
+            Sauvegarder cette aubaine gratuitement
+          </button>
         </section>
       </section>
     </main>
