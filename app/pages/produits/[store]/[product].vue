@@ -257,6 +257,58 @@ const currentProductRankLabel = computed(() => {
   return `Rang ${currentIndex + 1} sur ${totalCount}`
 })
 
+// Best competitor = first active product in sorted comparison that is not current
+const bestCompetitorProduct = computed(() => {
+  const current = productDetails.product
+  if (!current) return null
+
+  return sortedComparisonProducts.value.find(
+    (p) => p.is_active && p.id !== current.id
+  ) ?? null
+})
+
+// Savings vs best competitor (positive = current is more expensive)
+const savingsVsBestCompetitor = computed(() => {
+  const current = productDetails.product
+  const best = bestCompetitorProduct.value
+
+  if (!current || !best) return null
+  const currentPrice = current.price_num
+  const bestPrice = best.price_num
+
+  if (currentPrice == null || bestPrice == null) return null
+
+  const diff = currentPrice - bestPrice
+  return diff > 0.005 ? diff : null
+})
+
+// True if current product is already rank 1 among active products
+const getIsCurrentProductBestPrice = computed(() => {
+  const current = productDetails.product
+  if (!current) return false
+
+  const activeProducts = sortedComparisonProducts.value.filter((p) => p.is_active)
+  if (activeProducts.length === 0) return false
+
+  return activeProducts[0]?.id === current.id
+})
+
+const getHeroSavingsLabel = computed(() => {
+  const total = sortedComparisonProducts.value.length
+  const savings = savingsVsBestCompetitor.value
+  const best = bestCompetitorProduct.value
+
+  if (!best || savings == null) return null
+
+  const savingsText = savings.toLocaleString('fr-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  return {
+    savings: `${savingsText} $`,
+    bestStore: best.store,
+    bestPrice: best.price_num?.toLocaleString('fr-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' $',
+    totalStores: total
+  }
+})
+
 const getProductPageAnalyticsProperties = (product: SearchProduct, source: string) => {
   const comparisonProducts = productDetails.getSortedComparisonProducts
 
@@ -761,7 +813,8 @@ useHead(() => {
                 </span>
               </div>
 
-              <div class="mt-8 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+              <div class="mt-8 flex flex-col gap-5">
+                <!-- Prix + validité -->
                 <div class="min-w-0">
                   <p class="text-[10px] uppercase tracking-[0.35em] text-white/55">
                     {{ productDetails.product.is_active ? 'Prix observe' : 'Disponibilite' }}
@@ -769,59 +822,97 @@ useHead(() => {
                   <p class="mt-2 font-display text-4xl font-semibold italic tracking-tight text-white sm:text-5xl">
                     {{ productDetails.product.is_active ? getCadPriceLabel(getDisplayProductPrice(productDetails.product)) : 'Promotion terminee' }}
                   </p>
-                  <p
-                    v-if="getProductValidityText(productDetails.product)"
-                    class="mt-3 text-[10px] uppercase tracking-[0.3em] text-white/50"
-                  >
-                    {{ getProductValidityText(productDetails.product) }}
+
+                  <!-- Ligne meta : comparaison + validité -->
+                  <p class="mt-3 text-[10px] uppercase tracking-[0.3em] text-white/50">
+                    <template v-if="sortedComparisonProducts.length > 1">
+                      Compare avec {{ sortedComparisonProducts.length }} magasins
+                      <span v-if="getProductValidityText(productDetails.product)"> &bull; {{ getProductValidityText(productDetails.product) }}</span>
+                    </template>
+                    <template v-else-if="getProductValidityText(productDetails.product)">
+                      {{ getProductValidityText(productDetails.product) }}
+                    </template>
                   </p>
+
                   <p
                     v-if="productDetails.product.is_active && productDetails.product.price_text"
-                    class="mt-3 text-sm text-white/70 sm:text-base"
+                    class="mt-2 text-sm text-white/70 sm:text-base"
                   >
                     {{ productDetails.product.price_text }}
                   </p>
                   <p
                     v-else-if="!productDetails.product.is_active"
-                    class="mt-3 max-w-xl text-sm leading-relaxed text-white/65 sm:text-base"
+                    class="mt-2 max-w-xl text-sm leading-relaxed text-white/65 sm:text-base"
                   >
                     Le prix n'est plus affiche pour eviter de laisser croire que la promo est encore en cours.
                   </p>
                 </div>
 
-                <div class="flex flex-col gap-2 sm:flex-row lg:flex-col lg:items-end">
+                <!-- Signal d'economie hero -->
+                <div
+                  v-if="productDetails.product.is_active && getHeroSavingsLabel"
+                  class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3"
+                >
+                  <p class="text-[10px] uppercase tracking-[0.32em] text-white/55">
+                    <template v-if="getIsCurrentProductBestPrice">Meilleur prix sur {{ getHeroSavingsLabel.totalStores }} magasins</template>
+                    <template v-else>Tu peux payer moins cher ailleurs</template>
+                  </p>
+                  <p class="mt-1 font-display text-lg font-semibold italic tracking-tight text-white">
+                    <template v-if="!getIsCurrentProductBestPrice">
+                      Meilleur prix : {{ getHeroSavingsLabel.bestPrice }} chez {{ getHeroSavingsLabel.bestStore }}
+                    </template>
+                    <template v-else>
+                      Meilleur offre observee parmi {{ getHeroSavingsLabel.totalStores }} enseignes
+                    </template>
+                  </p>
+                  <p v-if="!getIsCurrentProductBestPrice" class="mt-0.5 text-sm text-white/65">
+                    Economie possible : {{ getHeroSavingsLabel.savings }}
+                  </p>
+                </div>
+
+                <!-- CTAs -->
+                <div class="flex flex-col gap-2">
+                  <!-- CTA principal -->
                   <button
                     type="button"
                     :class="[
-                      'inline-flex h-11 w-full items-center justify-center rounded-full border border-white/20 bg-white px-5 text-[10px] uppercase tracking-[0.32em] text-black transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:w-auto',
+                      'inline-flex h-12 w-full items-center justify-center rounded-full border border-white/20 bg-white px-6 text-[10px] uppercase tracking-[0.32em] text-black transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:w-auto',
                       getCurrentProductWasJustAdded
                         ? 'scale-[1.02] ring-2 ring-white/35 shadow-[0_0_24px_rgba(255,255,255,0.18)]'
                         : 'hover:bg-white/90'
                     ]"
                     @click="setAddCurrentProductToList"
                   >
-                    {{ getCurrentProductWasJustAdded ? 'Ajoute a la liste' : 'Ajouter a ma liste' }}
+                    {{ getCurrentProductWasJustAdded ? 'Aubaine sauvegardee' : 'Sauvegarder cette aubaine' }}
                   </button>
 
-                  <a
-                    v-if="getSafeProductUrl(productDetails.product.url)"
-                    :href="getSafeProductUrl(productDetails.product.url)!"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="inline-flex h-11 w-full items-center justify-center rounded-full border border-white/20 px-5 text-[10px] uppercase tracking-[0.32em] text-white/85 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:w-auto"
-                    @click="setCaptureProductStoreOutboundClicked(productDetails.product, getSafeProductUrl(productDetails.product.url)!, 'product_page')"
-                  >
-                    Voir en magasin
-                  </a>
+                  <!-- Micro-valeur compte -->
+                  <p v-if="getShowGuestProductCta" class="text-[10px] text-white/45">
+                    Gratuit, garde tes aubaines et reçois un rappel avant expiration.
+                  </p>
 
-                  <button
-                    v-if="getShowGuestProductCta"
-                    type="button"
-                    class="inline-flex h-11 w-full items-center justify-center rounded-full border border-white/20 px-5 text-[10px] uppercase tracking-[0.32em] text-white/85 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:w-auto"
-                    @click="setNotifySpecialFromProductCta"
-                  >
-                    Notifie-moi
-                  </button>
+                  <!-- CTAs secondaires -->
+                  <div class="mt-1 flex flex-wrap gap-2">
+                    <a
+                      v-if="getSafeProductUrl(productDetails.product.url)"
+                      :href="getSafeProductUrl(productDetails.product.url)!"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="inline-flex h-10 items-center justify-center rounded-full border border-white/15 px-4 text-[10px] uppercase tracking-[0.28em] text-white/65 transition hover:border-white/25 hover:text-white/85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                      @click="setCaptureProductStoreOutboundClicked(productDetails.product, getSafeProductUrl(productDetails.product.url)!, 'product_page')"
+                    >
+                      Voir en magasin
+                    </a>
+
+                    <button
+                      v-if="getShowGuestProductCta"
+                      type="button"
+                      class="inline-flex h-10 items-center justify-center rounded-full border border-white/15 px-4 text-[10px] uppercase tracking-[0.28em] text-white/65 transition hover:border-white/25 hover:text-white/85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                      @click="setNotifySpecialFromProductCta"
+                    >
+                      Creer une alerte prix
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -858,7 +949,7 @@ useHead(() => {
         >
           <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Autres promos</p>
+              <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">Comparaison de prix</p>
               <h2 class="mt-2 font-display text-2xl font-semibold italic tracking-tight text-white sm:text-3xl lg:text-4xl">
                 Classement du moins cher au plus cher
               </h2>
@@ -870,6 +961,34 @@ useHead(() => {
             <span class="text-[10px] uppercase tracking-[0.35em] text-white/60">
               {{ sortedComparisonProducts.length }} magasins
             </span>
+          </div>
+
+          <!-- Resumé economie avant la liste -->
+          <div
+            v-if="getHeroSavingsLabel && !getIsCurrentProductBestPrice && productDetails.product?.is_active"
+            class="mt-5 grid grid-cols-1 gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-4 sm:grid-cols-3"
+          >
+            <div>
+              <p class="text-[10px] uppercase tracking-[0.3em] text-white/50">Meilleur prix</p>
+              <p class="mt-1 font-display text-xl font-semibold italic tracking-tight text-white">
+                {{ getHeroSavingsLabel.bestPrice }}
+              </p>
+              <p class="mt-0.5 text-xs text-white/55">chez {{ getHeroSavingsLabel.bestStore }}</p>
+            </div>
+            <div>
+              <p class="text-[10px] uppercase tracking-[0.3em] text-white/50">Prix actuel</p>
+              <p class="mt-1 font-display text-xl font-semibold italic tracking-tight text-white/75">
+                {{ getCadPriceLabel(getDisplayProductPrice(productDetails.product)) }}
+              </p>
+              <p class="mt-0.5 text-xs text-white/55">chez {{ productDetails.product?.store }}</p>
+            </div>
+            <div>
+              <p class="text-[10px] uppercase tracking-[0.3em] text-white/50">Economie possible</p>
+              <p class="mt-1 font-display text-xl font-semibold italic tracking-tight text-white">
+                {{ getHeroSavingsLabel.savings }}
+              </p>
+              <p class="mt-0.5 text-xs text-white/55">en choisissant {{ getHeroSavingsLabel.bestStore }}</p>
+            </div>
           </div>
 
           <div class="mt-6 hidden grid-cols-[112px_minmax(0,1.45fr)_minmax(0,0.95fr)_auto] gap-6 px-2 text-[10px] uppercase tracking-[0.28em] text-white/55 lg:grid">
