@@ -114,6 +114,84 @@ export const useProductDetailsStore = defineStore('productDetails', {
       return sum / prices.length
     },
 
+    // Rang du produit courant (1-indexed label) parmi tous les produits comparés
+    getCurrentProductRankLabel(): string | null {
+      const currentIndex = this.getCurrentProductComparisonIndex
+      const totalCount = this.getSortedComparisonProducts.length
+
+      if (currentIndex < 0 || totalCount <= 0) {
+        return null
+      }
+
+      return `Rang ${currentIndex + 1} sur ${totalCount}`
+    },
+
+    // Premier produit actif concurrent (pas le produit courant)
+    getBestCompetitorProduct(): SearchProduct | null {
+      const current = this.product
+      if (!current) return null
+
+      return this.getSortedComparisonProducts.find(
+        (p) => p.is_active && p.id !== current.id
+      ) ?? null
+    },
+
+    // Economie possible si le produit courant n'est pas le moins cher (null sinon)
+    getSavingsVsBestCompetitor(): number | null {
+      const current = this.product
+      const best = this.getBestCompetitorProduct
+
+      if (!current || !best) return null
+
+      const currentPrice = current.price_num
+      const bestPrice = best.price_num
+
+      if (currentPrice == null || bestPrice == null) return null
+
+      const diff = currentPrice - bestPrice
+      return diff > 0.005 ? diff : null
+    },
+
+    // Vrai si le produit courant est le meilleur prix parmi les actifs
+    getIsCurrentProductBestPrice(): boolean {
+      const current = this.product
+      if (!current) return false
+
+      const activeProducts = this.getSortedComparisonProducts.filter((p) => p.is_active)
+      if (activeProducts.length === 0) return false
+
+      return activeProducts[0]?.id === current.id
+    },
+
+    // Libellé formaté fr-CA pour le signal d'économie hero
+    getHeroSavingsLabel(): { savings: string; bestStore: string; bestPrice: string; totalStores: number } | null {
+      const total = this.getSortedComparisonProducts.length
+      const savings = this.getSavingsVsBestCompetitor
+      const best = this.getBestCompetitorProduct
+
+      if (!best || savings == null) return null
+
+      const savingsText = savings.toLocaleString('fr-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      return {
+        savings: `${savingsText} $`,
+        bestStore: best.store,
+        bestPrice: (best.price_num?.toLocaleString('fr-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) ?? 'N/A') + ' $',
+        totalStores: total
+      }
+    },
+
+    // Prix affiché formaté "X.XX $ CA" (null si inactif ou prix absent)
+    getFormattedCadPrice(): string | null {
+      const product = this.product
+      if (!product || !product.is_active) return null
+
+      const price = product.price_num
+      const formatted = formatPrice(price)
+
+      if (formatted === 'N/A') return null
+      return `${formatted} $ CA`
+    },
+
     getComparisonRows(): (showGuestProductCta: boolean) => ComparisonRow[] {
       return (showGuestProductCta: boolean) => {
         const rankedProducts = this.getSortedComparisonProducts

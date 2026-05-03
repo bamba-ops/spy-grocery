@@ -242,72 +242,12 @@ const searchMoreProductsPath = computed(() => {
   return `/search?${params.toString()}`
 })
 
-const marketAveragePrice = computed(() => {
-  return productDetails.getMarketAveragePrice
-})
+// Delegation vers store — logique domaine centralisee dans useProductDetailsStore
+const marketAveragePrice = computed(() => productDetails.getMarketAveragePrice)
+const currentProductRankLabel = computed(() => productDetails.getCurrentProductRankLabel)
+const getIsCurrentProductBestPrice = computed(() => productDetails.getIsCurrentProductBestPrice)
+const getHeroSavingsLabel = computed(() => productDetails.getHeroSavingsLabel)
 
-const currentProductRankLabel = computed(() => {
-  const currentIndex = productDetails.getCurrentProductComparisonIndex
-  const totalCount = sortedComparisonProducts.value.length
-
-  if (currentIndex < 0 || totalCount <= 0) {
-    return null
-  }
-
-  return `Rang ${currentIndex + 1} sur ${totalCount}`
-})
-
-// Best competitor = first active product in sorted comparison that is not current
-const bestCompetitorProduct = computed(() => {
-  const current = productDetails.product
-  if (!current) return null
-
-  return sortedComparisonProducts.value.find(
-    (p) => p.is_active && p.id !== current.id
-  ) ?? null
-})
-
-// Savings vs best competitor (positive = current is more expensive)
-const savingsVsBestCompetitor = computed(() => {
-  const current = productDetails.product
-  const best = bestCompetitorProduct.value
-
-  if (!current || !best) return null
-  const currentPrice = current.price_num
-  const bestPrice = best.price_num
-
-  if (currentPrice == null || bestPrice == null) return null
-
-  const diff = currentPrice - bestPrice
-  return diff > 0.005 ? diff : null
-})
-
-// True if current product is already rank 1 among active products
-const getIsCurrentProductBestPrice = computed(() => {
-  const current = productDetails.product
-  if (!current) return false
-
-  const activeProducts = sortedComparisonProducts.value.filter((p) => p.is_active)
-  if (activeProducts.length === 0) return false
-
-  return activeProducts[0]?.id === current.id
-})
-
-const getHeroSavingsLabel = computed(() => {
-  const total = sortedComparisonProducts.value.length
-  const savings = savingsVsBestCompetitor.value
-  const best = bestCompetitorProduct.value
-
-  if (!best || savings == null) return null
-
-  const savingsText = savings.toLocaleString('fr-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-  return {
-    savings: `${savingsText} $`,
-    bestStore: best.store,
-    bestPrice: best.price_num?.toLocaleString('fr-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' $',
-    totalStores: total
-  }
-})
 
 const getProductPageAnalyticsProperties = (product: SearchProduct, source: string) => {
   const comparisonProducts = productDetails.getSortedComparisonProducts
@@ -321,8 +261,8 @@ const getProductPageAnalyticsProperties = (product: SearchProduct, source: strin
     has_description: Boolean(product.description?.trim()),
     comparison_count: comparisonProducts.length,
     active_comparison_count: comparisonProducts.filter((entry) => entry.is_active).length,
-    market_average_price: marketAveragePrice.value,
-    current_rank_label: currentProductRankLabel.value,
+    market_average_price: productDetails.getMarketAveragePrice,
+    current_rank_label: productDetails.getCurrentProductRankLabel,
     source
   }
 }
@@ -474,41 +414,26 @@ const canonicalUrl = computed(() => {
   return `${siteUrl}${path}`
 })
 
+// Helpers UI locaux (formatage presentationnel)
 const getCadPriceLabel = (price: number | null) => {
   const formattedPrice = productDetails.getFormattedPrice(price)
-
-  if (formattedPrice === 'N/A') {
-    return formattedPrice
-  }
-
+  if (formattedPrice === 'N/A') return formattedPrice
   return `${formattedPrice} $ CA`
 }
 
 const getProductValidityText = (product: SearchProduct | null | undefined) => {
-  if (!product) {
-    return null
-  }
-
+  if (!product) return null
   return getProductValidityLabel(product.valid_from, product.valid_to)
 }
 
 const getDisplayProductPrice = (product: SearchProduct | null | undefined) => {
-  if (!product || !product.is_active) {
-    return null
-  }
-
+  if (!product || !product.is_active) return null
   return product.price_num
 }
 
 const getComparisonStatusLabel = (product: SearchProduct, rankIndex: number) => {
-  if (!product.is_active) {
-    return 'Terminee'
-  }
-
-  if (rankIndex === 0) {
-    return 'Meilleur prix'
-  }
-
+  if (!product.is_active) return 'Terminee'
+  if (rankIndex === 0) return 'Meilleur prix'
   return 'En cours'
 }
 
