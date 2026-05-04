@@ -73,6 +73,13 @@ export default defineNuxtConfig({
       meta: [
         { name: 'theme-color', content: '#000000' },
         { name: 'msapplication-TileColor', content: '#000000' }
+      ],
+      script: [
+        {
+          src: 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5822400348247107',
+          async: true,
+          crossorigin: 'anonymous'
+        }
       ]
     }
   },
