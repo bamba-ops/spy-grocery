@@ -1,0 +1,24 @@
+-- Migration: drop_products_slug_unique_constraint
+-- Date: 2026-05-07
+--
+-- Context:
+--   The products table had a UNIQUE constraint on the `slug` column ("products_slug_key").
+--   This constraint caused batch upsert failures in the Flipp actor loader because:
+--     1. Flipp rotates external_id with each new flyer cycle.
+--     2. The slug was built from external_id (e.g. "metro-lait-9876543").
+--     3. Two different products in the same loader batch could generate the same slug,
+--        or a new product's slug could collide with an existing product's slug in the DB.
+--     4. Postgres enforces all UNIQUE constraints independently — even when the upsert
+--        conflict target is `product_key`, a slug collision on any row in the batch
+--        causes the entire batch to fail with "duplicate key value violates unique
+--        constraint products_slug_key".
+--
+-- Decision:
+--   Drop the UNIQUE constraint on `slug`.
+--   Product identity and deduplication are fully handled by `product_key` (which remains
+--   the upsert conflict target and the canonical identity key).
+--   The `slug` column is kept as a non-unique SEO-readable identifier used for legacy
+--   URL routing (/products/[slug]). Canonical URLs use store_slug + title_slug + external_id,
+--   not the slug column directly.
+
+ALTER TABLE products DROP CONSTRAINT IF EXISTS products_slug_key;

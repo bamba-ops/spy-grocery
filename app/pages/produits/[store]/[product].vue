@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowRight, ArrowUpRight } from 'lucide-vue-next'
+import { ArrowRight, ArrowUpRight, X, ZoomIn } from 'lucide-vue-next'
 import { getRouteParam } from '#shared/utils/getRouteParam'
 import { getAnalyticsProductProperties } from '#shared/utils/analytics'
 import { getProductValidityLabel } from '#shared/utils/productAvailability'
@@ -27,6 +27,13 @@ const authStore = useAuthStore()
 const analytics = useAnalytics()
 const onboardingStepNumbers = [1, 2, 3]
 const lastProductPageViewKey = ref('')
+
+const zoomedImageUrl = ref<string | null>(null)
+const openImageZoom = (url: string | null | undefined) => {
+  if (url) {
+    zoomedImageUrl.value = url
+  }
+}
 
 const loadingShimmerBaseClass = "relative overflow-hidden border border-white/10 bg-white/5 before:absolute before:inset-0 before:content-[''] before:bg-gradient-to-r before:from-transparent before:via-white/20 before:to-transparent before:bg-[length:200%_100%] before:animate-shimmer"
 const loadingShimmerPanelClass = `${loadingShimmerBaseClass} rounded-2xl`
@@ -804,17 +811,29 @@ useHead(() => {
             </div>
 
             <div class="order-1 lg:order-2">
-              <div :class="['relative mx-auto flex aspect-square max-w-[280px] items-center justify-center overflow-hidden rounded-[28px] border bg-black p-4 sm:max-w-[340px] lg:max-w-none', productDetails.product.is_active ? 'border-white/10' : 'border-white/20']">
+              <button
+                type="button"
+                :class="[
+                  'group relative mx-auto flex aspect-square w-full max-w-[280px] items-center justify-center overflow-hidden rounded-[28px] border bg-black p-4 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:max-w-[340px] lg:max-w-none',
+                  productDetails.product.is_active ? 'border-white/10 hover:border-white/30' : 'border-white/20 hover:border-white/40',
+                  productDetails.getComparisonProductImageDisplay(productDetails.product).type === 'url' ? 'cursor-zoom-in' : ''
+                ]"
+                @click="openImageZoom(productDetails.getComparisonProductImageDisplay(productDetails.product).type === 'url' ? productDetails.getComparisonProductImageDisplay(productDetails.product).value : null)"
+                aria-label="Agrandir l'image du produit"
+              >
                 <template v-if="productDetails.getComparisonProductImageDisplay(productDetails.product).type === 'url'">
                   <img
                     :src="productDetails.getComparisonProductImageDisplay(productDetails.product).value"
                     :alt="productDetails.product.title"
                     :class="[
-                      'h-full w-full object-contain brightness-95 contrast-110',
+                      'h-full w-full object-contain brightness-95 contrast-110 transition duration-300 group-hover:scale-105',
                       productDetails.product.is_active ? '' : 'grayscale opacity-65'
                     ]"
                     loading="lazy"
                   >
+                  <div class="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                    <ZoomIn class="h-8 w-8 text-white/90 drop-shadow-md" />
+                  </div>
                 </template>
 
                 <template v-else>
@@ -823,8 +842,8 @@ useHead(() => {
                   </span>
                 </template>
 
-                <div class="pointer-events-none absolute inset-0 bg-black/30"></div>
-              </div>
+                <div class="pointer-events-none absolute inset-0 bg-black/30 transition-opacity duration-300 group-hover:bg-black/10"></div>
+              </button>
             </div>
           </div>
         </section>
@@ -904,21 +923,28 @@ useHead(() => {
                       : 'border-white/15 bg-white/[0.03]')
               ]"
             >
-              <NuxtLink
-                :to="getProductRoutePath(row.product)"
-                class="relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-xl border border-white/15 bg-black transition hover:border-white/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:h-24 sm:w-24 lg:h-28 lg:w-28"
-                :aria-label="`Ouvrir ${row.product.title}`"
+              <button
+                type="button"
+                :class="[
+                  'group relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/15 bg-black transition hover:border-white/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:h-24 sm:w-24 lg:h-28 lg:w-28',
+                  getComparisonProductImageDisplay(row.product).type === 'url' ? 'cursor-zoom-in' : ''
+                ]"
+                :aria-label="`Agrandir l'image de ${row.product.title}`"
+                @click="openImageZoom(getComparisonProductImageDisplay(row.product).type === 'url' ? getComparisonProductImageDisplay(row.product).value : null)"
               >
                 <template v-if="getComparisonProductImageDisplay(row.product).type === 'url'">
                   <img
                     :src="getComparisonProductImageDisplay(row.product).value"
                     :alt="row.product.title"
                     :class="[
-                      'h-full w-full object-contain brightness-90 contrast-110',
+                      'h-full w-full object-contain brightness-90 contrast-110 transition duration-300 group-hover:scale-105',
                       row.product.is_active ? '' : 'grayscale opacity-65'
                     ]"
                     loading="lazy"
                   >
+                  <div class="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                    <ZoomIn class="h-6 w-6 text-white/90 drop-shadow-md" />
+                  </div>
                 </template>
 
                 <template v-else>
@@ -934,7 +960,7 @@ useHead(() => {
                     getCurrentProductAccentClasses(row.rankIndex, row.rankTotal)
                   ]"
                 />
-              </NuxtLink>
+              </button>
 
               <div class="mt-4 min-w-0 lg:mt-0">
                 <div class="flex flex-wrap items-center gap-2">
@@ -1123,5 +1149,39 @@ useHead(() => {
         </section>
       </section>
     </main>
+
+    <!-- Lightbox Zoom Image -->
+    <Teleport to="body">
+      <Transition
+        enter-active-class="transition duration-200 ease-out"
+        enter-from-class="opacity-0"
+        enter-to-class="opacity-100"
+        leave-active-class="transition duration-150 ease-in"
+        leave-from-class="opacity-100"
+        leave-to-class="opacity-0"
+      >
+        <div
+          v-if="zoomedImageUrl"
+          class="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm sm:p-8"
+          @click="zoomedImageUrl = null"
+        >
+          <div class="relative flex max-h-full max-w-5xl flex-col items-center" @click.stop>
+            <button
+              type="button"
+              class="absolute -right-2 -top-12 sm:-right-12 sm:-top-4 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/60 text-white/70 transition hover:bg-black/80 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+              @click="zoomedImageUrl = null"
+              aria-label="Fermer"
+            >
+              <X class="h-5 w-5" />
+            </button>
+            <img
+              :src="zoomedImageUrl"
+              class="max-h-[85vh] w-auto rounded-xl object-contain shadow-[0_30px_80px_rgba(0,0,0,0.55)]"
+              alt="Image du produit"
+            >
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
