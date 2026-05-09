@@ -75,7 +75,7 @@ export default defineNuxtConfig({
         { name: 'msapplication-TileColor', content: '#000000' },
         {
           name: 'impact-site-verification',
-          value: '31899a4d-ec3c-47b6-9635-f407c4295006'
+          content: '31899a4d-ec3c-47b6-9635-f407c4295006'
         }
       ],
       script: [
