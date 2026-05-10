@@ -94,6 +94,10 @@ Projet actif et en evolution continue.
 - Le depot est public pour visibilite.
 - Le projet n'est pas ouvert aux contributions externes pour le moment.
 
+## Règles de développement
+
+- **Commentaires et Logique** : Lors de toute modification de code (par un Agent IA ou un humain), il est obligatoire de laisser des commentaires détaillant chaque fonction et d'ajouter des `console.log` pertinents pour faciliter la compréhension et le débogage.
+
 ## Documentation
 
 - `docs/STRUCTURE.md` - architecture et conventions de couches

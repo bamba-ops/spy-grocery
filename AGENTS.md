@@ -218,7 +218,8 @@ Type anchors:
 - Prefer single quotes in TS/JS.
 - Keep code ASCII unless user-facing copy needs Unicode.
 - Keep components focused and small.
-- Avoid unnecessary comments; only explain non-obvious logic.
+- OBLIGATOIRE : Lors de toute modification de code, laisser des commentaires expliquant chaque fonction et logique ajoutée afin de faciliter la compréhension.
+- OBLIGATOIRE : Laisser des `console.log` pertinents pour mieux comprendre ce qui se passe pendant l'exécution.
 
 ## Vue / Nuxt Conventions
 - Use `<script setup lang="ts">` in Vue SFCs.
