@@ -711,12 +711,12 @@ useHead(() => {
 
         <section class="relative overflow-hidden rounded-[30px] border border-[#ff9900]/20 bg-[radial-gradient(circle_at_12%_0%,rgba(255,153,0,0.18),transparent_34%),linear-gradient(135deg,rgba(255,255,255,0.07),rgba(255,255,255,0.02))] p-4 sm:p-6 lg:p-7">
           <div class="pointer-events-none absolute -right-16 -top-20 h-44 w-44 rounded-full bg-[#ff9900]/10 blur-3xl"></div>
-          <div class="relative grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px] lg:items-center">
-            <div>
-              <div class="flex flex-wrap items-center gap-3">
-                <div :class="[loadingShimmerPanelClass, 'h-14 w-36 rounded-2xl bg-white/80']"></div>
+          <div class="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div class="lg:max-w-3xl">
+              <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+                <div :class="[loadingShimmerPanelClass, 'h-13 w-32 rounded-2xl bg-white/80 sm:h-14 sm:w-36']"></div>
                 <div :class="[loadingShimmerPillClass, 'h-7 w-32']"></div>
-                <div :class="[loadingShimmerPillClass, 'h-7 w-64 border-[#ff9900]/25 bg-[#ff9900]/10']"></div>
+                <div :class="[loadingShimmerPillClass, 'h-7 w-full max-w-64 border-[#ff9900]/25 bg-[#ff9900]/10']"></div>
               </div>
 
               <div class="mt-6 space-y-3">
@@ -727,12 +727,7 @@ useHead(() => {
               </div>
             </div>
 
-            <div class="rounded-[26px] border border-white/15 bg-black/35 p-4">
-              <div :class="[loadingShimmerLineClass, 'h-3 w-32']"></div>
-              <div :class="[loadingShimmerLineClass, 'mt-3 h-7 w-36']"></div>
-              <div :class="[loadingShimmerLineClass, 'mt-3 h-4 w-full']"></div>
-              <div :class="[loadingShimmerPillClass, 'mt-5 h-12 w-full bg-[#ff9900]/30']"></div>
-            </div>
+            <div :class="[loadingShimmerPillClass, 'h-12 w-full shrink-0 bg-[#ff9900]/30 sm:w-56 lg:mb-1']"></div>
           </div>
         </section>
 
@@ -1047,11 +1042,11 @@ useHead(() => {
           <article
             v-for="offer in productDetails.getAffiliateOffers"
             :key="`affiliate-card-${offer.id}`"
-            class="relative grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px] lg:items-center"
+            class="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between"
           >
-            <div class="min-w-0">
-              <div class="flex flex-wrap items-center gap-3">
-                <div class="flex h-14 w-36 shrink-0 items-center justify-center rounded-2xl bg-white px-4 shadow-[0_18px_45px_rgba(0,0,0,0.25)]">
+            <div class="min-w-0 lg:max-w-3xl">
+              <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+                <div class="flex h-13 w-32 shrink-0 items-center justify-center rounded-2xl bg-white px-4 shadow-[0_18px_45px_rgba(0,0,0,0.25)] sm:h-14 sm:w-36">
                   <img
                     src="https://upload.wikimedia.org/wikipedia/commons/e/e3/Amazon_Prime_Logo.svg"
                     alt="Amazon Prime"
@@ -1061,16 +1056,16 @@ useHead(() => {
                 </div>
 
                 <div class="flex flex-wrap items-center gap-2">
-                  <span class="inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[9px] uppercase tracking-[0.26em] text-white">
+                  <span class="inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[8px] uppercase tracking-[0.24em] text-white sm:text-[9px] sm:tracking-[0.26em]">
                     {{ offer.badgeLabel }}
                   </span>
-                  <span class="inline-flex rounded-full border border-[#ff9900]/35 bg-[#ff9900]/10 px-3 py-1 text-[9px] uppercase tracking-[0.26em] text-[#ffd28a]">
+                  <span class="inline-flex rounded-full border border-[#ff9900]/35 bg-[#ff9900]/10 px-3 py-1 text-[8px] uppercase tracking-[0.24em] text-[#ffd28a] sm:text-[9px] sm:tracking-[0.26em]">
                     Livraison possible dès demain avec Prime
                   </span>
                 </div>
               </div>
 
-              <h2 class="mt-5 max-w-3xl font-display text-3xl font-semibold italic tracking-tight text-white sm:text-4xl">
+              <h2 class="mt-5 font-display text-2xl font-semibold italic leading-tight tracking-tight text-white sm:text-4xl">
                 Recevez {{ productDetails.product.title }} dès demain avec Prime.
               </h2>
               <p class="mt-3 max-w-2xl text-sm leading-relaxed text-white/72 sm:text-base">
@@ -1081,26 +1076,16 @@ useHead(() => {
               </p>
             </div>
 
-            <div class="rounded-[26px] border border-white/15 bg-black/35 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-sm">
-              <p class="text-[10px] uppercase tracking-[0.3em] text-[#ffd28a]">Option en ligne</p>
-              <p class="mt-2 font-display text-2xl font-semibold italic tracking-tight text-white">
-                Amazon.ca
-              </p>
-              <p class="mt-1 text-sm leading-relaxed text-white/60">
-                Livraison selon ton adresse, Prime et le vendeur.
-              </p>
-
-              <a
-                v-if="getSafeAffiliateUrl(offer.affiliateUrl)"
-                :href="getSafeAffiliateUrl(offer.affiliateUrl)!"
-                target="_blank"
-                rel="nofollow sponsored noopener noreferrer"
-                class="mt-4 inline-flex h-12 w-full items-center justify-center rounded-full border border-[#ffb84d] bg-[#ff9900] px-6 text-[10px] font-semibold uppercase tracking-[0.3em] text-black shadow-[0_14px_35px_rgba(255,153,0,0.24)] transition hover:bg-[#ffad33] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff9900] focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-                @click="setCaptureAffiliateOfferClicked(offer)"
-              >
-                Voir sur Amazon
-              </a>
-            </div>
+            <a
+              v-if="getSafeAffiliateUrl(offer.affiliateUrl)"
+              :href="getSafeAffiliateUrl(offer.affiliateUrl)!"
+              target="_blank"
+              rel="nofollow sponsored noopener noreferrer"
+              class="inline-flex h-12 w-full shrink-0 items-center justify-center rounded-full border border-[#ffb84d] bg-[#ff9900] px-6 text-[10px] font-semibold uppercase tracking-[0.3em] text-black shadow-[0_14px_35px_rgba(255,153,0,0.24)] transition hover:bg-[#ffad33] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff9900] focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:w-auto sm:min-w-[220px] lg:mb-1"
+              @click="setCaptureAffiliateOfferClicked(offer)"
+            >
+              Voir sur Amazon
+            </a>
           </article>
         </section>
 
@@ -1406,54 +1391,6 @@ useHead(() => {
         </section>
       </section>
     </main>
-
-    <!-- Sticky Mobile CTA -->
-    <div
-      v-if="productDetails.product"
-      class="fixed bottom-[72px] left-0 right-0 z-40 border-t border-white/10 bg-black/90 p-3 pb-safe-bottom backdrop-blur-md sm:hidden"
-    >
-      <div class="flex gap-2">
-        <template v-if="productDetails.product.is_active">
-          <button
-            type="button"
-            class="inline-flex h-11 flex-1 items-center justify-center rounded-full bg-white px-2 text-[9px] uppercase tracking-[0.25em] text-black transition active:scale-[0.98]"
-            @click="setAddCurrentProductToList"
-          >
-            {{ getCurrentProductWasJustAdded ? 'Ajoutee' : 'Ajouter a la liste' }}
-          </button>
-          
-          <a
-            v-if="getSafeProductUrl(productDetails.product.url)"
-            :href="getSafeProductUrl(productDetails.product.url)!"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="inline-flex h-11 flex-1 items-center justify-center rounded-full border border-white/20 px-2 text-[9px] uppercase tracking-[0.25em] text-white transition active:bg-white/10"
-            @click="setCaptureProductStoreOutboundClicked(productDetails.product, getSafeProductUrl(productDetails.product.url)!, 'mobile_sticky')"
-          >
-            Voir en magasin
-          </a>
-        </template>
-
-        <template v-else-if="sortedComparisonProducts.filter(p => p.is_active).length > 0">
-          <a
-            href="#classement"
-            class="inline-flex h-11 w-full items-center justify-center rounded-full bg-white px-2 text-[9px] uppercase tracking-[0.25em] text-black transition active:scale-[0.98]"
-            @click="setCaptureProductCompareAnchorClicked('mobile_sticky_expired_cta')"
-          >
-            Voir les offres actives
-          </a>
-        </template>
-        
-        <template v-else>
-          <NuxtLink
-            :to="searchMoreProductsPath"
-            class="inline-flex h-11 w-full items-center justify-center rounded-full bg-white px-2 text-[9px] uppercase tracking-[0.25em] text-black transition active:scale-[0.98]"
-          >
-            Voir d'autres offres
-          </NuxtLink>
-        </template>
-      </div>
-    </div>
 
     <!-- Lightbox Zoom Image -->
     <Teleport to="body">
