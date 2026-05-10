@@ -117,7 +117,18 @@ export default defineNuxtConfig({
     sources: ['/api/__sitemap__/urls']
   },
   robots: {
-    disallow: ['/auth/', '/onboarding'],
+    groups: [
+      {
+        userAgent: '*',
+        disallow: ['/auth/', '/onboarding']
+      },
+      {
+        comment: ['AI search crawlers that can surface SpyGrocery as a cited source.'],
+        userAgent: ['OAI-SearchBot', 'ChatGPT-User', 'PerplexityBot'],
+        allow: '/',
+        disallow: ['/auth/', '/onboarding']
+      }
+    ],
     sitemap: [`${SITE_URL}/sitemap.xml`]
   },
   imports: {

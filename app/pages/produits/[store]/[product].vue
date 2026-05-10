@@ -473,6 +473,29 @@ const seoTitle = computed(() => {
   return `${product.title} chez ${product.store} | Comparez les prix en epicerie | SpyGrocery`
 })
 
+const productAnswerSummary = computed(() => {
+  const product = productDetails.product
+
+  if (!product) {
+    return ''
+  }
+
+  const activeComparisonCount = sortedComparisonProducts.value.filter((entry) => entry.is_active).length
+  const validityLabel = getProductValidityText(product)
+
+  if (!product.is_active) {
+    return `${product.title} chez ${product.store} n'est plus affiche comme promotion active. SpyGrocery montre les autres offres encore disponibles pour aider a comparer avant d'acheter.`
+  }
+
+  const priceLabel = getCadPriceLabel(getDisplayProductPrice(product))
+  const comparisonLabel = activeComparisonCount > 1
+    ? `compare avec ${activeComparisonCount} offres locales suivies`
+    : 'suivi sur SpyGrocery'
+  const validityText = validityLabel ? ` ${validityLabel}.` : ''
+
+  return `${product.title} est observe chez ${product.store} a ${priceLabel}; SpyGrocery le ${comparisonLabel} pour reperer rapidement le meilleur prix.${validityText}`
+})
+
 const seoDescription = computed(() => {
   const product = productDetails.product
 
@@ -480,12 +503,7 @@ const seoDescription = computed(() => {
     return 'Consultez les details du produit et comparez les prix en epicerie au Quebec.'
   }
 
-  if (!product.is_active) {
-    return `Consultez ${product.title} chez ${product.store}, les dates de validite de cette promo et les options encore en cours dans les autres magasins.`
-  }
-
-  const priceLabel = getCadPriceLabel(getDisplayProductPrice(product))
-  return `Consultez ${product.title} chez ${product.store}, prix actuel ${priceLabel}, et comparez les options dans les autres magasins.`
+  return productAnswerSummary.value
 })
 
 const seoJsonLd = computed(() => {
@@ -499,17 +517,54 @@ const seoJsonLd = computed(() => {
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: product.title,
+    url: canonicalUrl.value,
+    mainEntityOfPage: canonicalUrl.value,
     image: product.image_url ? [product.image_url] : undefined,
     brand: product.brand ? { '@type': 'Brand', name: product.brand } : undefined,
-    description: product.description || undefined,
+    description: product.description || productAnswerSummary.value,
     sku: product.external_id || undefined,
+    additionalProperty: [
+      product.store
+        ? {
+            '@type': 'PropertyValue',
+            name: 'Store',
+            value: product.store
+          }
+        : null,
+      product.valid_from
+        ? {
+            '@type': 'PropertyValue',
+            name: 'Promotion valid from',
+            value: product.valid_from.slice(0, 10)
+          }
+        : null,
+      product.valid_to
+        ? {
+            '@type': 'PropertyValue',
+            name: 'Promotion valid until',
+            value: product.valid_to.slice(0, 10)
+          }
+        : null
+    ].filter(Boolean),
     offers: {
       '@type': 'Offer',
       priceCurrency: 'CAD',
       price: typeof getDisplayProductPrice(product) === 'number' ? getDisplayProductPrice(product) : undefined,
+      validFrom: product.is_active && product.valid_from ? product.valid_from.slice(0, 10) : undefined,
       priceValidUntil: product.is_active && product.valid_to ? product.valid_to.slice(0, 10) : undefined,
       url: canonicalUrl.value,
-      availability: product.is_active ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock'
+      availability: product.is_active ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+      itemCondition: 'https://schema.org/NewCondition',
+      seller: product.store
+        ? {
+            '@type': 'Organization',
+            name: product.store
+          }
+        : undefined,
+      areaServed: {
+        '@type': 'AdministrativeArea',
+        name: 'Quebec, Canada'
+      }
     }
   }
 
@@ -850,6 +905,10 @@ useHead(() => {
                 class="mt-4 max-w-3xl text-sm leading-relaxed text-white/75 sm:text-base"
               >
                 {{ productDetails.product.description }}
+              </p>
+
+              <p class="mt-4 max-w-3xl rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm leading-relaxed text-white/72 sm:text-base">
+                {{ productAnswerSummary }}
               </p>
 
               <div v-if="productHeroMetaChips.length > 0" class="mt-4 flex flex-wrap gap-2 text-[10px] uppercase tracking-[0.28em] text-white/60">

@@ -213,9 +213,31 @@ const seoTitle = computed(() => {
   return `${storeName} - aubaines et meilleurs produits en epicerie | SpyGrocery`
 })
 
-const seoDescription = computed(() => {
+const storeAnswerSummary = computed(() => {
   const storeName = storeOverview.storeName || storeSlug.value
-  return `${storeName} propose ${storeOverview.activeSpecialsCount} aubaines actives et ${storeOverview.productCount} produits suivis sur SpyGrocery.`
+  const updateText = storeOverview.formattedLastUpdated
+    ? ` Mis a jour ${storeOverview.formattedLastUpdated}.`
+    : ''
+
+  return `SpyGrocery suit ${storeOverview.productCount} produits chez ${storeName}, dont ${storeOverview.activeSpecialsCount} aubaines actives, pour comparer les prix avec les autres epiceries suivies au Quebec.${updateText}`
+})
+
+const storeTopDealsSummary = computed(() => {
+  const products = storeOverview.bestProducts.slice(0, 3)
+
+  if (products.length === 0) {
+    return ''
+  }
+
+  const deals = products
+    .map((product) => `${product.title} a ${storeOverview.getFormattedPrice(product.price_num)} $ CA`)
+    .join(', ')
+
+  return `Exemples de produits suivis: ${deals}.`
+})
+
+const seoDescription = computed(() => {
+  return `${storeAnswerSummary.value} ${storeTopDealsSummary.value}`.trim()
 })
 
 const seoJsonLd = computed(() => {
@@ -223,7 +245,24 @@ const seoJsonLd = computed(() => {
     '@type': 'ListItem',
     position: index + 1,
     url: `${siteUrl}${getProductRoutePath(product)}`,
-    name: product.title
+    item: {
+      '@type': 'Product',
+      name: product.title,
+      url: `${siteUrl}${getProductRoutePath(product)}`,
+      image: product.image_url || undefined,
+      brand: product.brand ? { '@type': 'Brand', name: product.brand } : undefined,
+      offers: {
+        '@type': 'Offer',
+        priceCurrency: 'CAD',
+        price: typeof product.price_num === 'number' ? product.price_num : undefined,
+        priceValidUntil: product.valid_to ? product.valid_to.slice(0, 10) : undefined,
+        availability: product.is_active ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+        seller: {
+          '@type': 'Organization',
+          name: product.store || storeOverview.storeName
+        }
+      }
+    }
   }))
 
   const collectionPageSchema = {
@@ -233,6 +272,7 @@ const seoJsonLd = computed(() => {
     description: seoDescription.value,
     url: canonicalUrl.value,
     numberOfItems: storeOverview.productCount,
+    about: storeAnswerSummary.value,
     mainEntity: {
       '@type': 'ItemList',
       itemListElement
@@ -358,12 +398,10 @@ useHead(() => ({
 
       <section class="mt-6 border-b border-white/10 pb-6">
         <p class="text-sm leading-relaxed text-white/70">
-          Chez {{ storeOverview.storeName || storeSlug }}, SpyGrocery suit actuellement
-          {{ storeOverview.productCount }} produits et
-          {{ storeOverview.activeSpecialsCount }} aubaines actives<template v-if="storeOverview.formattedLastUpdated">
-            (mis a jour {{ storeOverview.formattedLastUpdated }})</template>.
-          Les prix sont compares avec les autres epiceries suivies au Quebec
-          afin d'aider a reperer les produits les moins chers par magasin.
+          {{ storeAnswerSummary }}
+          <template v-if="storeTopDealsSummary">
+            {{ storeTopDealsSummary }}
+          </template>
         </p>
       </section>
 

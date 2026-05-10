@@ -10,6 +10,7 @@ const analytics = useAnalytics()
 onMounted(() => {
   void authStore.initAuth()
   listsStore.setHydrateCurrentListDraft()
+  analytics.captureAiReferralLanding()
 
   // Debug log intentionally kept while onboarding v2 is monitored.
   console.log('[app] initialized auth and list draft hydration')
