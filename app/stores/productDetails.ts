@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import type { AffiliateOffer } from '#shared/types/affiliate'
 import type { SearchProduct } from '#shared/types'
 import { getProductRoutePath } from '#shared/utils/productRoute'
 import { toSlug } from '#shared/utils/toSlug'
@@ -36,6 +37,7 @@ export const useProductDetailsStore = defineStore('productDetails', {
   state: () => ({
     product: null as SearchProduct | null,
     otherStoreProducts: [] as SearchProduct[],
+    affiliateOffers: [] as AffiliateOffer[],
     visibleComparisonProductsCount: INITIAL_VISIBLE_COMPARISON_PRODUCTS_COUNT,
     loading: false,
     error: null as string | null,
@@ -46,6 +48,8 @@ export const useProductDetailsStore = defineStore('productDetails', {
   getters: {
     getHasProduct: (state) => Boolean(state.product),
     getHasOtherStoreProducts: (state) => state.otherStoreProducts.length > 0,
+    getAffiliateOffers: (state) => state.affiliateOffers,
+    getHasAffiliateOffers: (state) => state.affiliateOffers.length > 0,
 
     getSortedComparisonProducts(): SearchProduct[] {
       const mergedProducts = [
@@ -247,6 +251,40 @@ export const useProductDetailsStore = defineStore('productDetails', {
   },
 
   actions: {
+    setAffiliateOffersReset() {
+      this.affiliateOffers = []
+    },
+
+    async getAffiliateOffersForCurrentProduct() {
+      if (!this.product?.id) {
+        this.setAffiliateOffersReset()
+        return []
+      }
+
+      try {
+        const { getOffersByProductId } = useAffiliateOffers()
+        const offers = await getOffersByProductId(this.product.id)
+
+        this.affiliateOffers = offers
+
+        console.log('[affiliate][amazon] offers hydrated in product details store:', {
+          productId: this.product.id,
+          offerCount: offers.length
+        })
+
+        return offers
+      } catch (error) {
+        this.setAffiliateOffersReset()
+
+        console.error('[affiliate][amazon] failed to hydrate offers:', {
+          productId: this.product.id,
+          error
+        })
+
+        return []
+      }
+    },
+
     // Construction du path /search?intent=notify-special pour le produit courant
     getNotifySpecialNextPath(storeSlugFallback = '') {
       const params = new URLSearchParams()
@@ -325,6 +363,7 @@ export const useProductDetailsStore = defineStore('productDetails', {
       if (!normalizedSlug) {
         this.product = null
         this.otherStoreProducts = []
+        this.setAffiliateOffersReset()
         this.error = 'Slug produit invalide.'
         this.canonicalPath = null
         this.shouldRedirect = false
@@ -345,11 +384,13 @@ export const useProductDetailsStore = defineStore('productDetails', {
         this.canonicalPath = getProductRoutePath(response.product)
         this.shouldRedirect = false
         this.setComparisonVisibleProductsReset()
+        await this.getAffiliateOffersForCurrentProduct()
 
         return response as ProductDetailsResponse
       } catch (error: unknown) {
         this.product = null
         this.otherStoreProducts = []
+        this.setAffiliateOffersReset()
         this.error = error instanceof Error ? error.message : 'Impossible de charger les details du produit.'
         this.canonicalPath = null
         this.shouldRedirect = false
@@ -374,6 +415,7 @@ export const useProductDetailsStore = defineStore('productDetails', {
       if (!normalizedStoreSlug || !normalizedProductSlug) {
         this.product = null
         this.otherStoreProducts = []
+        this.setAffiliateOffersReset()
         this.error = 'Route produit invalide.'
         this.canonicalPath = null
         this.shouldRedirect = false
@@ -394,11 +436,13 @@ export const useProductDetailsStore = defineStore('productDetails', {
         this.canonicalPath = response.canonicalPath
         this.shouldRedirect = response.shouldRedirect
         this.setComparisonVisibleProductsReset()
+        await this.getAffiliateOffersForCurrentProduct()
 
         return response as ProductDetailsByRouteResponse
       } catch (error: unknown) {
         this.product = null
         this.otherStoreProducts = []
+        this.setAffiliateOffersReset()
         this.error = error instanceof Error ? error.message : 'Impossible de charger les details du produit.'
         this.canonicalPath = null
         this.shouldRedirect = false

@@ -46,6 +46,9 @@ const footerColumns = [
           <p class="mt-4 text-sm text-white/70">
             L'outil pour comparer les prix et economiser a l'epicerie pres de chez vous.
           </p>
+          <p class="mt-4 text-xs leading-relaxed text-white/45">
+            En tant que Partenaire Amazon, SpyGrocery peut realiser un benefice sur les achats admissibles.
+          </p>
         </div>
 
         <div class="grid gap-8 sm:grid-cols-2">

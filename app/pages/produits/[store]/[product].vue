@@ -8,6 +8,7 @@ import { ONBOARDING_MAX_STEP } from '#shared/utils/onboarding'
 import { getProductRoutePath } from '#shared/utils/productRoute'
 import { toPageError } from '#shared/utils/toPageError'
 import type { SearchProduct } from '#shared/types'
+import type { AffiliateOffer } from '#shared/types/affiliate'
 import { useProductDetailsStore } from '~/stores/productDetails'
 import { useListsStore } from '~/stores/lists'
 import { useOnboardingStore } from '~/stores/onboarding'
@@ -28,6 +29,7 @@ const authStore = useAuthStore()
 const analytics = useAnalytics()
 const onboardingStepNumbers = [1, 2, 3]
 const lastProductPageViewKey = ref('')
+const viewedAffiliateOfferIds = new Set<string>()
 
 const zoomedImageUrl = ref<string | null>(null)
 const openImageZoom = (url: string | null | undefined) => {
@@ -64,6 +66,13 @@ const productSlug = computed(() => {
 
 const getSafeProductUrl = (url: string | null) => {
   if (!url) return null
+  const trimmed = url.trim()
+  if (!trimmed) return null
+  if (!/^https?:\/\//i.test(trimmed)) return null
+  return trimmed
+}
+
+const getSafeAffiliateUrl = (url: string) => {
   const trimmed = url.trim()
   if (!trimmed) return null
   if (!/^https?:\/\//i.test(trimmed)) return null
@@ -229,6 +238,39 @@ const getProductPageAnalyticsProperties = (product: SearchProduct, source: strin
     current_rank_label: productDetails.getCurrentProductRankLabel,
     source
   }
+}
+
+const getAffiliateOfferAnalyticsProperties = (offer: AffiliateOffer, source: string) => {
+  const product = productDetails.product
+
+  return {
+    ...(product ? getProductPageAnalyticsProperties(product, source) : { source }),
+    provider: offer.provider,
+    provider_label: offer.providerLabel,
+    offer_source: offer.offerSource,
+    product_signature: offer.productSignature,
+    affiliate_offer_id: offer.id,
+    placement: 'product_affiliate_card'
+  }
+}
+
+const setCaptureAffiliateOfferViewed = (offer: AffiliateOffer, source = 'product_affiliate_card') => {
+  if (viewedAffiliateOfferIds.has(offer.id)) {
+    return
+  }
+
+  viewedAffiliateOfferIds.add(offer.id)
+  analytics.capture('affiliate_offer_viewed', getAffiliateOfferAnalyticsProperties(offer, source))
+}
+
+const setCaptureAffiliateOfferClicked = (offer: AffiliateOffer, source = 'product_affiliate_card') => {
+  analytics.capture('affiliate_offer_clicked', getAffiliateOfferAnalyticsProperties(offer, source))
+
+  console.log('[affiliate][amazon] offer clicked:', {
+    offerId: offer.id,
+    provider: offer.provider,
+    offerSource: offer.offerSource
+  })
 }
 
 const setCaptureProductCompareAnchorClicked = (source = 'product_page') => {
@@ -510,6 +552,18 @@ watch(
     setCaptureProductPageViewed('product_page_route_change')
   },
   { immediate: false }
+)
+
+watch(
+  () => productDetails.getAffiliateOffers.map((offer) => offer.id).join('|'),
+  () => {
+    productDetails.getAffiliateOffers.forEach((offer) => {
+      setCaptureAffiliateOfferViewed(offer)
+    })
+  },
+  {
+    immediate: true
+  }
 )
 
 useHead(() => {
@@ -890,6 +944,73 @@ useHead(() => {
               </button>
             </div>
           </div>
+        </section>
+
+        <section
+          v-if="productDetails.getHasAffiliateOffers"
+          class="relative overflow-hidden rounded-[30px] border border-[#ff9900]/30 bg-[radial-gradient(circle_at_12%_0%,rgba(255,153,0,0.26),transparent_34%),linear-gradient(135deg,rgba(255,255,255,0.09),rgba(255,255,255,0.025))] p-4 shadow-[0_28px_90px_rgba(255,153,0,0.08)] sm:p-6 lg:p-7"
+        >
+          <div class="pointer-events-none absolute -right-16 -top-20 h-44 w-44 rounded-full bg-[#ff9900]/20 blur-3xl"></div>
+          <div class="pointer-events-none absolute bottom-0 left-8 h-px w-40 bg-gradient-to-r from-[#ff9900]/70 to-transparent"></div>
+
+          <article
+            v-for="offer in productDetails.getAffiliateOffers"
+            :key="`affiliate-card-${offer.id}`"
+            class="relative grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px] lg:items-center"
+          >
+            <div class="min-w-0">
+              <div class="flex flex-wrap items-center gap-3">
+                <div class="flex h-14 w-24 shrink-0 items-center justify-center rounded-2xl bg-white px-4 shadow-[0_18px_45px_rgba(0,0,0,0.25)]">
+                  <img
+                    src="https://companieslogo.com/img/orig/AMZN-e9f942e4.png?t=1740113564"
+                    alt="Amazon"
+                    class="max-h-8 w-full object-contain"
+                    loading="lazy"
+                  >
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[9px] uppercase tracking-[0.26em] text-white">
+                    {{ offer.badgeLabel }}
+                  </span>
+                  <span class="inline-flex rounded-full border border-[#ff9900]/35 bg-[#ff9900]/10 px-3 py-1 text-[9px] uppercase tracking-[0.26em] text-[#ffd28a]">
+                    Livraison possible dès demain avec Prime
+                  </span>
+                </div>
+              </div>
+
+              <h2 class="mt-5 max-w-3xl font-display text-3xl font-semibold italic tracking-tight text-white sm:text-4xl">
+                Recevez-le demain avec Prime.
+              </h2>
+              <p class="mt-3 max-w-2xl text-sm leading-relaxed text-white/72 sm:text-base">
+                Pourquoi attendre ? Vérifiez si ce produit est disponible en livraison gratuite et ultra-rapide avant de finir votre liste.
+              </p>
+              <p class="mt-3 max-w-2xl text-xs leading-relaxed text-white/45">
+                En tant que Partenaire Amazon, SpyGrocery peut realiser un benefice sur les achats admissibles.
+              </p>
+            </div>
+
+            <div class="rounded-[26px] border border-white/15 bg-black/35 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-sm">
+              <p class="text-[10px] uppercase tracking-[0.3em] text-[#ffd28a]">Option en ligne</p>
+              <p class="mt-2 font-display text-2xl font-semibold italic tracking-tight text-white">
+                Amazon.ca
+              </p>
+              <p class="mt-1 text-sm leading-relaxed text-white/60">
+                Livraison selon ton adresse, Prime et le vendeur.
+              </p>
+
+              <a
+                v-if="getSafeAffiliateUrl(offer.affiliateUrl)"
+                :href="getSafeAffiliateUrl(offer.affiliateUrl)!"
+                target="_blank"
+                rel="nofollow sponsored noopener noreferrer"
+                class="mt-4 inline-flex h-12 w-full items-center justify-center rounded-full border border-[#ffb84d] bg-[#ff9900] px-6 text-[10px] font-semibold uppercase tracking-[0.3em] text-black shadow-[0_14px_35px_rgba(255,153,0,0.24)] transition hover:bg-[#ffad33] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff9900] focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                @click="setCaptureAffiliateOfferClicked(offer)"
+              >
+                Voir sur Amazon
+              </a>
+            </div>
+          </article>
         </section>
 
         <section
