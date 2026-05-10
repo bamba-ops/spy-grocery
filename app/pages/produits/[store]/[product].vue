@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useIntersectionObserver } from '@vueuse/core'
 import { ArrowRight, ArrowUpRight, X, ZoomIn } from 'lucide-vue-next'
 import { getRouteParam } from '#shared/utils/getRouteParam'
 import { getAnalyticsProductProperties } from '#shared/utils/analytics'
@@ -71,6 +72,9 @@ const getSafeProductUrl = (url: string | null) => {
 
 // Delegations vers stores — logique metier centralisee
 const setNotifySpecialFromProductCta = () => {
+  if (productDetails.product) {
+    analytics.capture('product_price_alert_clicked', getProductPageAnalyticsProperties(productDetails.product, 'product_page'))
+  }
   return productDetails.setNotifySpecialFromProductCta(storeSlug.value || '')
 }
 
@@ -213,6 +217,7 @@ const getProductPageAnalyticsProperties = (product: SearchProduct, source: strin
 
   return {
     ...getAnalyticsProductProperties(product),
+    is_authenticated: Boolean(authStore.user),
     price_text: product.price_text,
     valid_from: product.valid_from,
     valid_to: product.valid_to,
@@ -224,6 +229,13 @@ const getProductPageAnalyticsProperties = (product: SearchProduct, source: strin
     current_rank_label: productDetails.getCurrentProductRankLabel,
     source
   }
+}
+
+const setCaptureProductCompareAnchorClicked = (source = 'product_page') => {
+  const product = productDetails.product
+  if (!product) return
+
+  analytics.capture('product_compare_anchor_clicked', getProductPageAnalyticsProperties(product, source))
 }
 
 const setCaptureProductPageViewed = (source = 'product_page') => {
@@ -341,8 +353,21 @@ if (!productDetails.product) {
   })
 }
 
+const classementRef = ref<HTMLElement | null>(null)
+let hasScrolledToComparison = false
+
 onMounted(() => {
   setCaptureProductPageViewed()
+
+  if (import.meta.client) {
+    useIntersectionObserver(classementRef, (entries) => {
+      const entry = entries[0]
+      if (entry?.isIntersecting && !hasScrolledToComparison && productDetails.product) {
+        hasScrolledToComparison = true
+        analytics.capture('product_page_scrolled_to_comparison', getProductPageAnalyticsProperties(productDetails.product, 'product_page'))
+      }
+    })
+  }
 
   if (!getIsOnboardingContext.value || !productDetails.product) {
     return
@@ -758,6 +783,7 @@ useHead(() => {
                 <div class="flex flex-col gap-2">
                   <!-- CTA principal -->
                   <button
+                    v-if="productDetails.product.is_active"
                     type="button"
                     :class="[
                       'inline-flex h-12 w-full items-center justify-center rounded-full border border-white/20 bg-white px-6 text-[10px] uppercase tracking-[0.32em] text-black transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:w-auto',
@@ -767,8 +793,25 @@ useHead(() => {
                     ]"
                     @click="setAddCurrentProductToList"
                   >
-                    {{ getCurrentProductWasJustAdded ? 'Aubaine sauvegardee' : 'Sauvegarder cette aubaine' }}
+                    {{ getCurrentProductWasJustAdded ? 'Ajoutee a la liste' : 'Ajouter a ma liste' }}
                   </button>
+
+                  <a
+                    v-else-if="sortedComparisonProducts.filter(p => p.is_active).length > 0"
+                    href="#classement"
+                    class="inline-flex h-12 w-full items-center justify-center rounded-full border border-white/20 bg-white px-6 text-[10px] uppercase tracking-[0.32em] text-black transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:w-auto"
+                    @click="setCaptureProductCompareAnchorClicked('product_page_expired_cta')"
+                  >
+                    Voir les offres actives
+                  </a>
+
+                  <NuxtLink
+                    v-else
+                    :to="searchMoreProductsPath"
+                    class="inline-flex h-12 w-full items-center justify-center rounded-full border border-white/20 bg-white px-6 text-[10px] uppercase tracking-[0.32em] text-black transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:w-auto"
+                  >
+                    Voir d'autres offres
+                  </NuxtLink>
 
                   <!-- Micro-valeur compte -->
                   <p v-if="getShowGuestProductCta" class="text-[10px] text-white/45">
@@ -782,6 +825,7 @@ useHead(() => {
                       v-if="sortedComparisonProducts.length > 1"
                       href="#classement"
                       class="inline-flex h-10 items-center justify-center rounded-full border border-white/15 px-4 text-[10px] uppercase tracking-[0.28em] text-white/65 transition hover:border-white/25 hover:text-white/85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                      @click="setCaptureProductCompareAnchorClicked('product_page')"
                     >
                       Voir le classement
                     </a>
@@ -851,6 +895,7 @@ useHead(() => {
         <section
           v-if="sortedComparisonProducts.length > 0"
           id="classement"
+          ref="classementRef"
           class="rounded-[30px] border border-white/10 bg-black/60 p-4 sm:p-5 lg:p-6"
         >
           <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -1144,11 +1189,59 @@ useHead(() => {
             class="mt-6 inline-flex h-12 items-center justify-center rounded-full border border-white/20 bg-white px-8 text-[10px] uppercase tracking-[0.32em] text-black transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
             @click="setAddCurrentProductToList"
           >
-            Sauvegarder cette aubaine gratuitement
+            Ajouter a ma liste gratuitement
           </button>
         </section>
       </section>
     </main>
+
+    <!-- Sticky Mobile CTA -->
+    <div
+      v-if="productDetails.product"
+      class="fixed bottom-[72px] left-0 right-0 z-40 border-t border-white/10 bg-black/90 p-3 pb-safe-bottom backdrop-blur-md sm:hidden"
+    >
+      <div class="flex gap-2">
+        <template v-if="productDetails.product.is_active">
+          <button
+            type="button"
+            class="inline-flex h-11 flex-1 items-center justify-center rounded-full bg-white px-2 text-[9px] uppercase tracking-[0.25em] text-black transition active:scale-[0.98]"
+            @click="setAddCurrentProductToList"
+          >
+            {{ getCurrentProductWasJustAdded ? 'Ajoutee' : 'Ajouter a la liste' }}
+          </button>
+          
+          <a
+            v-if="getSafeProductUrl(productDetails.product.url)"
+            :href="getSafeProductUrl(productDetails.product.url)!"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex h-11 flex-1 items-center justify-center rounded-full border border-white/20 px-2 text-[9px] uppercase tracking-[0.25em] text-white transition active:bg-white/10"
+            @click="setCaptureProductStoreOutboundClicked(productDetails.product, getSafeProductUrl(productDetails.product.url)!, 'mobile_sticky')"
+          >
+            Voir en magasin
+          </a>
+        </template>
+
+        <template v-else-if="sortedComparisonProducts.filter(p => p.is_active).length > 0">
+          <a
+            href="#classement"
+            class="inline-flex h-11 w-full items-center justify-center rounded-full bg-white px-2 text-[9px] uppercase tracking-[0.25em] text-black transition active:scale-[0.98]"
+            @click="setCaptureProductCompareAnchorClicked('mobile_sticky_expired_cta')"
+          >
+            Voir les offres actives
+          </a>
+        </template>
+        
+        <template v-else>
+          <NuxtLink
+            :to="searchMoreProductsPath"
+            class="inline-flex h-11 w-full items-center justify-center rounded-full bg-white px-2 text-[9px] uppercase tracking-[0.25em] text-black transition active:scale-[0.98]"
+          >
+            Voir d'autres offres
+          </NuxtLink>
+        </template>
+      </div>
+    </div>
 
     <!-- Lightbox Zoom Image -->
     <Teleport to="body">
