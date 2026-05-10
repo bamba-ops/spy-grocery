@@ -722,7 +722,8 @@ export const searchProductsRows = async (
   const searchParams = buildSearchFilterParams(params.searchQuery)
 
   const hasSearchQuery = searchParams.normalizedSearchQuery.length > 0
-  const canUseRelevanceRanking = hasSearchQuery
+  const canUseRelevanceRanking = params.sortBy === 'relevance'
+    && hasSearchQuery
     && searchParams.normalizedSearchQuery.length >= MIN_RELEVANCE_QUERY_LENGTH
     && (params.offset + params.limit) <= MAX_CANDIDATE_ROWS
 
