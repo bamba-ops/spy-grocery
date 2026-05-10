@@ -662,34 +662,125 @@ useHead(() => {
         Retour a la recherche
       </NuxtLink>
 
-      <div v-if="productDetails.loading" class="mt-8">
-        <section class="rounded-[30px] border border-white/10 bg-black/60 p-3 sm:p-5 lg:p-6">
-          <div class="space-y-3">
-            <div :class="[loadingShimmerLineClass, 'h-3 w-32']"></div>
-            <div :class="[loadingShimmerLineClass, 'h-8 w-full max-w-[380px]']"></div>
-            <div :class="[loadingShimmerLineClass, 'h-3 w-24']"></div>
+      <div v-if="productDetails.loading" class="mt-8 flex flex-col gap-8 sm:gap-10" aria-busy="true">
+        <section class="overflow-hidden rounded-[30px] border border-white/10 bg-black/60">
+          <div class="grid gap-6 p-4 sm:p-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-8 lg:p-8">
+            <div class="order-2 lg:order-1">
+              <div class="flex flex-wrap gap-2">
+                <div :class="[loadingShimmerPillClass, 'h-7 w-20']"></div>
+                <div :class="[loadingShimmerPillClass, 'h-7 w-36']"></div>
+                <div :class="[loadingShimmerPillClass, 'h-7 w-48']"></div>
+              </div>
+
+              <div class="mt-5 space-y-3">
+                <div :class="[loadingShimmerLineClass, 'h-10 w-full max-w-[640px] sm:h-12']"></div>
+                <div :class="[loadingShimmerLineClass, 'h-10 w-4/5 max-w-[540px] sm:h-12']"></div>
+                <div :class="[loadingShimmerLineClass, 'h-4 w-full max-w-[520px]']"></div>
+              </div>
+
+              <div class="mt-6 flex flex-wrap gap-2">
+                <div :class="[loadingShimmerPillClass, 'h-7 w-28']"></div>
+                <div :class="[loadingShimmerPillClass, 'h-7 w-20']"></div>
+              </div>
+
+              <div class="mt-8">
+                <div :class="[loadingShimmerLineClass, 'h-3 w-32']"></div>
+                <div :class="[loadingShimmerLineClass, 'mt-3 h-12 w-48 sm:h-14']"></div>
+                <div :class="[loadingShimmerLineClass, 'mt-3 h-3 w-full max-w-[420px]']"></div>
+                <div :class="[loadingShimmerLineClass, 'mt-2 h-4 w-40']"></div>
+              </div>
+
+              <div class="mt-6 rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
+                <div :class="[loadingShimmerLineClass, 'h-3 w-56']"></div>
+                <div :class="[loadingShimmerLineClass, 'mt-3 h-5 w-full max-w-[360px]']"></div>
+                <div :class="[loadingShimmerLineClass, 'mt-2 h-4 w-40']"></div>
+              </div>
+
+              <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                <div :class="[loadingShimmerPillClass, 'h-12 w-full sm:w-64']"></div>
+                <div :class="[loadingShimmerPillClass, 'h-10 w-44']"></div>
+                <div :class="[loadingShimmerPillClass, 'h-10 w-40']"></div>
+              </div>
+            </div>
+
+            <div class="order-1 lg:order-2">
+              <div :class="[loadingShimmerPanelClass, 'mx-auto aspect-square w-full max-w-[280px] rounded-[28px] sm:max-w-[340px] lg:max-w-none']"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="relative overflow-hidden rounded-[30px] border border-[#ff9900]/20 bg-[radial-gradient(circle_at_12%_0%,rgba(255,153,0,0.18),transparent_34%),linear-gradient(135deg,rgba(255,255,255,0.07),rgba(255,255,255,0.02))] p-4 sm:p-6 lg:p-7">
+          <div class="pointer-events-none absolute -right-16 -top-20 h-44 w-44 rounded-full bg-[#ff9900]/10 blur-3xl"></div>
+          <div class="relative grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px] lg:items-center">
+            <div>
+              <div class="flex flex-wrap items-center gap-3">
+                <div :class="[loadingShimmerPanelClass, 'h-14 w-36 rounded-2xl bg-white/80']"></div>
+                <div :class="[loadingShimmerPillClass, 'h-7 w-32']"></div>
+                <div :class="[loadingShimmerPillClass, 'h-7 w-64 border-[#ff9900]/25 bg-[#ff9900]/10']"></div>
+              </div>
+
+              <div class="mt-6 space-y-3">
+                <div :class="[loadingShimmerLineClass, 'h-9 w-full max-w-[720px] sm:h-11']"></div>
+                <div :class="[loadingShimmerLineClass, 'h-9 w-3/4 max-w-[560px] sm:h-11']"></div>
+                <div :class="[loadingShimmerLineClass, 'h-4 w-full max-w-[620px]']"></div>
+                <div :class="[loadingShimmerLineClass, 'h-4 w-4/5 max-w-[520px]']"></div>
+              </div>
+            </div>
+
+            <div class="rounded-[26px] border border-white/15 bg-black/35 p-4">
+              <div :class="[loadingShimmerLineClass, 'h-3 w-32']"></div>
+              <div :class="[loadingShimmerLineClass, 'mt-3 h-7 w-36']"></div>
+              <div :class="[loadingShimmerLineClass, 'mt-3 h-4 w-full']"></div>
+              <div :class="[loadingShimmerPillClass, 'mt-5 h-12 w-full bg-[#ff9900]/30']"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="rounded-[30px] border border-white/10 bg-black/60 p-4 sm:p-5 lg:p-6">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <div :class="[loadingShimmerLineClass, 'h-3 w-40']"></div>
+              <div :class="[loadingShimmerLineClass, 'mt-3 h-8 w-full max-w-[420px]']"></div>
+              <div :class="[loadingShimmerLineClass, 'mt-3 h-4 w-full max-w-[480px]']"></div>
+            </div>
+            <div :class="[loadingShimmerLineClass, 'h-3 w-28']"></div>
+          </div>
+
+          <div class="mt-5 grid grid-cols-1 gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-4 sm:grid-cols-3">
+            <div v-for="summaryIndex in 3" :key="`comparison-summary-skeleton-${summaryIndex}`">
+              <div :class="[loadingShimmerLineClass, 'h-3 w-28']"></div>
+              <div :class="[loadingShimmerLineClass, 'mt-3 h-7 w-24']"></div>
+              <div :class="[loadingShimmerLineClass, 'mt-2 h-3 w-32']"></div>
+            </div>
           </div>
 
           <div class="mt-4 space-y-3 sm:space-y-4">
             <article
-              v-for="skeletonIndex in 4"
+              v-for="skeletonIndex in 3"
               :key="`comparison-skeleton-${skeletonIndex}`"
-              class="grid grid-cols-[auto_minmax(0,1fr)_auto] gap-x-3 gap-y-2 rounded-xl border border-white/10 p-3 sm:rounded-2xl md:grid-cols-12 md:items-center md:gap-3 md:px-5 md:py-5"
+              class="rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-5 lg:grid lg:grid-cols-[112px_minmax(0,1.45fr)_minmax(0,0.95fr)_auto] lg:items-center lg:gap-6 lg:px-6 lg:py-6"
             >
-              <div :class="[loadingShimmerPanelClass, 'row-span-2 h-16 w-16 sm:h-16 sm:w-16 md:col-span-2 md:row-span-1 md:h-20 md:w-20']"></div>
+              <div :class="[loadingShimmerPanelClass, 'h-20 w-20 rounded-xl sm:h-24 sm:w-24 lg:h-28 lg:w-28']"></div>
 
-              <div class="min-w-0 md:col-span-3">
+              <div class="mt-4 min-w-0 lg:mt-0">
                 <div :class="[loadingShimmerLineClass, 'h-3 w-24']"></div>
-                <div :class="[loadingShimmerLineClass, 'mt-2 h-3 w-full max-w-[180px]']"></div>
+                <div :class="[loadingShimmerLineClass, 'mt-3 h-7 w-full max-w-[260px]']"></div>
+                <div :class="[loadingShimmerLineClass, 'mt-2 h-7 w-3/4 max-w-[220px]']"></div>
+                <div class="mt-3 flex gap-2">
+                  <div :class="[loadingShimmerPillClass, 'h-7 w-24']"></div>
+                  <div :class="[loadingShimmerPillClass, 'h-7 w-32']"></div>
+                </div>
               </div>
 
-              <div :class="[loadingShimmerLineClass, 'h-8 w-24 justify-self-end md:col-span-2 md:justify-self-start']"></div>
-              <div :class="[loadingShimmerLineClass, 'col-span-2 h-3 w-16 md:col-span-2 md:justify-self-center']"></div>
-              <div :class="[loadingShimmerPillClass, 'col-start-3 row-start-2 h-6 w-16 justify-self-end md:col-start-auto md:col-span-1 md:row-auto md:justify-self-center']"></div>
+              <div class="mt-4 border-t border-white/10 pt-4 lg:mt-0 lg:border-t-0 lg:pt-0">
+                <div :class="[loadingShimmerLineClass, 'h-3 w-28']"></div>
+                <div :class="[loadingShimmerLineClass, 'mt-3 h-10 w-36']"></div>
+                <div :class="[loadingShimmerLineClass, 'mt-2 h-4 w-40']"></div>
+              </div>
 
-              <div class="col-span-3 mt-1 flex gap-2 md:col-span-2 md:mt-0 md:justify-end">
-                <div :class="[loadingShimmerPillClass, 'h-9 w-20 sm:h-10 sm:w-24']"></div>
-                <div :class="[loadingShimmerPillClass, 'h-9 w-20 sm:h-10 sm:w-24']"></div>
+              <div class="mt-4 flex flex-col gap-2 sm:flex-row lg:mt-0 lg:flex-col lg:items-end">
+                <div :class="[loadingShimmerPillClass, 'h-11 w-full sm:w-36 lg:w-40']"></div>
+                <div :class="[loadingShimmerPillClass, 'h-11 w-full sm:w-36 lg:w-40']"></div>
               </div>
             </article>
           </div>
@@ -960,11 +1051,11 @@ useHead(() => {
           >
             <div class="min-w-0">
               <div class="flex flex-wrap items-center gap-3">
-                <div class="flex h-14 w-24 shrink-0 items-center justify-center rounded-2xl bg-white px-4 shadow-[0_18px_45px_rgba(0,0,0,0.25)]">
+                <div class="flex h-14 w-36 shrink-0 items-center justify-center rounded-2xl bg-white px-4 shadow-[0_18px_45px_rgba(0,0,0,0.25)]">
                   <img
-                    src="https://companieslogo.com/img/orig/AMZN-e9f942e4.png?t=1740113564"
-                    alt="Amazon"
-                    class="max-h-8 w-full object-contain"
+                    src="https://upload.wikimedia.org/wikipedia/commons/e/e3/Amazon_Prime_Logo.svg"
+                    alt="Amazon Prime"
+                    class="max-h-9 w-full object-contain"
                     loading="lazy"
                   >
                 </div>
@@ -980,7 +1071,7 @@ useHead(() => {
               </div>
 
               <h2 class="mt-5 max-w-3xl font-display text-3xl font-semibold italic tracking-tight text-white sm:text-4xl">
-                Recevez-le demain avec Prime.
+                Recevez {{ productDetails.product.title }} dès demain avec Prime.
               </h2>
               <p class="mt-3 max-w-2xl text-sm leading-relaxed text-white/72 sm:text-base">
                 Pourquoi attendre ? Vérifiez si ce produit est disponible en livraison gratuite et ultra-rapide avant de finir votre liste.
